@@ -269,3 +269,16 @@ func (n *Note) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+// NoteUpdate represents a batch update request for a note
+type NoteUpdate struct {
+	NoteID  string              `json:"note_id"`
+	Request *UpdateNoteRequest  `json:"request"`
+}
+
+// NoteStats represents statistics for a user's notes
+type NoteStats struct {
+	TotalNotes int64     `json:"total_notes"`
+	OldestNote time.Time `json:"oldest_note"`
+	NewestNote time.Time `json:"newest_note"`
+}
