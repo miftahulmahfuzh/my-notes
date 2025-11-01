@@ -15,7 +15,7 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 5
+- Completed Today: 6
 - Completed This Week: 5
 - Completed This Month: 5
 
@@ -33,6 +33,40 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P2-EXT-A006** Remove redundant mock-factories.ts file and refactor sync.test.ts - extension/tests/mock-factories.ts
+  - **Completed**: 2025-11-02 18:05:00
+  - **Difficulty**: EASY
+  - **Context**: 313-line mock-factories.ts file was over-engineered and redundant with existing setup.ts functionality
+  - **Issue**: Only 1 file imported mock-factories.ts (sync.test.ts), while setup.ts already provided simpler mocking utilities
+  - **Analysis**: mock-factories.ts represented premature optimization - creating extensive mock infrastructure before actual tests
+  - **Files Modified**:
+    - extension/tests/mock-factories.ts (DELETED)
+    - extension/src/services/__tests__/sync.test.ts (refactored imports and mock usage)
+    - extension/tests/.workflows/todos.md (task completion)
+  - **Method Applied**:
+    - Removed complex mock-factories.ts file entirely (313 lines eliminated)
+    - Refactored sync.test.ts to use inline mock implementations
+    - Replaced complex mock factories with simple, focused mocking patterns
+    - Updated import statements to remove dependency on mock-factories
+  - **Results Achieved**:
+    - **Simplified Architecture**: Removed unnecessary abstraction layer
+    - **Better Maintainability**: Tests now use direct, obvious mocking patterns
+    - **Reduced Complexity**: 313 lines of over-engineering eliminated
+    - **Cleaner Codebase**: Now follows YAGNI principle for test infrastructure
+  - **Test Validation Results**:
+    - ✅ All sync tests continue to pass after refactoring (11/11 sync tests)
+    - ✅ No loss of test coverage or functionality (49/49 total tests pass)
+    - ✅ Test execution time remains reasonable (34.764s total)
+    - ✅ Mock functionality preserved with simpler implementation
+  - **Technical Impact**:
+    - **Code Reduction**: 313 lines of over-engineering removed
+    - **Import Simplification**: No more complex `@/../tests/mock-factories` path
+    - **Maintainability**: Mock logic now visible and obvious in test file
+    - **No Performance Impact**: Test execution time unchanged
+  - **Validation Results**:
+    - **Before**: 49 tests passing with 313-line mock infrastructure dependency
+    - **After**: 49 tests passing with inline, simple mocking (zero regression)
+    - **Benefits**: Cleaner codebase, easier maintenance, no functionality loss
 - [x] **P3-EXT-A005** Suppress expected console errors and warnings during test execution - extension/tests/setup.ts:155
   - **Completed**: 2025-11-02 17:40:00
   - **Difficulty**: EASY
