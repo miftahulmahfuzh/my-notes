@@ -9,34 +9,58 @@ import (
 	"github.com/google/uuid"
 )
 
+// UserPreferences represents user preferences and settings
+type UserPreferences struct {
+	Theme              string `json:"theme" db:"theme"`
+	Language           string `json:"language" db:"language"`
+	TimeZone           string `json:"timezone" db:"timezone"`
+	EmailNotifications bool   `json:"email_notifications" db:"email_notifications"`
+	AutoSave           bool   `json:"auto_save" db:"auto_save"`
+	DefaultNoteView    string `json:"default_note_view" db:"default_note_view"`
+}
+
+// UserSession represents a user session
+type UserSession struct {
+	ID        string    `json:"id" db:"id"`
+	UserID    string    `json:"user_id" db:"user_id"`
+	IPAddress string    `json:"ip_address" db:"ip_address"`
+	UserAgent string    `json:"user_agent" db:"user_agent"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	LastSeen  time.Time `json:"last_seen" db:"last_seen"`
+	IsActive  bool      `json:"is_active" db:"is_active"`
+}
+
 // User represents a user in the system
 type User struct {
-	ID        uuid.UUID  `json:"id" db:"id"`
-	GoogleID  string     `json:"google_id" db:"google_id"`
-	Email     string     `json:"email" db:"email"`
-	Name      string     `json:"name" db:"name"`
-	AvatarURL *string    `json:"avatar_url,omitempty" db:"avatar_url"`
-	CreatedAt time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at" db:"updated_at"`
+	ID          uuid.UUID      `json:"id" db:"id"`
+	GoogleID    string         `json:"google_id" db:"google_id"`
+	Email       string         `json:"email" db:"email"`
+	Name        string         `json:"name" db:"name"`
+	AvatarURL   *string        `json:"avatar_url,omitempty" db:"avatar_url"`
+	Preferences UserPreferences `json:"preferences" db:"preferences"`
+	CreatedAt   time.Time      `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at" db:"updated_at"`
 }
 
 // UserResponse is the safe response format for user data
 type UserResponse struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	Name      string    `json:"name"`
-	AvatarURL *string   `json:"avatar_url,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          uuid.UUID      `json:"id"`
+	Email       string         `json:"email"`
+	Name        string         `json:"name"`
+	AvatarURL   *string        `json:"avatar_url,omitempty"`
+	Preferences UserPreferences `json:"preferences"`
+	CreatedAt   time.Time      `json:"created_at"`
 }
 
 // ToResponse converts User to UserResponse (omits sensitive data)
 func (u *User) ToResponse() UserResponse {
 	return UserResponse{
-		ID:        u.ID,
-		Email:     u.Email,
-		Name:      u.Name,
-		AvatarURL: u.AvatarURL,
-		CreatedAt: u.CreatedAt,
+		ID:          u.ID,
+		Email:       u.Email,
+		Name:        u.Name,
+		AvatarURL:   u.AvatarURL,
+		Preferences: u.Preferences,
+		CreatedAt:   u.CreatedAt,
 	}
 }
 
