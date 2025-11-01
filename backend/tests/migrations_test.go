@@ -61,18 +61,19 @@ func TestMigrationsRollback(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check that the last migration was rolled back
-	// The last migration should be the note_tags table
+	// The last migration (005_add_user_preferences) should have removed the preferences column from users table
 	var exists bool
 	query := `
 		SELECT EXISTS (
-			SELECT FROM information_schema.tables
+			SELECT FROM information_schema.columns
 			WHERE table_schema = 'public'
-			AND table_name = 'note_tags'
+			AND table_name = 'users'
+			AND column_name = 'preferences'
 		)
 	`
 	err = db.QueryRow(query).Scan(&exists)
 	require.NoError(t, err)
-	assert.False(t, exists, "note_tags table should not exist after rollback")
+	assert.False(t, exists, "preferences column should not exist after rollback of 005_add_user_preferences")
 
 	// Check that other tables still exist
 	tables := []string{

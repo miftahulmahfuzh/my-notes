@@ -46,6 +46,30 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P1-TEST-A003** Fix TestMigrationsRollback incorrect table expectation
+  - **Completed**: 2025-11-01 19:24:00
+  - **Difficulty**: EASY
+  - **Context**: TestMigrationsRollback failed due to incorrect assumption about which database object should be removed during rollback
+  - **Impact**: Migration rollback testing was broken, preventing validation of database rollback functionality
+  - **Method**: Updated test to verify rollback of 005_add_user_preferences migration by checking for removal of preferences column
+  - **Root Cause**: Test expected note_tags table to be removed after rolling back 005_add_user_preferences, but note_tags was created by 004_create_note_tags_table
+  - **Files Modified**:
+    - `migrations_test.go` (fixed rollback verification to check for preferences column removal)
+  - **Technical Solution**:
+    - Updated test assertion to check for removal of preferences column from users table instead of note_tags table
+    - Fixed misleading comment about which migration creates which table
+    - Maintained all existing test functionality while fixing the incorrect expectation
+  - **Validation Results**:
+    - ✅ `TestMigrationsRollback` now passes correctly
+    - ✅ All migration tests continue to work as expected
+    - ✅ Full test suite executes without failures
+    - ✅ Database rollback functionality properly validated
+  - **Test Execution Results**:
+    - **Before fix**: Test failed with assertion error on note_tags table existence
+    - **After fix**: Test passes with correct verification of preferences column removal
+    - **Migration validation**: Properly tests rollback of 005_add_user_preferences migration
+  - **Production Impact**: Restores confidence in database migration rollback functionality and enables proper testing of schema changes
+
 - [x] **P1-TEST-A002** Fix duplicate declarations causing test compilation failures
   - **Completed**: 2025-11-01 19:20:00
   - **Difficulty**: MEDIUM
