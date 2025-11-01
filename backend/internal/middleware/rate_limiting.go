@@ -380,6 +380,15 @@ func (rlm *RateLimitingMiddleware) ResetGlobalRateLimiter() {
 	rlm.globalLimiter = NewTokenBucket(float64(rlm.config.GlobalBurstSize), rlm.config.GlobalRequestsPerSecond)
 }
 
+// ResetUserRateLimiters resets all user rate limiters (for testing)
+func (rlm *RateLimitingMiddleware) ResetUserRateLimiters() {
+	rlm.mu.Lock()
+	defer rlm.mu.Unlock()
+
+	// Create a new map to clear all existing user rate limiters
+	rlm.userLimiters = make(map[string]*TokenBucket)
+}
+
 // AdaptiveRateLimiting adjusts rate limits based on system load
 type AdaptiveRateLimiting struct {
 	baseLimit    float64

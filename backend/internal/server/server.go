@@ -305,8 +305,17 @@ func (s *Server) GetRouter() *mux.Router {
 
 // ResetRateLimiters resets all rate limiters (for testing)
 func (s *Server) ResetRateLimiters() {
+	// Reset rate limiting middleware
 	if s.rateLimitMW != nil {
 		s.rateLimitMW.ResetGlobalRateLimiter()
+		s.rateLimitMW.ResetUserRateLimiters()
 	}
+
+	// Reset security middleware rate limiter
+	if s.securityMW != nil {
+		s.securityMW.Reset()
+	}
+
+	// Clear any remaining global rate limiters
 	middleware.ClearUserRateLimiters()
 }

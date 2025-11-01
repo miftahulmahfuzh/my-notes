@@ -101,6 +101,8 @@ func (suite *AuthFlowTestSuite) SetupTest() {
 
 // TearDownTest runs after each test
 func (suite *AuthFlowTestSuite) TearDownTest() {
+	// Clean up rate limiters to prevent test interference
+	suite.server.ResetRateLimiters()
 	suite.cleanupTestData()
 }
 

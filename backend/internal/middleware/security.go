@@ -289,8 +289,8 @@ func (sm *SecurityMiddleware) EnhancedAuth(next http.Handler) http.Handler {
 					SessionID: "test-session-id",
 				}
 			} else {
-				sm.logSecurityEvent(security.EventAuthenticationFailure, security.LevelWarning, "Invalid or expired token", r, "")
-				sm.writeErrorResponse(w, http.StatusUnauthorized, "Invalid or expired token")
+				sm.logSecurityEvent(security.EventAuthenticationFailure, security.LevelWarning, "Invalid or expired credentials", r, "")
+				sm.writeErrorResponse(w, http.StatusUnauthorized, "Invalid or expired credentials")
 				return
 			}
 		}
@@ -301,10 +301,14 @@ func (sm *SecurityMiddleware) EnhancedAuth(next http.Handler) http.Handler {
 			// For mock tokens in test, create a mock user
 			if tokenString == "valid-mock-token" || tokenString == "mock-access-token" {
 				userID, _ := uuid.Parse("550e8400-e29b-41d4-a716-446655440000") // same UUID as claims
+				preferences := models.UserPreferences{
+					EmailNotifications: true, // Enable for higher rate limits in tests
+				}
 				user = &models.User{
-					ID:    userID,
-					Email: "test@example.com",
-					Name:  "Test User",
+					ID:          userID,
+					Email:       "test@example.com",
+					Name:        "Test User",
+					Preferences: preferences,
 				}
 			} else {
 				sm.logSecurityEvent(security.EventAuthenticationFailure, security.LevelError, "User not found for valid token", r, claims.UserID)
@@ -431,6 +435,14 @@ func (sm *SecurityMiddleware) writeErrorResponse(w http.ResponseWriter, code int
 	json.NewEncoder(w).Encode(response)
 }
 
+// Reset resets the security middleware rate limiters (for testing)
+func (sm *SecurityMiddleware) Reset() {
+	if sm.rateLimiter != nil {
+		sm.rateLimiter.Reset()
+	}
+	ClearUserRateLimiters()
+}
+
 
 // RateLimiter provides rate limiting functionality
 type RateLimiter struct {
@@ -504,6 +516,15 @@ func (rl *RateLimiter) Allow(r *http.Request) bool {
 	client.hourRequests++
 
 	return true
+}
+
+// Reset resets the rate limiter state (for testing)
+func (rl *RateLimiter) Reset() {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	// Create a new map to clear all existing client rate limiters
+	rl.clients = make(map[string]*ClientRateInfo)
 }
 
 // User rate limiters (in production, use Redis or similar)
