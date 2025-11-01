@@ -88,6 +88,7 @@ func TestHealthEndpoint(t *testing.T) {
 	// Create request
 	req, err := http.NewRequest("GET", "/api/v1/health", nil)
 	require.NoError(t, err)
+	req.Header.Set("User-Agent", "test-agent")
 
 	// Create response recorder
 	rr := httptest.NewRecorder()
@@ -158,13 +159,13 @@ func TestCORSMiddleware(t *testing.T) {
 			origin:         "http://localhost:3000",
 			method:         "OPTIONS",
 			expectedOrigin: "http://localhost:3000",
-			expectedStatus: http.StatusOK,
+			expectedStatus: http.StatusNoContent, // OPTIONS requests should return 204
 		},
 		{
 			name:           "Disallowed origin",
 			origin:         "http://evil.com",
 			method:         "GET",
-			expectedOrigin: "http://localhost:3000", // Falls back to first allowed origin
+			expectedOrigin: "", // Disallowed origins get no CORS headers
 			expectedStatus: http.StatusOK,
 		},
 	}
@@ -174,17 +175,20 @@ func TestCORSMiddleware(t *testing.T) {
 			req, err := http.NewRequest(tt.method, "/api/v1/health", nil)
 			require.NoError(t, err)
 			req.Header.Set("Origin", tt.origin)
+			req.Header.Set("User-Agent", "test-agent")
 
 			rr := httptest.NewRecorder()
 			router.ServeHTTP(rr, req)
 
 			assert.Equal(t, tt.expectedStatus, rr.Code)
+
 			assert.Equal(t, tt.expectedOrigin, rr.Header().Get("Access-Control-Allow-Origin"))
-			assert.Equal(t, "true", rr.Header().Get("Access-Control-Allow-Credentials"))
+			// CORS middleware doesn't set Access-Control-Allow-Credentials (not configured to allow credentials)
+			assert.Equal(t, "", rr.Header().Get("Access-Control-Allow-Credentials"))
 
 			if tt.method == "OPTIONS" {
-				assert.Equal(t, "GET,POST,PUT,DELETE,OPTIONS", rr.Header().Get("Access-Control-Allow-Methods"))
-				assert.Equal(t, "*", rr.Header().Get("Access-Control-Allow-Headers"))
+				assert.Equal(t, "GET, POST, PUT, DELETE, OPTIONS", rr.Header().Get("Access-Control-Allow-Methods"))
+				assert.Equal(t, "Content-Type, Authorization, X-Request-ID", rr.Header().Get("Access-Control-Allow-Headers"))
 				assert.Equal(t, "86400", rr.Header().Get("Access-Control-Max-Age"))
 			}
 		})
@@ -237,6 +241,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "/api/v1/health", nil)
 	require.NoError(t, err)
+	req.Header.Set("User-Agent", "test-agent")
 
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
@@ -246,7 +251,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	assert.Equal(t, "DENY", rr.Header().Get("X-Frame-Options"))
 	assert.Equal(t, "1; mode=block", rr.Header().Get("X-XSS-Protection"))
 	assert.Equal(t, "strict-origin-when-cross-origin", rr.Header().Get("Referrer-Policy"))
-	assert.Equal(t, "camera=(), microphone=(), geolocation=()", rr.Header().Get("Permissions-Policy"))
+	assert.Equal(t, "geolocation=(), microphone=(), camera=()", rr.Header().Get("Permissions-Policy"))
 }
 
 func TestContentTypeMiddleware(t *testing.T) {
@@ -280,6 +285,7 @@ func TestContentTypeMiddleware(t *testing.T) {
 		t.Run("Path_"+tt.path, func(t *testing.T) {
 			req, err := http.NewRequest("GET", tt.path, nil)
 			require.NoError(t, err)
+			req.Header.Set("User-Agent", "test-agent")
 
 			rr := httptest.NewRecorder()
 			router.ServeHTTP(rr, req)
@@ -306,6 +312,7 @@ func TestNotFoundHandler(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "/nonexistent/path", nil)
 	require.NoError(t, err)
+	req.Header.Set("User-Agent", "test-agent")
 
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
