@@ -53,6 +53,9 @@ func (s *Server) initializeServices() {
 	// Initialize user service
 	s.userService = services.NewUserService(s.db)
 
+	// Initialize tag service
+	tagService := services.NewTagService(s.db)
+
 	// Initialize token service
 	tokenSecret := s.config.Auth.JWTSecret
 	if tokenSecret == "" {
@@ -148,7 +151,7 @@ func (s *Server) initializeServices() {
 	userHandler := handlers.NewUserHandler(s.userService)
 
 	// Initialize note service and handler
-	noteService := services.NewNoteService(s.db)
+	noteService := services.NewNoteService(s.db, tagService)
 	notesHandler := handlers.NewNotesHandler(noteService)
 
 	// Initialize security handler with middleware dependencies

@@ -68,8 +68,11 @@ func (suite *NotesIntegrationTestSuite) SetupSuite() {
 	_, err = suite.db.Exec(query, suite.userID, "google_"+suite.userID.String(), suite.userEmail, "Test User")
 	require.NoError(suite.T(), err, "Failed to create test user")
 
+	// Create tag service with real database
+	tagService := services.NewTagService(suite.db)
+
 	// Create note service with real database
-	noteService := services.NewNoteService(suite.db)
+	noteService := services.NewNoteService(suite.db, tagService)
 	suite.noteHandler = handlers.NewNotesHandler(noteService)
 
 	// Setup router with routes

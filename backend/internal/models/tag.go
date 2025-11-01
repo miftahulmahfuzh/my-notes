@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -243,4 +244,25 @@ func (t *Tag) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+// UpdateTagRequest represents the request to update a tag
+type UpdateTagRequest struct {
+	Name string `json:"name" validate:"required,max=100"`
+}
+
+// TagAnalytics represents comprehensive analytics for a tag
+type TagAnalytics struct {
+	ID                uuid.UUID  `json:"id"`
+	Name              string     `json:"name"`
+	CreatedAt         time.Time  `json:"created_at"`
+	TotalNotes        int        `json:"total_notes"`
+	UniqueUsers       int        `json:"unique_users"`
+	FirstUsed         sql.NullTime `json:"first_used"`
+	LastUsed          sql.NullTime `json:"last_used"`
+	TotalAssociations int        `json:"total_associations"`
+	UsageFrequency    float64    `json:"usage_frequency"`
+	RecentNotes       int        `json:"recent_notes"`
+	IsTrending        bool       `json:"is_trending"`
+	RelatedTags       []TagResponse `json:"related_tags,omitempty"`
 }

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/gpd/my-notes/internal/config"
+	"github.com/gpd/my-notes/internal/database"
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -18,25 +20,36 @@ import (
 // NoteServiceTestSuite contains all tests for the note service
 type NoteServiceTestSuite struct {
 	suite.Suite
-	db        *sql.DB
-	service   *NoteService
-	userID    string
-	cleanupDB func()
+	db         *sql.DB
+	service    *NoteService
+	tagService *TagService
+	userID     string
+	cleanupDB  func()
 }
 
 // SetupSuite runs once before all tests
 func (suite *NoteServiceTestSuite) SetupSuite() {
-	// Initialize test database
-	db, cleanup := setupTestDatabase(suite.T())
+	// Check if PostgreSQL tests are enabled
+	if testing.Short() {
+		suite.T().Skip("Skipping integration tests in short mode")
+	}
+
+	// Load configuration
+	cfg, err := config.LoadConfig("")
+	require.NoError(suite.T(), err, "Failed to load config")
+
+	// Create test database
+	db, err := database.CreateTestDatabase(cfg.Database)
+	require.NoError(suite.T(), err, "Failed to create test database")
 	suite.db = db
-	suite.service = NewNoteService(db)
-	suite.cleanupDB = cleanup
+	suite.tagService = NewTagService(db)
+	suite.service = NewNoteService(db, suite.tagService)
+	suite.cleanupDB = func() { db.Close() }
 	suite.userID = uuid.New().String()
 
-	// Skip all tests if no database available
-	if suite.db == nil {
-		suite.T().Skip("Test database not available - skipping note service tests")
-	}
+	// Create test user
+	err = suite.createTestUser()
+	require.NoError(suite.T(), err, "Failed to create test user")
 }
 
 // TearDownSuite runs once after all tests
@@ -82,6 +95,23 @@ func (suite *NoteServiceTestSuite) cleanupTestData() {
 	if err != nil {
 		suite.T().Logf("Warning: failed to cleanup notes: %v", err)
 	}
+}
+
+// createTestUser creates a test user for the tests
+func (suite *NoteServiceTestSuite) createTestUser() error {
+	if suite.db == nil {
+		return fmt.Errorf("database not initialized")
+	}
+
+	query := `
+		INSERT INTO users (id, google_id, email, name, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`
+	userUUID := uuid.MustParse(suite.userID)
+	_, err := suite.db.ExecContext(context.Background(), query,
+		userUUID, "google_"+suite.userID, "test@example.com", "Test User",
+		time.Now(), time.Now())
+	return err
 }
 
 // TestCreateNote tests the CreateNote method
