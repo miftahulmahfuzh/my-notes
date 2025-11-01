@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
@@ -137,7 +136,7 @@ func TestUsersTableStructure(t *testing.T) {
 	// Check constraints
 	t.Run("Constraints", func(t *testing.T) {
 		// Test unique constraint on google_id
-		userID := CreateTestUser(t, db, "test1@example.com")
+		_ = CreateTestUser(t, db, "test1@example.com")
 
 		// Try to create another user with same google_id (should fail)
 		query := `
@@ -289,7 +288,7 @@ func TestTagsTableStructure(t *testing.T) {
 
 	// Test unique constraint on name
 	t.Run("UniqueNameConstraint", func(t *testing.T) {
-		tagID := CreateTestTag(t, db, "#test")
+		_ = CreateTestTag(t, db, "#test")
 
 		// Try to create another tag with same name (should fail)
 		query := `

@@ -35,12 +35,12 @@ func NewServer(cfg *config.Config, h *handlers.Handlers) *Server {
 
 // setupMiddleware configures the middleware stack
 func (s *Server) setupMiddleware() {
-	// Create middleware chain
-	middlewareChain := mux.MiddlewareFunc(middleware.Recovery)
-	middlewareChain = mux.MiddlewareFunc(middleware.RequestID).Middleware(middlewareChain)
-	middlewareChain = mux.MiddlewareFunc(middleware.Logging).Middleware(middlewareChain)
-	middlewareChain = mux.MiddlewareFunc(middleware.ContentType).Middleware(middlewareChain)
-	middlewareChain = mux.MiddlewareFunc(middleware.SecurityHeaders).Middleware(middlewareChain)
+	// Apply middleware in order
+	s.router.Use(middleware.Recovery)
+	s.router.Use(middleware.RequestID)
+	s.router.Use(middleware.Logging)
+	s.router.Use(middleware.ContentType)
+	s.router.Use(middleware.SecurityHeaders)
 
 	// CORS middleware
 	corsMiddleware := middleware.CORS(
@@ -49,19 +49,17 @@ func (s *Server) setupMiddleware() {
 		s.config.CORS.AllowedHeaders,
 		s.config.CORS.MaxAge,
 	)
-	middlewareChain = corsMiddleware.Middleware(middlewareChain)
+	s.router.Use(corsMiddleware)
 
 	// Timeout middleware
 	timeoutDuration := time.Duration(s.config.Server.ReadTimeout) * time.Second
-	middlewareChain = mux.MiddlewareFunc(middleware.Timeout(timeoutDuration)).Middleware(middlewareChain)
+	s.router.Use(middleware.Timeout(timeoutDuration))
 
 	// Rate limiting (100 requests per minute for development, stricter in production)
 	if s.config.IsProduction() {
 		rateLimitMiddleware := middleware.RateLimit(100, time.Minute)
-		middlewareChain = rateLimitMiddleware.Middleware(middlewareChain)
+		s.router.Use(rateLimitMiddleware)
 	}
-
-	s.router.Use(middlewareChain)
 }
 
 // setupRoutes configures the API routes

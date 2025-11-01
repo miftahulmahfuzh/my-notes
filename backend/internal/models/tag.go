@@ -226,8 +226,8 @@ func (t *Tag) UnmarshalJSON(data []byte) error {
 	}
 
 	if aux.CreatedAt != "" {
-		if t, err := time.Parse(time.RFC3339, aux.CreatedAt); err == nil {
-			t.CreatedAt = t
+		if parsedTime, err := time.Parse(time.RFC3339, aux.CreatedAt); err == nil {
+			t.CreatedAt = parsedTime
 		}
 	}
 
