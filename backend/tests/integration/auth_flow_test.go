@@ -13,6 +13,7 @@ import (
 	"github.com/gpd/my-notes/internal/config"
 	"github.com/gpd/my-notes/internal/database"
 	"github.com/gpd/my-notes/internal/handlers"
+	"github.com/gpd/my-notes/internal/middleware"
 	"github.com/gpd/my-notes/internal/server"
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/stretchr/testify/assert"
@@ -89,6 +90,9 @@ func (suite *AuthFlowTestSuite) TearDownSuite() {
 
 // SetupTest runs before each test
 func (suite *AuthFlowTestSuite) SetupTest() {
+	// Clean up global rate limiters to prevent test interference
+	middleware.ClearUserRateLimiters()
+
 	// Clean up test data before each test
 	suite.cleanupTestData()
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gpd/my-notes/internal/auth"
@@ -433,6 +434,7 @@ func (sm *SecurityMiddleware) writeErrorResponse(w http.ResponseWriter, code int
 
 // RateLimiter provides rate limiting functionality
 type RateLimiter struct {
+	mu                sync.RWMutex
 	requestsPerMinute int
 	requestsPerHour   int
 	clients           map[string]*ClientRateInfo
@@ -440,6 +442,7 @@ type RateLimiter struct {
 
 // ClientRateInfo tracks rate information for a client
 type ClientRateInfo struct {
+	mu             sync.RWMutex
 	minuteRequests int
 	hourRequests   int
 	lastMinute     time.Time
@@ -460,6 +463,8 @@ func (rl *RateLimiter) Allow(r *http.Request) bool {
 	clientIP := getClientIP(r)
 	now := time.Now()
 
+	// Lock the map access
+	rl.mu.Lock()
 	client, exists := rl.clients[clientIP]
 	if !exists {
 		client = &ClientRateInfo{
@@ -468,6 +473,11 @@ func (rl *RateLimiter) Allow(r *http.Request) bool {
 		}
 		rl.clients[clientIP] = client
 	}
+	rl.mu.Unlock()
+
+	// Lock the client data access
+	client.mu.Lock()
+	defer client.mu.Unlock()
 
 	// Reset counters if needed
 	if now.Sub(client.lastMinute) >= time.Minute {
@@ -497,14 +507,35 @@ func (rl *RateLimiter) Allow(r *http.Request) bool {
 }
 
 // User rate limiters (in production, use Redis or similar)
-var userRateLimiters = make(map[string]*RateLimiter)
+var (
+	userRateLimiters = make(map[string]*RateLimiter)
+	userRateLimitersMu sync.RWMutex
+)
 
 // getUserRateLimiter gets or creates a rate limiter for a specific user
 func getUserRateLimiter(userID string) *RateLimiter {
+	userRateLimitersMu.RLock()
 	limiter, exists := userRateLimiters[userID]
+	userRateLimitersMu.RUnlock()
+
 	if !exists {
-		limiter = NewRateLimiter(120, 2000) // Higher limits for authenticated users
-		userRateLimiters[userID] = limiter
+		userRateLimitersMu.Lock()
+		// Double-check after acquiring write lock
+		limiter, exists = userRateLimiters[userID]
+		if !exists {
+			limiter = NewRateLimiter(120, 2000) // Higher limits for authenticated users
+			userRateLimiters[userID] = limiter
+		}
+		userRateLimitersMu.Unlock()
 	}
 	return limiter
+}
+
+// ClearUserRateLimiters clears all user rate limiters (for testing)
+func ClearUserRateLimiters() {
+	userRateLimitersMu.Lock()
+	defer userRateLimitersMu.Unlock()
+
+	// Create a new map to clear all existing rate limiters
+	userRateLimiters = make(map[string]*RateLimiter)
 }
