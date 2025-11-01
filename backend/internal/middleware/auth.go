@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 
@@ -226,8 +227,16 @@ func getClientIP(r *http.Request) string {
 		return xri
 	}
 
-	// Fall back to RemoteAddr
-	return r.RemoteAddr
+	// Fall back to RemoteAddr and parse out the IP
+	return parseIPFromRemoteAddr(r.RemoteAddr)
+}
+
+// parseIPFromRemoteAddr extracts IP from RemoteAddr (IP:port format)
+func parseIPFromRemoteAddr(remoteAddr string) string {
+	if host, _, err := net.SplitHostPort(remoteAddr); err == nil {
+		return host
+	}
+	return remoteAddr
 }
 
 // respondWithError sends an error response

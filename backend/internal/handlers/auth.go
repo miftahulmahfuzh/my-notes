@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"strings"
 
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/models"
@@ -354,20 +356,10 @@ func getClientIP(r *http.Request) string {
 	// Check X-Forwarded-For header first (for reverse proxies)
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		// X-Forwarded-For can contain multiple IPs, take the first one
-		if idx := len(xff); idx > 0 {
-			if commaIdx := 0; commaIdx < idx {
-				for i, c := range xff {
-					if c == ',' {
-						commaIdx = i
-						break
-					}
-				}
-				if commaIdx > 0 {
-					return xff[:commaIdx]
-				}
-			}
-			return xff
+		if commaIdx := strings.Index(xff, ","); commaIdx > 0 {
+			return xff[:commaIdx]
 		}
+		return xff
 	}
 
 	// Check X-Real-IP header
@@ -375,8 +367,16 @@ func getClientIP(r *http.Request) string {
 		return xri
 	}
 
-	// Fall back to RemoteAddr
-	return r.RemoteAddr
+	// Fall back to RemoteAddr and parse out the IP
+	return parseIPFromRemoteAddr(r.RemoteAddr)
+}
+
+// parseIPFromRemoteAddr extracts IP from RemoteAddr (IP:port format)
+func parseIPFromRemoteAddr(remoteAddr string) string {
+	if host, _, err := net.SplitHostPort(remoteAddr); err == nil {
+		return host
+	}
+	return remoteAddr
 }
 
 // respondWithError sends an error response

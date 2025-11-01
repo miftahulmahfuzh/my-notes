@@ -105,7 +105,7 @@ func (sm *SecurityMiddleware) Security(next http.Handler) http.Handler {
 		}
 
 		// Validate request size
-		if r.ContentLength > 10*1024*1024 { // 10MB limit
+		if r.ContentLength > 1*1024*1024 { // 1MB limit
 			sm.logSecurityEvent(security.EventSuspiciousActivity, security.LevelWarning, "Large request detected", r, "")
 			sm.writeErrorResponse(w, http.StatusRequestEntityTooLarge, "Request too large")
 			return

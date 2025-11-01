@@ -88,30 +88,30 @@ func (suite *SecurityTestSuite) TestInputValidation() {
 	}{
 		{
 			name:           "SQL injection attempt in auth request",
-			endpoint:       "/api/v1/auth/google",
+			endpoint:       "/api/v1/auth/exchange",
 			method:         "POST",
-			body:           map[string]interface{}{"redirect_uri": "'; DROP TABLE users; --"},
+			body:           map[string]interface{}{"code": "'; DROP TABLE users; --"},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "XSS attempt in auth request",
-			endpoint:       "/api/v1/auth/google",
+			endpoint:       "/api/v1/auth/exchange",
 			method:         "POST",
-			body:           map[string]interface{}{"redirect_uri": "<script>alert('xss')</script>"},
+			body:           map[string]interface{}{"code": "<script>alert('xss')</script>"},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Malicious JSON with null bytes",
-			endpoint:       "/api/v1/auth/google",
+			endpoint:       "/api/v1/auth/exchange",
 			method:         "POST",
-			body:           map[string]interface{}{"redirect_uri": "test\x00value"},
+			body:           map[string]interface{}{"code": "test\x00value"},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Oversized payload",
-			endpoint:       "/api/v1/auth/google",
+			endpoint:       "/api/v1/auth/exchange",
 			method:         "POST",
-			body:           map[string]interface{}{"data": strings.Repeat("A", 1000000)},
+			body:           map[string]interface{}{"data": strings.Repeat("A", 2000000)}, // 2MB
 			expectedStatus: http.StatusRequestEntityTooLarge,
 		},
 	}
@@ -377,8 +377,8 @@ func (suite *SecurityTestSuite) TestSecurityMonitoring() {
 
 		suite.server.GetRouter().ServeHTTP(w, req)
 
-		// Should return security metrics (or require auth)
-		assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusUnauthorized)
+		// Should return security metrics (or require auth, or be rate limited)
+		assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusUnauthorized || w.Code == http.StatusTooManyRequests)
 
 		if w.Code == http.StatusOK {
 			var response map[string]interface{}

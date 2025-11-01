@@ -419,14 +419,14 @@ func (suite *AuthFlowTestSuite) TestErrorHandling() {
 	}{
 		{
 			name:           "Invalid JSON",
-			path:           "/api/v1/auth/google",
+			path:           "/api/v1/auth/exchange",
 			method:         "POST",
 			body:           "invalid-json",
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Missing required fields",
-			path:           "/api/v1/auth/google",
+			path:           "/api/v1/auth/exchange",
 			method:         "POST",
 			body:           map[string]interface{}{},
 			expectedStatus: http.StatusBadRequest,
