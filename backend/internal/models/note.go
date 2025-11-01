@@ -149,12 +149,14 @@ func (r *CreateNoteRequest) ToNote(userID uuid.UUID) *Note {
 		}
 	}
 
+	now := time.Now()
 	return &Note{
+		ID:        uuid.New(),
 		UserID:    userID,
 		Title:     title,
 		Content:   r.Content,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: now,
+		UpdatedAt: now,
 		Version:   1,
 	}
 }

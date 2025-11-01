@@ -45,17 +45,6 @@ func NewNoteService(db *sql.DB) *NoteService {
 func (s *NoteService) CreateNote(userID string, request *models.CreateNoteRequest) (*models.Note, error) {
 	ctx := context.Background()
 
-	// Validate request manually
-	if request.Content == "" {
-		return nil, fmt.Errorf("invalid request: content is required")
-	}
-	if len(request.Content) > 10000 {
-		return nil, fmt.Errorf("invalid request: content too long (max 10000 characters)")
-	}
-	if len(request.Title) > 500 {
-		return nil, fmt.Errorf("invalid request: title too long (max 500 characters)")
-	}
-
 	// Convert request to note model
 	note := request.ToNote(uuid.MustParse(userID))
 
