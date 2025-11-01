@@ -172,7 +172,10 @@ func (suite *AuthFlowTestSuite) TestCompleteAuthFlow() {
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
-		assert.NotEmpty(t, response["auth_url"])
+
+		// Extract data from the wrapped API response format
+		data := response["data"].(map[string]interface{})
+		assert.NotEmpty(t, data["auth_url"])
 	})
 
 	// Step 2: Test token exchange (mocked)
@@ -199,9 +202,12 @@ func (suite *AuthFlowTestSuite) TestCompleteAuthFlow() {
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
-		assert.NotEmpty(t, response["access_token"])
-		assert.NotEmpty(t, response["refresh_token"])
-		assert.Equal(t, "Bearer", response["token_type"])
+
+		// Extract data from the wrapped API response format
+		data := response["data"].(map[string]interface{})
+		assert.NotEmpty(t, data["access_token"])
+		assert.NotEmpty(t, data["refresh_token"])
+		assert.Equal(t, "Bearer", data["token_type"])
 	})
 
 	// Step 3: Test protected resource access
@@ -237,7 +243,10 @@ func (suite *AuthFlowTestSuite) TestCompleteAuthFlow() {
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
-		assert.NotEmpty(t, response["access_token"])
+
+		// Extract data from the wrapped API response format
+		data := response["data"].(map[string]interface{})
+		assert.NotEmpty(t, data["access_token"])
 	})
 
 	// Step 5: Test logout
