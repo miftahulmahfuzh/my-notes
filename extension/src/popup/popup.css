@@ -1,0 +1,185 @@
+/* Brutalist Design - High Contrast and Bold */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&family=Inter:wght@400;600&display=swap');
+
+:root {
+  --primary-color: #FF4D00;
+  --black: #0A0A0A;
+  --white: #FFFFFF;
+  --gray-light: #F5F5F5;
+  --gray-medium: #999999;
+  --border-width: 3px;
+  --border-radius: 0;
+  --shadow: 8px 8px 0 rgba(10, 10, 10, 0.8);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--white);
+  color: var(--black);
+  width: 400px;
+  min-height: 500px;
+}
+
+.container {
+  padding: 16px;
+}
+
+.header {
+  margin-bottom: 24px;
+  border-bottom: var(--border-width) solid var(--black);
+  padding-bottom: 12px;
+}
+
+.header h1 {
+  font-family: 'Archivo', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.note-creator {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.note-input {
+  border: var(--border-width) solid var(--black);
+  background-color: var(--white);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  padding: 12px;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.1s ease;
+}
+
+.note-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow);
+}
+
+.create-btn {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: var(--border-width) solid var(--black);
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.create-btn:hover:not(:disabled) {
+  background-color: #FF6A00;
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow);
+}
+
+.create-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.note-item {
+  border: var(--border-width) solid var(--black);
+  background-color: var(--white);
+  padding: 16px;
+  transition: all 0.1s ease;
+}
+
+.note-item:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow);
+}
+
+.note-title {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: var(--black);
+}
+
+.note-content {
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 12px;
+  color: var(--black);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.note-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.delete-btn {
+  background-color: var(--black);
+  color: var(--white);
+  border: var(--border-width) solid var(--black);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.delete-btn:hover {
+  background-color: var(--primary-color);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(10, 10, 10, 0.8);
+}
+
+.loading {
+  text-align: center;
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  padding: 40px 0;
+}
+
+/* Scrollbar styling */
+.notes-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.notes-list::-webkit-scrollbar-track {
+  background: var(--gray-light);
+}
+
+.notes-list::-webkit-scrollbar-thumb {
+  background: var(--black);
+  border: 2px solid var(--gray-light);
+}
+
+.notes-list::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}

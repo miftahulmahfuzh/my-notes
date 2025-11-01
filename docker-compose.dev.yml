@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: silence-notes-postgres
+    environment:
+      POSTGRES_DB: notes_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - silence-notes-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: silence-notes-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - silence-notes-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: silence-notes-backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: notes_dev
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SERVER_PORT: 8080
+      APP_ENV: development
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+    networks:
+      - silence-notes-network
+    command: air -c .air.toml
+
+volumes:
+  postgres_data:
+
+networks:
+  silence-notes-network:
+    driver: bridge
