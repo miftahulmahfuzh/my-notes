@@ -52,6 +52,7 @@ func (m *MockNoteRepository) Update(ctx context.Context, note *models.Note) erro
 		return ErrNoteNotFound
 	}
 	note.UpdatedAt = time.Now()
+	note.Version++
 	m.notes[note.ID] = *note
 	return nil
 }
