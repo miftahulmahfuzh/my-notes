@@ -62,12 +62,13 @@ export class ApiService {
   }
 
   // Notes API
-  static async getNotes(params: { limit?: number; offset?: number; orderBy?: string; orderDir?: string } = {}): Promise<ApiResponse<{ notes: Note[]; total: number; page: number; limit: number; hasMore: boolean }>> {
+  static async getNotes(params: { limit?: number; offset?: number; orderBy?: string; orderDir?: string; updated_since?: string } = {}): Promise<ApiResponse<{ notes: Note[]; total: number; page: number; limit: number; hasMore: boolean }>> {
     const searchParams = new URLSearchParams();
     if (params.limit) searchParams.append('limit', params.limit.toString());
     if (params.offset) searchParams.append('offset', params.offset.toString());
     if (params.orderBy) searchParams.append('order_by', params.orderBy);
     if (params.orderDir) searchParams.append('order_dir', params.orderDir);
+    if (params.updated_since) searchParams.append('updated_since', params.updated_since);
 
     const endpoint = `/notes${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
     return this.request(endpoint, {
@@ -142,14 +143,7 @@ export class ApiService {
     });
   }
 
-  static async syncNotes(since: string): Promise<ApiResponse<{ notes: Note[]; count: number }>> {
-    return this.request(`/notes/sync?since=${encodeURIComponent(since)}`, {
-      headers: {
-        'Authorization': `Bearer ${await this.getAuthToken()}`,
-      },
-    });
-  }
-
+  
   static async batchCreateNotes(notes: { title?: string; content: string }[]): Promise<ApiResponse<{ notes: Note[]; count: number }>> {
     return this.request('/notes/batch', {
       method: 'POST',
