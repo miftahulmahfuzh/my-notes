@@ -1,5 +1,23 @@
 import { Note, ApiResponse, HealthResponse } from '../types';
 
+export interface SyncResponse {
+  notes: Note[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+  syncToken: string;
+  serverTime: string;
+  conflicts: any[];
+  metadata: {
+    lastSyncAt: string;
+    serverTime: string;
+    totalNotes: number;
+    updatedNotes: number;
+    hasConflicts: boolean;
+  };
+}
+
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 export class ApiService {
@@ -44,9 +62,15 @@ export class ApiService {
   }
 
   // Notes API
-  static async getNotes(): Promise<ApiResponse<Note[]>> {
-    // TODO: Implement authentication
-    return this.request<Note[]>('/notes', {
+  static async getNotes(params: { limit?: number; offset?: number; orderBy?: string; orderDir?: string } = {}): Promise<ApiResponse<{ notes: Note[]; total: number; page: number; limit: number; hasMore: boolean }>> {
+    const searchParams = new URLSearchParams();
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+    if (params.offset) searchParams.append('offset', params.offset.toString());
+    if (params.orderBy) searchParams.append('order_by', params.orderBy);
+    if (params.orderDir) searchParams.append('order_dir', params.orderDir);
+
+    const endpoint = `/notes${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    return this.request(endpoint, {
       headers: {
         'Authorization': `Bearer ${await this.getAuthToken()}`,
       },
@@ -63,7 +87,15 @@ export class ApiService {
     });
   }
 
-  static async updateNote(id: string, updates: { title?: string; content?: string }): Promise<ApiResponse<Note>> {
+  static async getNote(id: string): Promise<ApiResponse<Note>> {
+    return this.request<Note>(`/notes/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+      },
+    });
+  }
+
+  static async updateNote(id: string, updates: { title?: string; content?: string; version?: number }): Promise<ApiResponse<Note>> {
     return this.request<Note>(`/notes/${id}`, {
       method: 'PUT',
       headers: {
@@ -79,6 +111,102 @@ export class ApiService {
       headers: {
         'Authorization': `Bearer ${await this.getAuthToken()}`,
       },
+    });
+  }
+
+  static async searchNotes(params: { query?: string; tags?: string[]; limit?: number; offset?: number }): Promise<ApiResponse<{ notes: Note[]; total: number; page: number; limit: number; hasMore: boolean }>> {
+    const searchParams = new URLSearchParams();
+    if (params.query) searchParams.append('query', params.query);
+    if (params.tags) searchParams.append('tags', params.tags.join(','));
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+    if (params.offset) searchParams.append('offset', params.offset.toString());
+
+    const endpoint = `/search/notes${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    return this.request(endpoint, {
+      headers: {
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+      },
+    });
+  }
+
+  static async getNotesByTag(tag: string, params: { limit?: number; offset?: number } = {}): Promise<ApiResponse<{ notes: Note[]; total: number; page: number; limit: number; hasMore: boolean }>> {
+    const searchParams = new URLSearchParams();
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+    if (params.offset) searchParams.append('offset', params.offset.toString());
+
+    const endpoint = `/notes/tags/${encodeURIComponent(tag)}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    return this.request(endpoint, {
+      headers: {
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+      },
+    });
+  }
+
+  static async syncNotes(since: string): Promise<ApiResponse<{ notes: Note[]; count: number }>> {
+    return this.request(`/notes/sync?since=${encodeURIComponent(since)}`, {
+      headers: {
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+      },
+    });
+  }
+
+  static async batchCreateNotes(notes: { title?: string; content: string }[]): Promise<ApiResponse<{ notes: Note[]; count: number }>> {
+    return this.request('/notes/batch', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+      },
+      body: JSON.stringify(notes),
+    });
+  }
+
+  static async batchUpdateNotes(updates: { noteId: string; updates: { title?: string; content?: string; version?: number } }[]): Promise<ApiResponse<{ notes: Note[]; count: number }>> {
+    return this.request('/notes/batch', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+      },
+      body: JSON.stringify({ updates }),
+    });
+  }
+
+  static async getNoteStats(): Promise<ApiResponse<{ total_notes: number; last_sync: string }>> {
+    return this.request('/notes/stats', {
+      headers: {
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+      },
+    });
+  }
+
+  // Sync API
+  static async syncNotes(params: {
+    since?: string;
+    limit?: number;
+    offset?: number;
+    syncToken?: string;
+    includeDeleted?: boolean;
+  } = {}): Promise<ApiResponse<SyncResponse>> {
+    const searchParams = new URLSearchParams();
+    if (params.since) searchParams.append('since', params.since);
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+    if (params.offset) searchParams.append('offset', params.offset.toString());
+    if (params.syncToken) searchParams.append('sync_token', params.syncToken);
+    if (params.includeDeleted) searchParams.append('include_deleted', 'true');
+
+    return this.request<SyncResponse>(`/notes/sync?${searchParams.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+      },
+    });
+  }
+
+  static async forceSync(): Promise<ApiResponse<SyncResponse>> {
+    // Force sync by getting all recent notes (last 24 hours)
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    return this.syncNotes({
+      since,
+      limit: 1000,
+      includeDeleted: false
     });
   }
 

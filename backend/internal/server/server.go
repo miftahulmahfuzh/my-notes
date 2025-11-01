@@ -147,11 +147,18 @@ func (s *Server) initializeServices() {
 
 	userHandler := handlers.NewUserHandler(s.userService)
 
+	// Initialize note service and handler
+	noteService := services.NewNoteService(s.db)
+	notesHandler := handlers.NewNotesHandler(noteService)
+
 	// Initialize security handler with middleware dependencies
 	s.handlers.SetSecurityMiddleware(s.rateLimitMW, s.sessionMW)
 
 	// Initialize auth handlers
 	s.handlers.SetAuthHandlers(authHandler, userHandler)
+
+	// Initialize notes handler
+	s.handlers.SetNotesHandler(notesHandler)
 
 	log.Printf("✅ Security services initialized")
 	log.Printf("🔒 Security mode: %s", s.config.App.Environment)
@@ -238,20 +245,28 @@ func (s *Server) setupRoutes() {
 	}
 
 	// Note routes
-	// protected.HandleFunc("/notes", s.handlers.Notes.GetNotes).Methods("GET")
-	// protected.HandleFunc("/notes", s.handlers.Notes.CreateNote).Methods("POST")
-	// protected.HandleFunc("/notes/{id}", s.handlers.Notes.GetNote).Methods("GET")
-	// protected.HandleFunc("/notes/{id}", s.handlers.Notes.UpdateNote).Methods("PUT")
-	// protected.HandleFunc("/notes/{id}", s.handlers.Notes.DeleteNote).Methods("DELETE")
+	if s.handlers.Notes != nil {
+		protected.HandleFunc("/notes", s.handlers.Notes.ListNotes).Methods("GET")
+		protected.HandleFunc("/notes", s.handlers.Notes.CreateNote).Methods("POST")
+		protected.HandleFunc("/notes/{id}", s.handlers.Notes.GetNote).Methods("GET")
+		protected.HandleFunc("/notes/{id}", s.handlers.Notes.UpdateNote).Methods("PUT")
+		protected.HandleFunc("/notes/{id}", s.handlers.Notes.DeleteNote).Methods("DELETE")
+		protected.HandleFunc("/notes/sync", s.handlers.Notes.SyncNotes).Methods("GET")
+		protected.HandleFunc("/notes/batch", s.handlers.Notes.BatchCreateNotes).Methods("POST")
+		protected.HandleFunc("/notes/batch", s.handlers.Notes.BatchUpdateNotes).Methods("PUT")
+		protected.HandleFunc("/notes/stats", s.handlers.Notes.GetNoteStats).Methods("GET")
+		protected.HandleFunc("/notes/tags/{tag}", s.handlers.Notes.GetNotesByTag).Methods("GET")
+	}
+
+	// Search routes
+	protected.HandleFunc("/search/notes", s.handlers.Notes.SearchNotes).Methods("GET")
 
 	// Tag routes
 	// protected.HandleFunc("/tags", s.handlers.Tags.GetTags).Methods("GET")
 	// protected.HandleFunc("/tags", s.handlers.Tags.CreateTag).Methods("POST")
 	// protected.HandleFunc("/tags/suggestions", s.handlers.Tags.GetSuggestions).Methods("GET")
 
-	// Search routes
-	// protected.HandleFunc("/search/notes", s.handlers.Search.SearchNotes).Methods("GET")
-	// protected.HandleFunc("/search/tags", s.handlers.Search.SearchTags).Methods("GET")
+	// Search routes are now handled by the notes handler
 
 	// Security and monitoring routes
 	if s.handlers.Security != nil {

@@ -10,8 +10,8 @@ type Handlers struct {
 	Security *SecurityHandler
 	Auth     *AuthHandler
 	User     *UserHandler
+	Notes    *NotesHandler
 	// Additional handlers will be added in subsequent phases:
-	// Notes  *NotesHandler
 	// Tags   *TagsHandler
 	// Search *SearchHandler
 }
@@ -23,8 +23,8 @@ func NewHandlers() *Handlers {
 		Security: nil, // Will be initialized after middleware is created
 		Auth:     nil, // Will be initialized after services are created
 		User:     nil, // Will be initialized after services are created
+		Notes:    nil, // Will be initialized after services are created
 		// Additional handlers will be initialized in subsequent phases:
-		// Notes:  NewNotesHandler(...),
 		// Tags:   NewTagsHandler(...),
 		// Search: NewSearchHandler(...),
 	}
@@ -39,4 +39,9 @@ func (h *Handlers) SetSecurityMiddleware(rateLimitMW *middleware.RateLimitingMid
 func (h *Handlers) SetAuthHandlers(authHandler *AuthHandler, userHandler *UserHandler) {
 	h.Auth = authHandler
 	h.User = userHandler
+}
+
+// SetNotesHandler initializes the notes handler with service dependencies
+func (h *Handlers) SetNotesHandler(notesHandler *NotesHandler) {
+	h.Notes = notesHandler
 }
