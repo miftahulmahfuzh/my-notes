@@ -75,11 +75,21 @@ type CORSConfig struct {
 // LoadConfig loads configuration from environment variables and optional config file
 func LoadConfig(configPath string) (*Config, error) {
 	// Load .env file if it exists
-	if err := godotenv.Load(); err != nil {
-		// .env file not found is not an error in production
-		if !os.IsNotExist(err) {
-			return nil, fmt.Errorf("failed to load .env file: %w", err)
+	// Try to load from current directory first, then from parent directory
+	envPaths := []string{".env", "../.env", "../../.env"}
+	var envErr error
+	for _, path := range envPaths {
+		if err := godotenv.Load(path); err == nil {
+			// Successfully loaded .env file
+			break
+		} else if !os.IsNotExist(err) {
+			envErr = fmt.Errorf("failed to load .env file from %s: %w", path, err)
 		}
+	}
+
+	// If we have a non-file-not-found error, return it
+	if envErr != nil {
+		return nil, envErr
 	}
 
 	config := &Config{

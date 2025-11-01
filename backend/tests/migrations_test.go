@@ -10,6 +10,10 @@ import (
 )
 
 func TestMigrationsUp(t *testing.T) {
+	if !USE_POSTGRE_DURING_TEST {
+		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
+	}
+
 	// Create test database
 	db := SetupTestDB(t)
 	defer CleanupTestDB(t, db)
@@ -41,6 +45,10 @@ func TestMigrationsUp(t *testing.T) {
 }
 
 func TestMigrationsRollback(t *testing.T) {
+	if !USE_POSTGRE_DURING_TEST {
+		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
+	}
+
 	// Create test database
 	db := SetupTestDB(t)
 	defer CleanupTestDB(t, db)
@@ -91,6 +99,10 @@ func TestMigrationsRollback(t *testing.T) {
 }
 
 func TestMigrationStatus(t *testing.T) {
+	if !USE_POSTGRE_DURING_TEST {
+		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
+	}
+
 	// Create test database
 	db := SetupTestDB(t)
 	defer CleanupTestDB(t, db)
@@ -104,6 +116,10 @@ func TestMigrationStatus(t *testing.T) {
 }
 
 func TestUsersTableStructure(t *testing.T) {
+	if !USE_POSTGRE_DURING_TEST {
+		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
+	}
+
 	db := SetupTestDB(t)
 	defer CleanupTestDB(t, db)
 
@@ -178,6 +194,10 @@ func TestUsersTableStructure(t *testing.T) {
 }
 
 func TestNotesTableStructure(t *testing.T) {
+	if !USE_POSTGRE_DURING_TEST {
+		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
+	}
+
 	db := SetupTestDB(t)
 	defer CleanupTestDB(t, db)
 
@@ -261,6 +281,10 @@ func TestNotesTableStructure(t *testing.T) {
 }
 
 func TestTagsTableStructure(t *testing.T) {
+	if !USE_POSTGRE_DURING_TEST {
+		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
+	}
+
 	db := SetupTestDB(t)
 	defer CleanupTestDB(t, db)
 
@@ -315,6 +339,10 @@ func TestTagsTableStructure(t *testing.T) {
 }
 
 func TestNoteTagsTableStructure(t *testing.T) {
+	if !USE_POSTGRE_DURING_TEST {
+		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
+	}
+
 	db := SetupTestDB(t)
 	defer CleanupTestDB(t, db)
 
