@@ -134,14 +134,18 @@ func TestGoogleAuth(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response handlers.GoogleAuthResponse
+	var response struct {
+		Success bool                    `json:"success"`
+		Data    handlers.GoogleAuthResponse `json:"data"`
+	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
-	assert.NotEmpty(t, response.AuthURL)
-	assert.NotEmpty(t, response.State)
-	assert.Contains(t, response.AuthURL, "accounts.google.com")
-	assert.Contains(t, response.AuthURL, "state="+response.State)
+	assert.True(t, response.Success)
+	assert.NotEmpty(t, response.Data.AuthURL)
+	assert.NotEmpty(t, response.Data.State)
+	assert.Contains(t, response.Data.AuthURL, "accounts.google.com")
+	assert.Contains(t, response.Data.AuthURL, "state="+response.Data.State)
 }
 
 func TestGoogleCallback(t *testing.T) {
@@ -219,9 +223,15 @@ func TestLogout(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]string
+	var response struct {
+		Success bool `json:"success"`
+		Data    struct {
+			Message string `json:"message"`
+		} `json:"data"`
+	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "Successfully logged out", response["message"])
+	assert.True(t, response.Success)
+	assert.Equal(t, "Successfully logged out", response.Data.Message)
 }

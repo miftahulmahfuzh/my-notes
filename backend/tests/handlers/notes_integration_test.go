@@ -149,8 +149,8 @@ func (suite *NotesIntegrationTestSuite) TestNotesAPI_FullCRUD() {
 	suite.Equal(http.StatusCreated, rr.Code)
 
 	var createResp struct {
-		Success bool          `json:"success"`
-		Data    *models.Note `json:"data"`
+		Success bool               `json:"success"`
+		Data    *models.NoteResponse `json:"data"`
 	}
 	err := json.Unmarshal(rr.Body.Bytes(), &createResp)
 	require.NoError(suite.T(), err)
@@ -291,8 +291,8 @@ func (suite *NotesIntegrationTestSuite) TestNotesAPI_ErrorHandling() {
 	suite.Equal(http.StatusCreated, rr.Code)
 
 	var createResp struct {
-		Success bool          `json:"success"`
-		Data    *models.Note `json:"data"`
+		Success bool               `json:"success"`
+		Data    *models.NoteResponse `json:"data"`
 	}
 	err := json.Unmarshal(rr.Body.Bytes(), &createResp)
 	require.NoError(suite.T(), err)
@@ -316,8 +316,8 @@ func (suite *NotesIntegrationTestSuite) TestNotesAPI_AutoTitleGeneration() {
 	suite.Equal(http.StatusCreated, rr.Code)
 
 	var createResp struct {
-		Success bool          `json:"success"`
-		Data    *models.Note `json:"data"`
+		Success bool               `json:"success"`
+		Data    *models.NoteResponse `json:"data"`
 	}
 	err := json.Unmarshal(rr.Body.Bytes(), &createResp)
 	require.NoError(suite.T(), err)
@@ -340,8 +340,8 @@ func (suite *NotesIntegrationTestSuite) TestNotesAPI_HashtagExtraction() {
 	suite.Equal(http.StatusCreated, rr.Code)
 
 	var createResp struct {
-		Success bool          `json:"success"`
-		Data    *models.Note `json:"data"`
+		Success bool               `json:"success"`
+		Data    *models.NoteResponse `json:"data"`
 	}
 	err := json.Unmarshal(rr.Body.Bytes(), &createResp)
 	require.NoError(suite.T(), err)

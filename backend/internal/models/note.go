@@ -48,6 +48,31 @@ func (n *Note) ToResponse() NoteResponse {
 	}
 }
 
+// ExtractHashtags extracts hashtags from the note content
+func (nr *NoteResponse) ExtractHashtags() []string {
+	// Regular expression to match hashtags (#word)
+	hashtagRegex := regexp.MustCompile(`#\w+`)
+	matches := hashtagRegex.FindAllString(nr.Content, -1)
+
+	// Remove duplicates and ensure they start with #
+	uniqueTags := make(map[string]bool)
+	var tags []string
+
+	for _, match := range matches {
+		if !uniqueTags[match] {
+			uniqueTags[match] = true
+			tags = append(tags, match)
+		}
+	}
+
+	// Return empty slice instead of nil if no tags found
+	if len(tags) == 0 {
+		return []string{}
+	}
+
+	return tags
+}
+
 // Validate validates the note data
 func (n *Note) Validate() error {
 	if n.UserID == uuid.Nil {
@@ -316,4 +341,38 @@ type SyncMetadata struct {
 	TotalNotes   int    `json:"total_notes"`
 	UpdatedNotes int    `json:"updated_notes"`
 	HasConflicts bool   `json:"has_conflicts"`
+}
+
+// APIResponse represents the standard API response format
+type APIResponse struct {
+	Success bool        `json:"success"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   *APIError   `json:"error,omitempty"`
+}
+
+// APIError represents the standard API error format
+type APIError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Details string `json:"details,omitempty"`
+}
+
+// NewAPIResponse creates a successful API response
+func NewAPIResponse(data interface{}) *APIResponse {
+	return &APIResponse{
+		Success: true,
+		Data:    data,
+	}
+}
+
+// NewAPIErrorResponse creates an error API response
+func NewAPIErrorResponse(code, message, details string) *APIResponse {
+	return &APIResponse{
+		Success: false,
+		Error: &APIError{
+			Code:    code,
+			Message: message,
+			Details: details,
+		},
+	}
 }

@@ -84,15 +84,26 @@ func TestGetUserProfile(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			} else {
-				var response models.UserResponse
+				var response struct {
+					Success bool               `json:"success"`
+					Data    models.UserResponse `json:"data"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, "test@example.com", response.Email)
+				assert.True(t, response.Success)
+				assert.Equal(t, "test@example.com", response.Data.Email)
 			}
 
 			mockUserService.AssertExpectations(t)
@@ -185,14 +196,25 @@ func TestUpdateUserProfile(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			} else {
-				var response models.UserResponse
+				var response struct {
+					Success bool               `json:"success"`
+					Data    models.UserResponse `json:"data"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
+				assert.True(t, response.Success)
 				// Verify the update was applied
 				if tt.requestBody != `invalid json` {
 					// Extract the name from the request body to check against response
@@ -201,7 +223,7 @@ func TestUpdateUserProfile(t *testing.T) {
 					}
 					json.Unmarshal([]byte(tt.requestBody), &reqBody)
 					if reqBody.Name != nil {
-						assert.Equal(t, *reqBody.Name, response.Name)
+						assert.Equal(t, *reqBody.Name, response.Data.Name)
 					}
 				}
 			}
@@ -261,16 +283,27 @@ func TestGetUserPreferences(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			} else {
-				var response models.UserPreferences
+				var response struct {
+					Success bool                  `json:"success"`
+					Data    models.UserPreferences `json:"data"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, "dark", response.Theme) // Mock user has dark theme by default
-				assert.Equal(t, "en", response.Language)
+				assert.True(t, response.Success)
+				assert.Equal(t, "dark", response.Data.Theme) // Mock user has dark theme by default
+				assert.Equal(t, "en", response.Data.Language)
 			}
 
 			mockUserService.AssertExpectations(t)
@@ -371,18 +404,29 @@ func TestUpdateUserPreferences(t *testing.T) {
 			}
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			} else {
-				var response models.UserPreferences
+				var response struct {
+					Success bool                  `json:"success"`
+					Data    models.UserPreferences `json:"data"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
+				assert.True(t, response.Success)
 				// Verify the update was applied
 				if tt.requestBody != `{"theme": "invalid"}` && tt.requestBody != `{"theme": "light", "default_note_view": "invalid"}` {
-					assert.Equal(t, "dark", response.Theme) // Should match the request
-					assert.Equal(t, "grid", response.DefaultNoteView) // Should match the request
+					assert.Equal(t, "dark", response.Data.Theme) // Should match the request
+					assert.Equal(t, "grid", response.Data.DefaultNoteView) // Should match the request
 				}
 			}
 
@@ -440,16 +484,27 @@ func TestGetUserSessions(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			} else {
-				var response map[string]interface{}
+				var response struct {
+					Success bool `json:"success"`
+					Data    map[string]interface{} `json:"data"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Contains(t, response, "sessions")
-				assert.Contains(t, response, "total")
+				assert.True(t, response.Success)
+				assert.Contains(t, response.Data, "sessions")
+				assert.Contains(t, response.Data, "total")
 			}
 
 			mockUserService.AssertExpectations(t)
@@ -524,15 +579,28 @@ func TestDeleteUserSession(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			} else {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Data    struct {
+						Message string `json:"message"`
+					} `json:"data"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, "Session deleted successfully", response["message"])
+				assert.True(t, response.Success)
+				assert.Equal(t, "Session deleted successfully", response.Data.Message)
 			}
 
 			mockUserService.AssertExpectations(t)
@@ -595,15 +663,26 @@ func TestGetUserStats(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			} else {
-				var response models.UserStats
+				var response struct {
+					Success bool           `json:"success"`
+					Data    models.UserStats `json:"data"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, 42, response.TotalNotes)
+				assert.True(t, response.Success)
+				assert.Equal(t, 42, response.Data.TotalNotes)
 			}
 
 			mockUserService.AssertExpectations(t)

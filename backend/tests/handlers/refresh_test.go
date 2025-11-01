@@ -106,10 +106,17 @@ func TestTokenRefreshValidation(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			}
 
 			// Reset mock for next test
@@ -155,18 +162,27 @@ func TestTokenRefreshWithValidToken(t *testing.T) {
 	// Should succeed and return new tokens
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response struct {
+		Success bool `json:"success"`
+		Data    struct {
+			AccessToken  string `json:"access_token"`
+			RefreshToken string `json:"refresh_token"`
+			TokenType    string `json:"token_type"`
+			ExpiresIn    int    `json:"expires_in"`
+		} `json:"data"`
+	}
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
-	assert.NotEmpty(t, response["access_token"])
-	assert.NotEmpty(t, response["refresh_token"])
-	assert.Equal(t, "Bearer", response["token_type"])
-	assert.Equal(t, float64(900), response["expires_in"]) // 15 minutes = 900 seconds
+	assert.True(t, response.Success)
+	assert.NotEmpty(t, response.Data.AccessToken)
+	assert.NotEmpty(t, response.Data.RefreshToken)
+	assert.Equal(t, "Bearer", response.Data.TokenType)
+	assert.Equal(t, 900, response.Data.ExpiresIn) // 15 minutes = 900 seconds
 
 	// The new tokens should be different from the original
-	assert.NotEqual(t, tokenPair.AccessToken, response["access_token"])
-	assert.NotEqual(t, tokenPair.RefreshToken, response["refresh_token"])
+	assert.NotEqual(t, tokenPair.AccessToken, response.Data.AccessToken)
+	assert.NotEqual(t, tokenPair.RefreshToken, response.Data.RefreshToken)
 
 	mockUserService.AssertExpectations(t)
 }
@@ -206,13 +222,21 @@ func TestTokenRefreshFlow(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response struct {
+		Success bool `json:"success"`
+		Data    struct {
+			AccessToken  string `json:"access_token"`
+			RefreshToken string `json:"refresh_token"`
+		} `json:"data"`
+	}
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
+	assert.True(t, response.Success)
+
 	// Step 4: Verify new tokens are valid
-	newAccessToken := response["access_token"].(string)
-	newRefreshToken := response["refresh_token"].(string)
+	newAccessToken := response.Data.AccessToken
+	newRefreshToken := response.Data.RefreshToken
 
 	// Validate new access token
 	claims, err := tokenService.ValidateToken(newAccessToken)
@@ -292,10 +316,17 @@ func TestTokenRefreshWithExpiredToken(t *testing.T) {
 	// Should fail with user not found error (since token is still valid but user doesn't exist)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 
-	var response map[string]string
+	var response struct {
+		Success bool `json:"success"`
+		Error   struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
-	assert.Equal(t, "User not found", response["error"])
+	assert.False(t, response.Success)
+	assert.Equal(t, "User not found", response.Error.Message)
 }
 
 func TestTokenRefreshWithMalformedToken(t *testing.T) {
@@ -358,10 +389,17 @@ func TestTokenRefreshWithMalformedToken(t *testing.T) {
 
 			assert.Equal(t, expectedStatus, w.Code)
 
-			var response map[string]string
+			var response struct {
+				Success bool `json:"success"`
+				Error   struct {
+					Code    string `json:"code"`
+					Message string `json:"message"`
+				} `json:"error"`
+			}
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			assert.NoError(t, err)
-			assert.Equal(t, expectedError, response["error"])
+			assert.False(t, response.Success)
+			assert.Equal(t, expectedError, response.Error.Message)
 		})
 	}
 }
@@ -401,26 +439,35 @@ func TestTokenRefreshResponseStructure(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response struct {
+		Success bool `json:"success"`
+		Data    struct {
+			AccessToken  string `json:"access_token"`
+			RefreshToken string `json:"refresh_token"`
+			TokenType    string `json:"token_type"`
+			ExpiresIn    int    `json:"expires_in"`
+		} `json:"data"`
+	}
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
+	assert.True(t, response.Success)
+
 	// Verify response structure
-	requiredFields := []string{"access_token", "refresh_token", "token_type", "expires_in"}
-	for _, field := range requiredFields {
-		_, exists := response[field]
-		assert.True(t, exists, "Response should contain field: "+field)
-	}
+	assert.NotEmpty(t, response.Data.AccessToken, "Response should contain access_token")
+	assert.NotEmpty(t, response.Data.RefreshToken, "Response should contain refresh_token")
+	assert.NotEmpty(t, response.Data.TokenType, "Response should contain token_type")
+	assert.Greater(t, response.Data.ExpiresIn, 0, "Response should contain expires_in")
 
 	// Verify field types
-	assert.IsType(t, "", response["access_token"], "access_token should be a string")
-	assert.IsType(t, "", response["refresh_token"], "refresh_token should be a string")
-	assert.IsType(t, "", response["token_type"], "token_type should be a string")
-	assert.IsType(t, float64(0), response["expires_in"], "expires_in should be a number")
+	assert.IsType(t, "", response.Data.AccessToken, "access_token should be a string")
+	assert.IsType(t, "", response.Data.RefreshToken, "refresh_token should be a string")
+	assert.IsType(t, "", response.Data.TokenType, "token_type should be a string")
+	assert.IsType(t, 0, response.Data.ExpiresIn, "expires_in should be a number")
 
 	// Verify values
-	assert.Equal(t, "Bearer", response["token_type"], "token_type should be 'Bearer'")
-	assert.Greater(t, response["expires_in"], float64(0), "expires_in should be positive")
+	assert.Equal(t, "Bearer", response.Data.TokenType, "token_type should be 'Bearer'")
+	assert.Greater(t, response.Data.ExpiresIn, 0, "expires_in should be positive")
 
 	mockUserService.AssertExpectations(t)
 }

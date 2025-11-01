@@ -380,13 +380,63 @@ func parseIPFromRemoteAddr(remoteAddr string) string {
 }
 
 // respondWithError sends an error response
+// HTTP error codes
+const (
+	ErrCodeBadRequest    = "BAD_REQUEST"
+	ErrCodeUnauthorized  = "UNAUTHORIZED"
+	ErrCodeForbidden     = "FORBIDDEN"
+	ErrCodeNotFound      = "NOT_FOUND"
+	ErrCodeConflict      = "CONFLICT"
+	ErrCodeInternalError = "INTERNAL_ERROR"
+)
+
+// respondWithError sends an error response with standard format
 func respondWithError(w http.ResponseWriter, code int, message string) {
-	respondWithJSON(w, code, map[string]string{"error": message})
+	errorCode := ErrCodeInternalError
+	details := ""
+
+	// Map HTTP status codes to error codes
+	switch code {
+	case http.StatusBadRequest:
+		errorCode = ErrCodeBadRequest
+	case http.StatusUnauthorized:
+		errorCode = ErrCodeUnauthorized
+	case http.StatusForbidden:
+		errorCode = ErrCodeForbidden
+	case http.StatusNotFound:
+		errorCode = ErrCodeNotFound
+	case http.StatusConflict:
+		errorCode = ErrCodeConflict
+	}
+
+	// If message contains details (separated by ": "), split them
+	if parts := strings.SplitN(message, ": ", 2); len(parts) == 2 {
+		message = parts[0]
+		details = parts[1]
+	}
+
+	apiResponse := models.NewAPIErrorResponse(errorCode, message, details)
+
+	response, err := json.Marshal(apiResponse)
+	if err != nil {
+		// Fallback to simple error response if marshaling fails
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"success":false,"error":{"code":"INTERNAL_ERROR","message":"Failed to marshal error response"}}`))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(response)
 }
 
 // respondWithJSON sends a JSON response
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	response, err := json.Marshal(payload)
+	// Wrap payload in standard API response format
+	apiResponse := models.NewAPIResponse(payload)
+
+	response, err := json.Marshal(apiResponse)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to marshal response")
 		return

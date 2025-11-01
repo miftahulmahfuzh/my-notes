@@ -89,10 +89,17 @@ func TestGoogleCallbackValidation(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			}
 		})
 	}
@@ -144,15 +151,19 @@ func TestAuthResponseStructure(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response handlers.GoogleAuthResponse
+	var response struct {
+		Success bool                    `json:"success"`
+		Data    handlers.GoogleAuthResponse `json:"data"`
+	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
 	// Verify response structure
-	assert.NotEmpty(t, response.AuthURL, "AuthURL should not be empty")
-	assert.NotEmpty(t, response.State, "State should not be empty")
-	assert.IsType(t, "", response.AuthURL, "AuthURL should be a string")
-	assert.IsType(t, "", response.State, "State should be a string")
+	assert.True(t, response.Success)
+	assert.NotEmpty(t, response.Data.AuthURL, "AuthURL should not be empty")
+	assert.NotEmpty(t, response.Data.State, "State should not be empty")
+	assert.IsType(t, "", response.Data.AuthURL, "AuthURL should be a string")
+	assert.IsType(t, "", response.Data.State, "State should be a string")
 }
 
 func TestAuthErrorHandling(t *testing.T) {
@@ -205,10 +216,17 @@ func TestAuthErrorHandling(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			if tt.expectedError != "" {
-				var response map[string]string
+				var response struct {
+					Success bool `json:"success"`
+					Error   struct {
+						Code    string `json:"code"`
+						Message string `json:"message"`
+					} `json:"error"`
+				}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedError, response["error"])
+				assert.False(t, response.Success)
+				assert.Equal(t, tt.expectedError, response.Error.Message)
 			}
 		})
 	}
@@ -225,12 +243,16 @@ func TestSessionManagement(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response handlers.GoogleAuthResponse
+	var response struct {
+		Success bool                    `json:"success"`
+		Data    handlers.GoogleAuthResponse `json:"data"`
+	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
 	// Verify state was generated and stored
-	assert.NotEmpty(t, response.State)
-	assert.Regexp(t, `^[A-Za-z0-9-_]+$`, response.State, "State should be base64url encoded")
-	assert.Equal(t, 43, len(response.State), "State should be 43 characters (UUID base64url)")
+	assert.True(t, response.Success)
+	assert.NotEmpty(t, response.Data.State)
+	assert.Regexp(t, `^[A-Za-z0-9-_]+$`, response.Data.State, "State should be base64url encoded")
+	assert.Equal(t, 43, len(response.Data.State), "State should be 43 characters (UUID base64url)")
 }
