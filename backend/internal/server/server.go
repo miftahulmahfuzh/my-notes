@@ -13,6 +13,7 @@ import (
 	"github.com/gpd/my-notes/internal/middleware"
 	"github.com/gpd/my-notes/internal/services"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 // Server represents the HTTP server
@@ -24,6 +25,8 @@ type Server struct {
 	db            *sql.DB
 	userService   services.UserServiceInterface
 	tokenService  *auth.TokenService
+	oauthService  *auth.OAuthService
+	sessionStore  sessions.Store
 	securityMW    *middleware.SecurityMiddleware
 	sessionMW     *middleware.SessionMiddleware
 	rateLimitMW   *middleware.RateLimitingMiddleware
@@ -108,8 +111,47 @@ func (s *Server) initializeServices() {
 	}
 	s.rateLimitMW = middleware.NewRateLimitingMiddleware(s.userService, s.tokenService, rateLimitConfig)
 
+	// Initialize OAuth service
+	googleConfig := &auth.GoogleConfig{
+		ClientID:     s.config.Auth.GoogleClientID,
+		ClientSecret: s.config.Auth.GoogleClientSecret,
+		RedirectURL:  s.config.Auth.GoogleRedirectURL,
+		Scopes:       auth.DefaultScopes(),
+	}
+	s.oauthService = auth.NewOAuthService(googleConfig)
+
+	// Initialize session store
+	sessionSecret := []byte(s.config.Auth.JWTSecret)
+	if len(sessionSecret) == 0 {
+		sessionSecret = []byte("your-session-secret-change-in-production")
+		log.Println("⚠️  Warning: Using default session secret - please set JWT_SECRET in production")
+	}
+	s.sessionStore = sessions.NewCookieStore(sessionSecret)
+	if cookieStore, ok := s.sessionStore.(*sessions.CookieStore); ok {
+		cookieStore.Options = &sessions.Options{
+			Path:     "/",
+			MaxAge:   int(securityConfig.Session.SessionTimeout.Seconds()),
+			HttpOnly: true,
+			Secure:   s.config.App.Environment == "production",
+			SameSite: http.SameSiteStrictMode,
+		}
+	}
+
+	// Initialize auth handlers
+	authHandler := handlers.NewAuthHandler(
+		s.oauthService,
+		s.tokenService,
+		s.userService,
+		s.sessionStore,
+	)
+
+	userHandler := handlers.NewUserHandler(s.userService)
+
 	// Initialize security handler with middleware dependencies
 	s.handlers.SetSecurityMiddleware(s.rateLimitMW, s.sessionMW)
+
+	// Initialize auth handlers
+	s.handlers.SetAuthHandlers(authHandler, userHandler)
 
 	log.Printf("✅ Security services initialized")
 	log.Printf("🔒 Security mode: %s", s.config.App.Environment)
@@ -159,10 +201,13 @@ func (s *Server) setupRoutes() {
 	api.HandleFunc("/health", s.handlers.Health.HealthCheck).Methods("GET")
 
 	// Public authentication routes (no session middleware needed)
-	// auth := api.PathPrefix("/auth").Subrouter()
-	// These will be implemented when we create auth handlers
-	// auth.HandleFunc("/google", s.handlers.Auth.GoogleAuth).Methods("POST")
-	// auth.HandleFunc("/validate", s.handlers.Auth.ValidateToken).Methods("GET")
+	auth := api.PathPrefix("/auth").Subrouter()
+	if s.handlers.Auth != nil {
+		auth.HandleFunc("/google", s.handlers.Auth.GoogleAuth).Methods("POST")
+		auth.HandleFunc("/exchange", s.handlers.Auth.GoogleCallback).Methods("POST") // for test compatibility
+		auth.HandleFunc("/refresh", s.handlers.Auth.RefreshToken).Methods("POST") // token refresh doesn't need auth
+		auth.HandleFunc("/validate", s.handlers.Auth.ValidateToken).Methods("GET")
+	}
 
 	// Protected routes with authentication and session management
 	protected := api.PathPrefix("/").Subrouter()
@@ -178,16 +223,19 @@ func (s *Server) setupRoutes() {
 	}
 
 	// Token management routes
-	// protected.HandleFunc("/auth/refresh", s.handlers.Auth.RefreshToken).Methods("POST")
-	// protected.HandleFunc("/auth/logout", s.handlers.Auth.Logout).Methods("DELETE")
+	if s.handlers.Auth != nil {
+		protected.HandleFunc("/auth/logout", s.handlers.Auth.Logout).Methods("DELETE")
+	}
 
 	// User profile routes
-	// protected.HandleFunc("/user/profile", s.handlers.User.GetProfile).Methods("GET")
-	// protected.HandleFunc("/user/profile", s.handlers.User.UpdateProfile).Methods("PUT")
-	// protected.HandleFunc("/user/preferences", s.handlers.User.GetPreferences).Methods("GET")
-	// protected.HandleFunc("/user/preferences", s.handlers.User.UpdatePreferences).Methods("PUT")
-	// protected.HandleFunc("/user/sessions", s.handlers.User.GetSessions).Methods("GET")
-	// protected.HandleFunc("/user/sessions/{id}", s.handlers.User.DeleteSession).Methods("DELETE")
+	if s.handlers.User != nil {
+		protected.HandleFunc("/user/profile", s.handlers.User.GetProfile).Methods("GET")
+		protected.HandleFunc("/user/profile", s.handlers.User.UpdateUserProfile).Methods("PUT")
+		protected.HandleFunc("/user/preferences", s.handlers.User.GetUserPreferences).Methods("GET")
+		protected.HandleFunc("/user/preferences", s.handlers.User.UpdateUserPreferences).Methods("PUT")
+		protected.HandleFunc("/user/sessions", s.handlers.User.GetUserSessions).Methods("GET")
+		protected.HandleFunc("/user/sessions/{sessionId}", s.handlers.User.DeleteUserSession).Methods("DELETE")
+	}
 
 	// Note routes
 	// protected.HandleFunc("/notes", s.handlers.Notes.GetNotes).Methods("GET")

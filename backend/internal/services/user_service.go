@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -441,14 +442,20 @@ func (s *UserService) SearchUsers(query string, page, limit int) ([]models.User,
 // Private helper methods
 
 func (s *UserService) createUser(ctx context.Context, user *models.User) error {
+	// Convert preferences to JSON for database storage
+	preferencesJSON, err := json.Marshal(user.Preferences)
+	if err != nil {
+		return fmt.Errorf("failed to marshal preferences: %w", err)
+	}
+
 	query := `
 		INSERT INTO users (id, google_id, email, name, avatar_url, preferences, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
-	_, err := s.db.ExecContext(ctx, query,
+	_, err = s.db.ExecContext(ctx, query,
 		user.ID, user.GoogleID, user.Email, user.Name, user.AvatarURL,
-		user.Preferences, user.CreatedAt, user.UpdatedAt)
+		preferencesJSON, user.CreatedAt, user.UpdatedAt)
 
 	return err
 }

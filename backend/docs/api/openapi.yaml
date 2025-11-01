@@ -1,0 +1,1053 @@
+openapi: 3.0.3
+info:
+  title: Silence Notes API
+  description: |
+    ## Overview
+
+    Silence Notes is a Chrome extension for note-taking with hashtag filtering and persistent backend storage.
+    This API provides authentication, user management, and note functionality with comprehensive security features.
+
+    ## Authentication
+
+    The API uses Google OAuth 2.0 for authentication with JWT tokens. Protected endpoints require a valid Bearer token:
+
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+
+    ## Security Features
+
+    - **Rate Limiting**: Global (100 req/sec) and per-user (60 req/min) limits
+    - **CORS Protection**: Configured for Chrome extension and web origins
+    - **Security Headers**: CSP, HSTS, XSS protection, frame options
+    - **Session Management**: Concurrent session limits and activity tracking
+    - **Request Validation**: Input sanitization and size limits
+
+    ## Error Handling
+
+    All errors return JSON with consistent format:
+    ```json
+    {
+      "error": "Error message",
+      "code": 400,
+      "success": false
+    }
+    ```
+
+    ## Rate Limiting
+
+    Rate limit headers are included in responses:
+    - `X-RateLimit-Limit`: Maximum requests per window
+    - `X-RateLimit-Remaining`: Remaining requests in current window
+    - `X-RateLimit-Reset`: Time when rate limit window resets
+
+  version: 1.0.0
+  contact:
+    name: Silence Notes Team
+    email: support@silenzenotes.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.silencenotes.com/v1
+    description: Production server
+  - url: https://staging-api.silencenotes.com/v1
+    description: Staging server
+  - url: http://localhost:8080/v1
+    description: Development server
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check endpoint
+      description: Returns the current health status of the API service
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                version: 1.0.0
+                timestamp: "2024-01-01T12:00:00Z"
+                uptime: 3600
+
+  /auth/google:
+    post:
+      tags:
+        - Authentication
+      summary: Initiate Google OAuth flow
+      description: |
+        Starts the Google OAuth 2.0 authentication flow. Returns an authorization URL
+        that the user should be redirected to in their browser or Chrome extension.
+      operationId: initiateGoogleAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleAuthRequest'
+            example:
+              redirect_uri: "http://localhost:3000/auth/callback"
+              state: "random-state-string"
+      responses:
+        '200':
+          description: OAuth URL generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoogleAuthResponse'
+              example:
+                success: true
+                auth_url: "https://accounts.google.com/oauth/authorize?access_type=offline&client_id=..."
+                state: "random-state-string"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/exchange:
+    post:
+      tags:
+        - Authentication
+      summary: Exchange authorization code for tokens
+      description: |
+        Exchanges the Google OAuth authorization code for access and refresh tokens.
+        This completes the authentication flow.
+      operationId: exchangeAuthCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenExchangeRequest'
+            example:
+              code: "4/0AX4XfWh..."
+              state: "random-state-string"
+              redirect_uri: "http://localhost:3000/auth/callback"
+      responses:
+        '200':
+          description: Tokens exchanged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                success: true
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: Bearer
+                expires_in: 3600
+                user:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  email: "user@example.com"
+                  name: "John Doe"
+                  avatar_url: "https://lh3.googleusercontent.com/..."
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Invalid authorization code or state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Invalid authorization code"
+                code: 401
+                success: false
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: |
+        Uses a refresh token to obtain a new access token. Refresh tokens are
+        long-lived and can be used to maintain user sessions without requiring
+        re-authentication.
+      operationId: refreshToken
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+            example:
+              refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+              example:
+                success: true
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: Bearer
+                expires_in: 3600
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Invalid or expired refresh token"
+                code: 401
+                success: false
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/logout:
+    delete:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: |
+        Invalidates the current access token and refresh token, effectively logging
+        the user out of all sessions. The tokens are added to a blacklist.
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: "Logged out successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /user/profile:
+    get:
+      tags:
+        - User
+      summary: Get user profile
+      description: Retrieves the current user's profile information including preferences.
+      operationId: getUserProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+              example:
+                success: true
+                user:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  google_id: "123456789012345678901"
+                  email: "user@example.com"
+                  name: "John Doe"
+                  avatar_url: "https://lh3.googleusercontent.com/..."
+                  created_at: "2024-01-01T10:00:00Z"
+                  updated_at: "2024-01-01T11:00:00Z"
+                  preferences:
+                    theme: "light"
+                    language: "en"
+                    timezone: "UTC"
+                    email_notifications: true
+                    auto_save: true
+                    default_note_view: "grid"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "User not found"
+                code: 404
+                success: false
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - User
+      summary: Update user profile
+      description: Updates the current user's profile information.
+      operationId: updateUserProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileUpdateRequest'
+            example:
+              name: "John Smith"
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+              example:
+                success: true
+                message: "Profile updated successfully"
+                user:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  name: "John Smith"
+                  email: "user@example.com"
+                  updated_at: "2024-01-01T12:00:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /user/preferences:
+    get:
+      tags:
+        - User
+      summary: Get user preferences
+      description: Retrieves the current user's preferences.
+      operationId: getUserPreferences
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferencesResponse'
+              example:
+                success: true
+                preferences:
+                  theme: "light"
+                  language: "en"
+                  timezone: "UTC"
+                  email_notifications: true
+                  auto_save: true
+                  default_note_view: "grid"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - User
+      summary: Update user preferences
+      description: Updates the current user's preferences.
+      operationId: updateUserPreferences
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferencesUpdateRequest'
+            example:
+              theme: "dark"
+              language: "fr"
+              email_notifications: false
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferencesResponse'
+              example:
+                success: true
+                message: "Preferences updated successfully"
+                preferences:
+                  theme: "dark"
+                  language: "fr"
+                  timezone: "UTC"
+                  email_notifications: false
+                  auto_save: true
+                  default_note_view: "grid"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /user/sessions:
+    get:
+      tags:
+        - User
+      summary: Get user sessions
+      description: Retrieves all active sessions for the current user.
+      operationId: getUserSessions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User sessions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSessionsResponse'
+              example:
+                success: true
+                sessions:
+                  - id: "sess_123e4567-e89b-12d3-a456-426614174000"
+                    ip_address: "192.168.1.100"
+                    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
+                    created_at: "2024-01-01T10:00:00Z"
+                    last_seen: "2024-01-01T11:30:00Z"
+                    is_active: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /user/sessions/{sessionId}:
+    delete:
+      tags:
+        - User
+      summary: Delete user session
+      description: Deletes a specific session for the current user.
+      operationId: deleteUserSession
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: ID of the session to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: "Session deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Session not found"
+                code: 404
+                success: false
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /security/rate-limit:
+    get:
+      tags:
+        - Security
+      summary: Get rate limit information
+      description: Retrieves current rate limit status for the authenticated user.
+      operationId: getRateLimitInfo
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Rate limit information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitInfoResponse'
+              example:
+                success: true
+                rate_limits:
+                  limit: 60
+                  remaining: 45
+                  reset_time: 1704110400
+                  window: "minute"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /security/session-info:
+    get:
+      tags:
+        - Security
+      summary: Get current session information
+      description: Retrieves information about the current user's session.
+      operationId: getSessionInfo
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Session information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionInfoResponse'
+              example:
+                success: true
+                session_info:
+                  session_id: "sess_123e4567-e89b-12d3-a456-426614174000"
+                  user_id: "123e4567-e89b-12d3-a456-426614174000"
+                  ip_address: "192.168.1.100"
+                  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
+                  created_at: "2024-01-01T10:00:00Z"
+                  last_seen: "2024-01-01T11:30:00Z"
+                  is_active: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /security/metrics:
+    get:
+      tags:
+        - Security
+      summary: Get security metrics
+      description: Retrieves security monitoring metrics (admin only).
+      operationId: getSecurityMetrics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Security metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityMetricsResponse'
+              example:
+                success: true
+                metrics:
+                  total_events: 1250
+                  monitoring_active: true
+                  rate_limiting:
+                    active: true
+                    limiters: "global_and_per_user"
+                  security_config:
+                    cors_enabled: true
+                    rate_limiting: true
+                    auth_required: true
+                    session_management: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Insufficient permissions"
+                code: 403
+                success: false
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT token obtained from authentication flow"
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        version:
+          type: string
+          example: 1.0.0
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        uptime:
+          type: integer
+          description: Server uptime in seconds
+          example: 3600
+
+    GoogleAuthRequest:
+      type: object
+      required:
+        - redirect_uri
+      properties:
+        redirect_uri:
+          type: string
+          description: URL to redirect to after authentication
+          example: "http://localhost:3000/auth/callback"
+        state:
+          type: string
+          description: CSRF protection state parameter
+          example: "random-state-string"
+
+    GoogleAuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        auth_url:
+          type: string
+          description: Google OAuth authorization URL
+          example: "https://accounts.google.com/oauth/authorize?access_type=offline&client_id=..."
+        state:
+          type: string
+          description: The state parameter that was sent in the request
+          example: "random-state-string"
+
+    TokenExchangeRequest:
+      type: object
+      required:
+        - code
+        - state
+        - redirect_uri
+      properties:
+        code:
+          type: string
+          description: Authorization code received from Google OAuth callback
+          example: "4/0AX4XfWh..."
+        state:
+          type: string
+          description: State parameter received from OAuth callback
+          example: "random-state-string"
+        redirect_uri:
+          type: string
+          description: The same redirect_uri used in the initial auth request
+          example: "http://localhost:3000/auth/callback"
+
+    TokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        access_token:
+          type: string
+          description: JWT access token for API requests
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          description: JWT refresh token for obtaining new access tokens
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          description: Access token expiration time in seconds
+          example: 3600
+        user:
+          $ref: '#/components/schemas/User'
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          description: Valid refresh token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    TokenRefreshResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        access_token:
+          type: string
+          description: New JWT access token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          description: New access token expiration time in seconds
+          example: 3600
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        google_id:
+          type: string
+          description: Google account ID
+          example: "123456789012345678901"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "user@example.com"
+        name:
+          type: string
+          description: User's display name
+          example: "John Doe"
+        avatar_url:
+          type: string
+          format: uri
+          description: URL to user's profile picture
+          example: "https://lh3.googleusercontent.com/..."
+        created_at:
+          type: string
+          format: date-time
+          description: When the user account was created
+          example: "2024-01-01T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: When the user account was last updated
+          example: "2024-01-01T11:00:00Z"
+
+    UserPreferences:
+      type: object
+      properties:
+        theme:
+          type: string
+          enum: [light, dark, auto]
+          description: UI theme preference
+          example: light
+        language:
+          type: string
+          description: Interface language code
+          example: en
+        timezone:
+          type: string
+          description: User's timezone
+          example: UTC
+        email_notifications:
+          type: boolean
+          description: Whether email notifications are enabled
+          example: true
+        auto_save:
+          type: boolean
+          description: Whether notes are automatically saved
+          example: true
+        default_note_view:
+          type: string
+          enum: [grid, list]
+          description: Default view for notes
+          example: grid
+
+    UserProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        user:
+          allOf:
+            - $ref: '#/components/schemas/User'
+            - type: object
+              properties:
+                preferences:
+                  $ref: '#/components/schemas/UserPreferences'
+
+    UserProfileUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New display name for the user
+          example: "John Smith"
+          minLength: 1
+          maxLength: 100
+
+    UserPreferencesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+
+    UserPreferencesUpdateRequest:
+      type: object
+      properties:
+        theme:
+          type: string
+          enum: [light, dark, auto]
+          example: dark
+        language:
+          type: string
+          example: fr
+        timezone:
+          type: string
+          example: America/New_York
+        email_notifications:
+          type: boolean
+          example: false
+        auto_save:
+          type: boolean
+          example: true
+        default_note_view:
+          type: string
+          enum: [grid, list]
+          example: list
+
+    UserSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Session identifier
+          example: "sess_123e4567-e89b-12d3-a456-426614174000"
+        ip_address:
+          type: string
+          description: IP address of the session
+          example: "192.168.1.100"
+        user_agent:
+          type: string
+          description: User agent string of the session
+          example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
+        created_at:
+          type: string
+          format: date-time
+          description: When the session was created
+          example: "2024-01-01T10:00:00Z"
+        last_seen:
+          type: string
+          format: date-time
+          description: When the session was last active
+          example: "2024-01-01T11:30:00Z"
+        is_active:
+          type: boolean
+          description: Whether the session is currently active
+          example: true
+
+    UserSessionsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSession'
+
+    RateLimitInfo:
+      type: object
+      properties:
+        limit:
+          type: integer
+          description: Maximum requests allowed in the current window
+          example: 60
+        remaining:
+          type: integer
+          description: Remaining requests in the current window
+          example: 45
+        reset_time:
+          type: integer
+          description: Unix timestamp when the rate limit window resets
+          example: 1704110400
+        window:
+          type: string
+          description: Rate limit window duration
+          example: "minute"
+
+    RateLimitInfoResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        rate_limits:
+          $ref: '#/components/schemas/RateLimitInfo'
+        user_id:
+          type: string
+          description: User ID for whom the rate limits apply
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+    SessionInfoResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        session_info:
+          $ref: '#/components/schemas/UserSession'
+
+    SecurityMetricsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        metrics:
+          type: object
+          properties:
+            total_events:
+              type: integer
+              description: Total security events logged
+              example: 1250
+            monitoring_active:
+              type: boolean
+              description: Whether security monitoring is active
+              example: true
+            rate_limiting:
+              type: object
+              properties:
+                active:
+                  type: boolean
+                  example: true
+                limiters:
+                  type: string
+                  example: "global_and_per_user"
+            security_config:
+              type: object
+              properties:
+                cors_enabled:
+                  type: boolean
+                  example: true
+                rate_limiting:
+                  type: boolean
+                  example: true
+                auth_required:
+                  type: boolean
+                  example: true
+                session_management:
+                  type: boolean
+                  example: true
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Success message
+          example: "Operation completed successfully"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Invalid request"
+        code:
+          type: integer
+          description: HTTP status code
+          example: 400
+        success:
+          type: boolean
+          example: false
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Invalid request data"
+            code: 400
+            success: false
+
+    Unauthorized:
+      description: Unauthorized - authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Authentication required"
+            code: 401
+            success: false
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Insufficient permissions"
+            code: 403
+            success: false
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Resource not found"
+            code: 404
+            success: false
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Rate limit exceeded"
+            code: 429
+            success: false
+            retry_after: 60
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Internal server error"
+            code: 500
+            success: false
+
+tags:
+  - name: Health
+    description: Health check and system status endpoints
+  - name: Authentication
+    description: OAuth authentication and token management
+  - name: User
+    description: User profile and preference management
+  - name: Security
+    description: Security monitoring and rate limiting information

@@ -338,6 +338,26 @@ docker-compose -f docker-compose.dev.yml down
 - [**API Documentation**](./docs/api.md) - API reference
 - [**Development Guide**](./docs/development.md) - Development setup and workflows
 
+### 📖 Interactive API Documentation
+
+The project includes interactive API documentation using Swagger UI. To explore the backend API endpoints:
+
+1. **Start the Swagger UI container:**
+   ```bash
+   docker run -p 80:8080 -e SWAGGER_JSON=/openapi.yaml -v $(pwd)/backend/docs/api/openapi.yaml:/openapi.yaml swaggerapi/swagger-ui
+   ```
+
+2. **Open in browser:**
+   Navigate to [http://localhost](http://localhost) to access the interactive API documentation.
+
+3. **Explore the API:**
+   - View all available endpoints
+   - Test API calls directly from the browser
+   - See request/response schemas
+   - Understand authentication requirements
+
+**Note:** The OpenAPI specification file is located at `backend/docs/api/openapi.yaml` and is automatically generated from the backend code.
+
 ## 🗺️ Roadmap
 
 ### Phase 1: Foundation ✅

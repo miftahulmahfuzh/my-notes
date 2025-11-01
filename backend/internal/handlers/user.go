@@ -34,6 +34,18 @@ func (h *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, user.ToResponse())
 }
 
+// GetProfile handles GET /api/v1/user/profile (for test compatibility)
+func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
+	// Get user from context (set by auth middleware)
+	user, ok := r.Context().Value("user").(*models.User)
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, user.ToResponse())
+}
+
 // UpdateUserProfile handles PUT /api/v1/users/profile
 func (h *UserHandler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	// Get user from context
