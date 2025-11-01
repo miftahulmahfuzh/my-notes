@@ -213,10 +213,7 @@ describe('SyncService Final Working Tests', () => {
     });
 
     test('handles note not found correctly', async () => {
-      mockStorageService.getNote.mockResolvedValue({
-        success: false,
-        error: 'Note not found'
-      });
+      mockStorageService.getNote.mockResolvedValue(null);
 
       const result = await syncService.syncNote('non-existent-id');
 
@@ -274,10 +271,17 @@ describe('SyncService Final Working Tests', () => {
     test('emits events correctly', () => {
       const listener = jest.fn();
 
-      syncService.addEventListener('syncStarted', listener);
-      syncService.emit('syncStarted', { data: 'test' });
+      syncService.addEventListener(listener);
 
-      expect(listener).toHaveBeenCalledWith({ data: 'test' });
+      // Trigger a sync complete event by calling the internal notification method
+      const mockResult = { success: true, uploaded: 1, downloaded: 0, conflicts: [], errors: [], timestamp: new Date().toISOString() };
+      syncService['notifySyncComplete'](mockResult);
+
+      expect(listener).toHaveBeenCalledWith({
+        type: 'sync_complete',
+        data: mockResult,
+        timestamp: expect.any(String)
+      });
     });
   });
 });
