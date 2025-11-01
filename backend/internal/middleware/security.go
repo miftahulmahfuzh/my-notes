@@ -75,7 +75,7 @@ func NewSecurityMiddleware(
 	}
 
 	// Initialize security monitor
-	securityMonitor := security.NewSecurityMonitor(10000) // Keep last 10,000 events
+	securityMonitor := security.NewSecurityMonitor(10000, securityConfig.Monitoring.LogSecurityEvents) // Keep last 10,000 events
 
 	return &SecurityMiddleware{
 		tokenService:    tokenService,

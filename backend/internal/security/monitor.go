@@ -51,9 +51,10 @@ const (
 
 // SecurityMonitor tracks and manages security events
 type SecurityMonitor struct {
-	events    []SecurityEvent
-	maxEvents int
-	mu        sync.RWMutex
+	events          []SecurityEvent
+	maxEvents       int
+	logEvents       bool
+	mu              sync.RWMutex
 
 	// Metrics
 	eventCounts map[SecurityEventType]int
@@ -65,7 +66,7 @@ type SecurityMonitor struct {
 }
 
 // NewSecurityMonitor creates a new security monitor
-func NewSecurityMonitor(maxEvents int) *SecurityMonitor {
+func NewSecurityMonitor(maxEvents int, logEvents bool) *SecurityMonitor {
 	if maxEvents <= 0 {
 		maxEvents = 10000 // Default limit
 	}
@@ -73,6 +74,7 @@ func NewSecurityMonitor(maxEvents int) *SecurityMonitor {
 	return &SecurityMonitor{
 		events:          make([]SecurityEvent, 0, maxEvents),
 		maxEvents:       maxEvents,
+		logEvents:       logEvents,
 		eventCounts:     make(map[SecurityEventType]int),
 		levelCounts:     make(map[SecurityEventLevel]int),
 		alertThresholds: getDefaultAlertThresholds(),
@@ -110,13 +112,15 @@ func (sm *SecurityMonitor) LogEvent(event SecurityEvent) {
 	// Check for alerts
 	sm.checkAlerts(event)
 
-	// Log to console
-	log.Printf("[SECURITY] %s: %s - %s %s - %s",
-		string(event.Level),
-		string(event.Type),
-		event.Method,
-		event.Path,
-		event.Message)
+	// Log to console only if logging is enabled
+	if sm.logEvents {
+		log.Printf("[SECURITY] %s: %s - %s %s - %s",
+			string(event.Level),
+			string(event.Type),
+			event.Method,
+			event.Path,
+			event.Message)
+	}
 }
 
 // GetEvents returns recent security events

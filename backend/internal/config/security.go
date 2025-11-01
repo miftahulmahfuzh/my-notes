@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -150,17 +152,45 @@ type DatabaseSecurityConfig struct {
 
 // GetDefaultSecurityConfig returns the default security configuration
 func GetDefaultSecurityConfig() *SecurityConfig {
+	// Helper functions to get environment variables with defaults
+	getEnvInt := func(key string, defaultValue int) int {
+		if value := os.Getenv(key); value != "" {
+			if intValue, err := strconv.Atoi(value); err == nil {
+				return intValue
+			}
+		}
+		return defaultValue
+	}
+
+	getEnvFloat := func(key string, defaultValue float64) float64 {
+		if value := os.Getenv(key); value != "" {
+			if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+				return floatValue
+			}
+		}
+		return defaultValue
+	}
+
+	getEnvBool := func(key string, defaultValue bool) bool {
+		if value := os.Getenv(key); value != "" {
+			if boolValue, err := strconv.ParseBool(value); err == nil {
+				return boolValue
+			}
+		}
+		return defaultValue
+	}
+
 	return &SecurityConfig{
 		RateLimiting: RateLimitConfig{
-			GlobalRequestsPerSecond: 100,
-			GlobalBurstSize:         200,
-			UserRequestsPerMinute:   60,
-			UserRequestsPerHour:     1000,
-			UserRequestsPerDay:      10000,
-			AuthRequestsPerMinute:   10,
-			ProfileRequestsPerMinute: 30,
-			SearchRequestsPerMinute: 20,
-			NotesRequestsPerMinute:  100,
+			GlobalRequestsPerSecond: getEnvFloat("GLOBAL_REQUESTS_PER_SECOND", 100),
+			GlobalBurstSize:         getEnvInt("GLOBAL_BURST_SIZE", 200),
+			UserRequestsPerMinute:   getEnvInt("USER_REQUESTS_PER_MINUTE", 60),
+			UserRequestsPerHour:     getEnvInt("USER_REQUESTS_PER_HOUR", 1000),
+			UserRequestsPerDay:      getEnvInt("USER_REQUESTS_PER_DAY", 10000),
+			AuthRequestsPerMinute:   getEnvInt("AUTH_REQUESTS_PER_MINUTE", 10),
+			ProfileRequestsPerMinute: getEnvInt("PROFILE_REQUESTS_PER_MINUTE", 30),
+			SearchRequestsPerMinute: getEnvInt("SEARCH_REQUESTS_PER_MINUTE", 20),
+			NotesRequestsPerMinute:  getEnvInt("NOTES_REQUESTS_PER_MINUTE", 100),
 			WhitelistedIPs:          []string{},
 			WhitelistedUsers:        []string{},
 		},
@@ -190,15 +220,15 @@ func GetDefaultSecurityConfig() *SecurityConfig {
 			PermissionsPolicy:       "geolocation=(), microphone=(), camera=()",
 		},
 		Monitoring: MonitoringConfig{
-			LogRequests:         true,
-			LogLevel:            "info",
-			EnableRequestID:      true,
-			TrackResponseTime:    true,
-			SlowRequestThreshold: time.Second,
-			LogSecurityEvents:   true,
-			EnableAuditLog:       true,
-			EnableMetrics:        true,
-			MetricsPort:          9090,
+			LogRequests:         getEnvBool("LOG_REQUESTS", true),
+			LogLevel:            getEnv("LOG_LEVEL", "info"),
+			EnableRequestID:      getEnvBool("ENABLE_REQUEST_ID", true),
+			TrackResponseTime:    getEnvBool("TRACK_RESPONSE_TIME", true),
+			SlowRequestThreshold: time.Duration(getEnvInt("SLOW_REQUEST_THRESHOLD", 1)) * time.Second,
+			LogSecurityEvents:   getEnvBool("LOG_SECURITY_EVENTS", true),
+			EnableAuditLog:       getEnvBool("ENABLE_AUDIT_LOG", true),
+			EnableMetrics:        getEnvBool("ENABLE_METRICS", true),
+			MetricsPort:          getEnvInt("METRICS_PORT", 9090),
 		},
 		Token: TokenConfig{
 			AccessExpiry:    15 * time.Minute,

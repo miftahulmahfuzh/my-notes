@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +31,14 @@ func RequestID(next http.Handler) http.Handler {
 // Logging logs all incoming requests
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if logging is disabled
+		logRequests := true
+		if value := os.Getenv("LOG_REQUESTS"); value != "" {
+			if boolValue, err := strconv.ParseBool(value); err == nil {
+				logRequests = boolValue
+			}
+		}
+
 		start := time.Now()
 
 		// Create a response writer wrapper to capture status code
@@ -36,18 +46,21 @@ func Logging(next http.Handler) http.Handler {
 
 		next.ServeHTTP(wrapped, r)
 
-		duration := time.Since(start)
-		requestID, _ := r.Context().Value("requestID").(string)
+		// Only log if logging is enabled
+		if logRequests {
+			duration := time.Since(start)
+			requestID, _ := r.Context().Value("requestID").(string)
 
-		log.Printf(
-			"[%s] %s %s %d %v %s",
-			requestID,
-			r.Method,
-			r.URL.Path,
-			wrapped.statusCode,
-			duration,
-			r.RemoteAddr,
-		)
+			log.Printf(
+				"[%s] %s %s %d %v %s",
+				requestID,
+				r.Method,
+				r.URL.Path,
+				wrapped.statusCode,
+				duration,
+				r.RemoteAddr,
+			)
+		}
 	})
 }
 

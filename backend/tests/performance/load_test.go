@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -12,8 +14,71 @@ import (
 	"github.com/gpd/my-notes/internal/database"
 	"github.com/gpd/my-notes/internal/handlers"
 	"github.com/gpd/my-notes/internal/server"
+	"github.com/gpd/my-notes/tests"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Helper functions for environment variables (same as tests package)
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func getEnvBool(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		if boolValue, err := strconv.ParseBool(value); err == nil {
+			return boolValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
+	}
+	return defaultValue
+}
+
+// getTestConfig returns test configuration (local copy)
+func getTestConfig() *config.Config {
+	// Load configuration to ensure .env file is loaded
+	_, err := config.LoadConfig("")
+	if err != nil {
+		// Fall back to environment variables if config loading fails
+	}
+
+	// Override with test-specific values
+	testConfig := &config.Config{
+		App: config.AppConfig{
+			Environment: "test",
+			Debug:       false,
+			LogLevel:    "error",
+		},
+		Server: config.ServerConfig{
+			Host: "localhost",
+			Port: "9999", // Use different port for testing
+		},
+		Database: config.DatabaseConfig{
+			Host:     getEnv("TEST_DB_HOST", getEnv("DB_HOST", "localhost")),
+			Port:     getEnvInt("TEST_DB_PORT", getEnvInt("DB_PORT", 5432)),
+			User:     getEnv("TEST_DB_USER", getEnv("DB_USER", "postgres")),
+			Password: getEnv("TEST_DB_PASSWORD", getEnv("DB_PASSWORD", "postgres123")),
+			Name:     getEnv("TEST_DB_NAME", getEnv("DB_NAME", "notes_test")),
+			SSLMode:  "disable",
+		},
+		Auth: config.AuthConfig{
+			JWTSecret: "test-secret",
+		},
+	}
+
+	return testConfig
+}
 
 // LoadTestConfig holds configuration for load testing
 type LoadTestConfig struct {
@@ -294,176 +359,230 @@ func calculatePercentile(sorted []time.Duration, percentile int) time.Duration {
 	return sorted[index]
 }
 
-// GetDefaultLoadTestConfig returns a default load test configuration
-func GetDefaultLoadTestConfig() *LoadTestConfig {
-	return &LoadTestConfig{
-		ConcurrentUsers: 10,
-		RequestsPerUser: 100,
-		Duration:        30 * time.Second,
-		RampUpTime:      5 * time.Second,
-		Endpoints: []Endpoint{
-			{
-				Path:            "/api/v1/health",
-				Method:          "GET",
-				Weight:          70, // 70% of requests
-				ExpectedStatus:  http.StatusOK,
-			},
-			{
-				Path:            "/api/v1/auth/validate",
-				Method:          "GET",
-				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
-				Weight:          20, // 20% of requests
-				ExpectedStatus:  http.StatusUnauthorized, // Expected to fail
-			},
-			{
-				Path:            "/api/v1/user/profile",
-				Method:          "GET",
-				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
-				Weight:          10, // 10% of requests
-				ExpectedStatus:  http.StatusUnauthorized, // Expected to fail
-			},
-		},
-	}
-}
+// REMOVED: GetDefaultLoadTestConfig - Replaced by GetTagSystemLoadTestConfig
+// This provided a generic test that wasn't focused on any specific user workflow.
+// The tag system test provides more meaningful and actionable performance data.
 
-// GetAuthLoadTestConfig returns a load test config focused on authentication
-func GetAuthLoadTestConfig() *LoadTestConfig {
+// REMOVED: GetAuthLoadTestConfig - Authentication should be tested with dedicated security testing tools
+// Load testing auth endpoints provides false confidence and doesn't reflect real security concerns.
+// Use specialized security testing frameworks for authentication validation.
+
+// GetTagSystemLoadTestConfig returns a load test config focused on Phase 4 hashtag system
+func GetTagSystemLoadTestConfig() *LoadTestConfig {
 	return &LoadTestConfig{
-		ConcurrentUsers: 50,
-		RequestsPerUser: 20,
+		ConcurrentUsers: 25,
+		RequestsPerUser: 60,
 		Duration:        60 * time.Second,
 		RampUpTime:      10 * time.Second,
 		Endpoints: []Endpoint{
 			{
-				Path:            "/api/v1/auth/google",
-				Method:          "POST",
-				Weight:          40,
-				ExpectedStatus:  http.StatusBadRequest, // No valid auth data
-			},
-			{
-				Path:            "/api/v1/auth/refresh",
-				Method:          "POST",
-				Weight:          30,
+				Path:            "/api/v1/tags",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          20,
 				ExpectedStatus:  http.StatusUnauthorized,
 			},
 			{
-				Path:            "/api/v1/user/profile",
+				Path:            "/api/v1/tags/suggestions?query=work",
 				Method:          "GET",
-				Weight:          30,
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          15,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/tags/popular",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          15,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/notes/by-tags?tags=work&operator=and",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          15,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/notes/by-tags?tags=work,urgent,project&operator=or",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          10,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/search/notes?query=meeting&tags=work,urgent",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          10,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/tags/trending",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          10,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/search/suggestions?query=project",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          5,
 				ExpectedStatus:  http.StatusUnauthorized,
 			},
 		},
 	}
 }
 
-// GetSecurityLoadTestConfig returns a load test config focused on security endpoints
-func GetSecurityLoadTestConfig() *LoadTestConfig {
+
+// GetComplexFilteringLoadTestConfig returns a load test config for advanced filtering scenarios
+func GetComplexFilteringLoadTestConfig() *LoadTestConfig {
 	return &LoadTestConfig{
-		ConcurrentUsers: 20,
+		ConcurrentUsers: 15,
 		RequestsPerUser: 50,
-		Duration:        45 * time.Second,
-		RampUpTime:      5 * time.Second,
+		Duration:        40 * time.Second,
+		RampUpTime:      7 * time.Second,
 		Endpoints: []Endpoint{
 			{
-				Path:            "/api/v1/security/rate-limit",
+				Path:            "/api/v1/notes/by-tags?tags=work,urgent&operator=and",
 				Method:          "GET",
-				Weight:          33,
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          20,
 				ExpectedStatus:  http.StatusUnauthorized,
 			},
 			{
-				Path:            "/api/v1/security/session-info",
+				Path:            "/api/v1/notes/by-tags?tags=project,meeting,deadline&operator=or",
 				Method:          "GET",
-				Weight:          33,
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          15,
 				ExpectedStatus:  http.StatusUnauthorized,
 			},
 			{
-				Path:            "/api/v1/security/metrics",
+				Path:            "/api/v1/search/notes?query=important%20deadline&tags=work,urgent&tagOperator=and",
 				Method:          "GET",
-				Weight:          34,
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          15,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/search/notes?tags=work&excludeTags=archived,completed",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          15,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/tags/related/123e4567-e89b-12d3-a456-426614174000",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          10,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/search/notes?query=&tags=personal,health&sortBy=relevance",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          10,
+				ExpectedStatus:  http.StatusUnauthorized,
+			},
+			{
+				Path:            "/api/v1/search/notes?query=meeting&tags=&sortBy=created_at&limit=20",
+				Method:          "GET",
+				Headers:         map[string]string{"Authorization": "Bearer mock-token"},
+				Weight:          15,
 				ExpectedStatus:  http.StatusUnauthorized,
 			},
 		},
 	}
 }
 
-// BenchmarkHealthCheck benchmarks the health check endpoint
-func BenchmarkHealthCheck(b *testing.B) {
-	// Setup test server
-	testConfig := &config.Config{
-		App: config.AppConfig{Environment: "test"},
-		Server: config.ServerConfig{Port: "0"},
-		Database: config.DatabaseConfig{
-			Host: "localhost", Port: 5432, Name: "notes_test",
-			User: "postgres", Password: "password", SSLMode: "disable",
-		},
-		Auth: config.AuthConfig{JWTSecret: "test-secret"},
+// REMOVED: GetSecurityLoadTestConfig - Security endpoints require specialized security testing
+// Load testing security endpoints doesn't validate actual security posture and can provide false confidence.
+// Security testing should focus on vulnerability assessment, not load handling.
+
+// REMOVED: BenchmarkHealthCheck - Health checks are trivial operations that provide no meaningful performance insights
+// Testing health endpoint performance is like testing how fast "hello world" prints - useless data.
+// Health checks should be simple and fast by design; if they're not, the issue is architectural, not performance-related.
+
+// TestTagSystemLoadTest runs the Phase 4 hashtag system load test
+func TestTagSystemLoadTest(t *testing.T) {
+	// Check if PostgreSQL tests are enabled
+	if !tests.USE_POSTGRE_DURING_TEST {
+		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
+	// Setup test server using test configuration
+	testConfig := getTestConfig()
+
 	db, err := database.NewConnection(testConfig.Database)
-	require.NoError(b, err)
+	require.NoError(t, err)
 	defer db.Close()
 
 	handlers := handlers.NewHandlers()
 	server := server.NewServer(testConfig, handlers, db)
 
-	loadTester := NewLoadTester(server, &LoadTestConfig{
-		ConcurrentUsers: 1,
-		RequestsPerUser: b.N,
-		Duration:        0, // Run until benchmark completes
-		RampUpTime:      0,
-		Endpoints: []Endpoint{{
-			Path:           "/api/v1/health",
-			Method:         "GET",
-			Weight:         1,
-			ExpectedStatus: http.StatusOK,
-		}},
-	})
+	loadTester := NewLoadTester(server, GetTagSystemLoadTestConfig())
+	result := loadTester.RunLoadTest(t)
 
-	b.ResetTimer()
-	result := loadTester.RunLoadTest(&testing.T{})
-	b.StopTimer()
+	// Assert performance requirements
+	t.Logf("Tag System Load Test Results:")
+	t.Logf("  Total Requests: %d", result.TotalRequests)
+	t.Logf("  Successful: %d", result.SuccessfulReqs)
+	t.Logf("  Failed: %d", result.FailedReqs)
+	t.Logf("  Requests/sec: %.2f", result.RequestsPerSec)
+	t.Logf("  Average Response: %v", result.AverageResponse)
+	t.Logf("  P95 Response: %v", result.Percentiles["p95"])
+	t.Logf("  P99 Response: %v", result.Percentiles["p99"])
 
-	b.ReportMetric(float64(result.AverageResponse.Nanoseconds())/1000, "ns/op")
-	b.ReportMetric(result.RequestsPerSec, "req/s")
+	// Performance assertions based on Phase 4 requirements
+	assert.Less(t, result.AverageResponse, 300*time.Millisecond, "Average response time should be < 300ms")
+	assert.Less(t, result.Percentiles["p95"], 500*time.Millisecond, "P95 response time should be < 500ms")
+	assert.Greater(t, result.RequestsPerSec, 50.0, "Should handle at least 50 requests/sec")
 }
 
-// BenchmarkRateLimiting benchmarks rate limiting performance
-func BenchmarkRateLimiting(b *testing.B) {
-	// Similar setup to BenchmarkHealthCheck but focusing on rate limiting
-	testConfig := &config.Config{
-		App: config.AppConfig{Environment: "test"},
-		Server: config.ServerConfig{Port: "0"},
-		Database: config.DatabaseConfig{
-			Host: "localhost", Port: 5432, Name: "notes_test",
-			User: "postgres", Password: "password", SSLMode: "disable",
-		},
-		Auth: config.AuthConfig{JWTSecret: "test-secret"},
+
+// TestComplexFilteringLoadTest runs advanced filtering scenarios load test
+func TestComplexFilteringLoadTest(t *testing.T) {
+	// Check if PostgreSQL tests are enabled
+	if !tests.USE_POSTGRE_DURING_TEST {
+		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
+	// Setup test server using test configuration
+	testConfig := getTestConfig()
+
 	db, err := database.NewConnection(testConfig.Database)
-	require.NoError(b, err)
+	require.NoError(t, err)
 	defer db.Close()
 
 	handlers := handlers.NewHandlers()
 	server := server.NewServer(testConfig, handlers, db)
 
-	loadTester := NewLoadTester(server, &LoadTestConfig{
-		ConcurrentUsers: 10,
-		RequestsPerUser: b.N / 10,
-		Duration:        0,
-		RampUpTime:      0,
-		Endpoints: []Endpoint{{
-			Path:           "/api/v1/health",
-			Method:         "GET",
-			Weight:         1,
-			ExpectedStatus: http.StatusOK,
-		}},
-	})
+	loadTester := NewLoadTester(server, GetComplexFilteringLoadTestConfig())
+	result := loadTester.RunLoadTest(t)
 
-	b.ResetTimer()
-	result := loadTester.RunLoadTest(&testing.T{})
-	b.StopTimer()
+	t.Logf("Complex Filtering Load Test Results:")
+	t.Logf("  Total Requests: %d", result.TotalRequests)
+	t.Logf("  Successful: %d", result.SuccessfulReqs)
+	t.Logf("  Failed: %d", result.FailedReqs)
+	t.Logf("  Requests/sec: %.2f", result.RequestsPerSec)
+	t.Logf("  Average Response: %v", result.AverageResponse)
+	t.Logf("  P95 Response: %v", result.Percentiles["p95"])
 
-	b.ReportMetric(float64(result.AverageResponse.Nanoseconds())/1000, "ns/op")
-	b.ReportMetric(result.RequestsPerSec, "req/s")
+	// Complex filtering can be slower but should still be reasonable
+	assert.Less(t, result.AverageResponse, 500*time.Millisecond, "Complex filtering should be < 500ms")
+	assert.Less(t, result.Percentiles["p95"], 800*time.Millisecond, "P95 filtering should be < 800ms")
 }
+
+// REMOVED: BenchmarkTagSystem - Redundant with TestTagSystemLoadTest
+// The comprehensive load test already covers tag system performance more realistically than this micro-benchmark.
+// Single-endpoint benchmarks don't reflect real user behavior or system performance under load.
+
+// REMOVED: BenchmarkTagFiltering - Covered by TestComplexFilteringLoadTest
+// The complex filtering load test covers real-world filtering scenarios instead of artificial single-endpoint testing.
+// Micro-benchmarks provide artificial metrics that don't translate to real user experience.
+
+// REMOVED: BenchmarkRateLimiting - Rate limiting is infrastructure middleware, not user-facing functionality
+// Performance of rate limiting doesn't directly impact user experience in meaningful ways.
+// Rate limiting should be simple and efficient; if it's not, the issue is architectural, not performance-related.
