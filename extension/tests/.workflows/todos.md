@@ -15,9 +15,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 1
-- Completed This Week: 1
-- Completed This Month: 1
+- Completed Today: 2
+- Completed This Week: 2
+- Completed This Month: 2
 
 ---
 
@@ -33,6 +33,27 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P3-EXT-A002** Suppress console.error in AuthService initialization test - extension/tests/auth.test.ts:157
+  - **Completed**: 2025-11-01 16:35:00
+  - **Difficulty**: EASY
+  - **Context**: Test "should handle initialization errors gracefully" was triggering expected console.error logging
+  - **Issue**: Console.error message appeared during test execution despite test passing correctly
+  - **Solution Implemented**: Mock console.error only for the specific test that intentionally triggers storage errors
+  - **Files Modified**: auth.test.ts (lines 157-170)
+  - **Method**:
+    - Added `jest.spyOn(console, 'error').mockImplementation(() => {})` before error trigger
+    - Added `consoleErrorSpy.mockRestore()` after test assertions
+    - This isolates the mocking to only the specific test scenario
+  - **Test Results**:
+    - **Before**: Console.error noise during test execution
+    - **After**: Clean test output with no console errors
+    - **Test Coverage Maintained**: Error handling logic still properly validated
+  - **Impact**: Improved test execution clarity while maintaining error handling validation
+  - **Validation Results**:
+    - ✅ All tests pass (10/10) in 17.527s
+    - ✅ No console.error messages during test execution
+    - ✅ Error handling test still validates proper error state returned
+    - ✅ Other tests unaffected by console.error mocking
 - [x] **P0-EXT-A001** Fix JavaScript heap memory issues in auth.test.ts - extension/tests/auth.test.ts
   - **Completed**: 2025-11-01 16:20:00
   - **Difficulty**: HARD

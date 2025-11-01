@@ -161,23 +161,13 @@ make clean             # Clean build artifacts
 
 ### Backend Tests
 ```bash
-cd backend
-go test ./...                           # Run all tests
-go test -v ./...                        # Run with verbose output
-go test -coverprofile=coverage.out ./... # Generate coverage
-go tool cover -html=coverage.out        # View coverage in browser
+go clean -testcache && go -C backend test ./tests/... -v
 ```
 
 ### Frontend Tests
 ```bash
-cd extension
-npm test                                 # Run tests
-npm run test:coverage                   # Run with coverage
-npm run lint                           # Run linting
+npm run test --prefix extension
 ```
-
-### Test Database
-The project automatically creates isolated test databases for testing. No manual database setup required for tests.
 
 ## 📊 Database Schema
 

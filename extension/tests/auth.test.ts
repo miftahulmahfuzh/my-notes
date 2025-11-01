@@ -154,6 +154,9 @@ describe('AuthService', () => {
     });
 
     it('should handle initialization errors gracefully', async () => {
+      // Mock console.error to suppress expected error logging during this test
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
       (AuthStorage.getAuthState as jest.Mock).mockRejectedValue(new Error('Storage error'));
 
       const authState = await authService.initialize();
@@ -161,6 +164,9 @@ describe('AuthService', () => {
       expect(authState.isAuthenticated).toBe(false);
       // The AuthService catches and processes the error, returning a generic error message
       expect(authState.error).toBe('An unknown error occurred.');
+
+      // Restore console.error to avoid affecting other tests
+      consoleErrorSpy.mockRestore();
     });
   });
 
