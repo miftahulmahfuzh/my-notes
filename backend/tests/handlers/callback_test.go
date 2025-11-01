@@ -102,7 +102,7 @@ func TestGoogleCallbackWithMockOAuth(t *testing.T) {
 	handler, mockUserService := setupAuthHandler(t)
 
 	// Mock user service
-	user := createTestUser(t)
+	user := createTestUser()
 	mockUserService.On("CreateOrUpdateFromGoogle", mock.AnythingOfType("*auth.GoogleUserInfo")).
 		Return(user, nil)
 

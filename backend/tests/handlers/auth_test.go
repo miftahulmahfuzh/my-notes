@@ -12,45 +12,11 @@ import (
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/handlers"
 	"github.com/gpd/my-notes/internal/models"
-	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/oauth2"
 )
-
-// MockUserService is a mock implementation of UserServiceInterface
-type MockUserService struct {
-	mock.Mock
-}
-
-func (m *MockUserService) CreateOrUpdateFromGoogle(userInfo *auth.GoogleUserInfo) (*models.User, error) {
-	args := m.Called(userInfo)
-	return args.Get(0).(*models.User), args.Error(1)
-}
-
-func (m *MockUserService) GetByID(userID string) (*models.User, error) {
-	args := m.Called(userID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.User), args.Error(1)
-}
-
-func (m *MockUserService) CreateSession(userID, ipAddress, userAgent string) (*models.UserSession, error) {
-	args := m.Called(userID, ipAddress, userAgent)
-	return args.Get(0).(*models.UserSession), args.Error(1)
-}
-
-func (m *MockUserService) UpdateSessionActivity(sessionID, ipAddress, userAgent string) error {
-	args := m.Called(sessionID, ipAddress, userAgent)
-	return args.Error(0)
-}
-
-func (m *MockUserService) GetActiveSessions(userID string) ([]models.UserSession, error) {
-	args := m.Called(userID)
-	return args.Get(0).([]models.UserSession), args.Error(1)
-}
 
 // MockOAuthService is a mock implementation of OAuthService
 type MockOAuthService struct {
@@ -157,28 +123,6 @@ func setupAuthHandler(t *testing.T) (*handlers.AuthHandler, *MockUserService) {
 	return handler, mockUserService
 }
 
-func createTestUser(t *testing.T) *models.User {
-	userID := uuid.New()
-	avatarURL := "https://example.com/avatar.jpg"
-
-	return &models.User{
-		ID:        userID,
-		GoogleID:  "google-123",
-		Email:     "test@example.com",
-		Name:      "Test User",
-		AvatarURL: &avatarURL,
-		Preferences: models.UserPreferences{
-			Theme:              "light",
-			Language:           "en",
-			TimeZone:           "UTC",
-			EmailNotifications: true,
-			AutoSave:           true,
-			DefaultNoteView:    "grid",
-		},
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-}
 
 func TestGoogleAuth(t *testing.T) {
 	handler, _ := setupAuthHandler(t)
@@ -204,7 +148,7 @@ func TestGoogleCallback(t *testing.T) {
 	handler, mockUserService := setupAuthHandler(t)
 
 	// Mock user service
-	user := createTestUser(t)
+	user := createTestUser()
 	mockUserService.On("CreateOrUpdateFromGoogle", mock.AnythingOfType("*auth.GoogleUserInfo")).
 		Return(user, nil)
 
@@ -237,7 +181,7 @@ func TestGoogleCallback(t *testing.T) {
 func TestTokenRefresh(t *testing.T) {
 	handler, mockUserService := setupAuthHandler(t)
 
-	user := createTestUser(t)
+	user := createTestUser()
 
 	// Mock user service
 	mockUserService.On("GetByID", user.ID.String()).Return(user, nil)
@@ -266,7 +210,7 @@ func TestLogout(t *testing.T) {
 	req := httptest.NewRequest("POST", "/api/v1/auth/logout", nil)
 
 	// Add user to context (simulating auth middleware)
-	user := createTestUser(t)
+	user := createTestUser()
 	ctx := context.WithValue(req.Context(), "user", user)
 	req = req.WithContext(ctx)
 

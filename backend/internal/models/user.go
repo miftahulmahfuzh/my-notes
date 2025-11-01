@@ -30,6 +30,44 @@ type UserSession struct {
 	IsActive  bool      `json:"is_active" db:"is_active"`
 }
 
+// UserSessionResponse is the safe response format for user session data
+type UserSessionResponse struct {
+	ID        string `json:"id"`
+	IPAddress string `json:"ip_address"`
+	UserAgent string `json:"user_agent"`
+	CreatedAt string `json:"created_at"`
+	LastSeen  string `json:"last_seen"`
+	IsActive  bool   `json:"is_active"`
+}
+
+// ToResponse converts UserSession to UserSessionResponse
+func (s *UserSession) ToResponse() UserSessionResponse {
+	return UserSessionResponse{
+		ID:        s.ID,
+		IPAddress: s.IPAddress,
+		UserAgent: s.UserAgent,
+		CreatedAt: s.CreatedAt.Format(time.RFC3339),
+		LastSeen:  s.LastSeen.Format(time.RFC3339),
+		IsActive:  s.IsActive,
+	}
+}
+
+// UserStats represents user statistics
+type UserStats struct {
+	TotalNotes      int `json:"total_notes"`
+	TotalTags       int `json:"total_tags"`
+	ActiveSessions  int `json:"active_sessions"`
+	AccountAgeDays  int `json:"account_age_days"`
+	LastLoginAt     string `json:"last_login_at"`
+}
+
+// UserSearchResult represents a user search result
+type UserSearchResult struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	AvatarURL *string   `json:"avatar_url,omitempty"`
+}
+
 // User represents a user in the system
 type User struct {
 	ID          uuid.UUID      `json:"id" db:"id"`

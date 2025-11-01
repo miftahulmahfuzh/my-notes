@@ -80,7 +80,7 @@ func TestTokenRefreshValidation(t *testing.T) {
 					"notes-app",
 					"notes-users",
 				)
-				user := createTestUser(t)
+				user := createTestUser()
 
 				// Set up the mock to expect this specific user
 				mockUserService.On("GetByID", user.ID.String()).Return(user, nil)
@@ -131,7 +131,7 @@ func TestTokenRefreshWithValidToken(t *testing.T) {
 		"notes-users",
 	)
 
-	user := createTestUser(t)
+	user := createTestUser()
 
 	// Generate a valid token pair
 	tokenPair, err := tokenService.GenerateTokenPair(user)
@@ -183,7 +183,7 @@ func TestTokenRefreshFlow(t *testing.T) {
 		"notes-users",
 	)
 
-	user := createTestUser(t)
+	user := createTestUser()
 
 	// Step 1: Generate initial tokens
 	initialTokens, err := tokenService.GenerateTokenPair(user)
@@ -265,7 +265,7 @@ func TestTokenRefreshWithExpiredToken(t *testing.T) {
 		store,
 	)
 
-	user := createTestUser(t)
+	user := createTestUser()
 
 	// Set up mock to return an error when GetByID is called (simulating user not found)
 	mockUserService.On("GetByID", mock.AnythingOfType("string")).Return(nil, assert.AnError)
@@ -369,7 +369,7 @@ func TestTokenRefreshWithMalformedToken(t *testing.T) {
 func TestTokenRefreshResponseStructure(t *testing.T) {
 	handler, mockUserService := setupAuthHandler(t)
 
-	user := createTestUser(t)
+	user := createTestUser()
 
 	// Create a real token service for this test
 	tokenService := auth.NewTokenService(

@@ -15,9 +15,15 @@ import (
 type UserServiceInterface interface {
 	CreateOrUpdateFromGoogle(userInfo *auth.GoogleUserInfo) (*models.User, error)
 	GetByID(userID string) (*models.User, error)
+	Update(user *models.User) (*models.User, error)
+	Delete(userID string) error
 	CreateSession(userID, ipAddress, userAgent string) (*models.UserSession, error)
 	UpdateSessionActivity(sessionID, ipAddress, userAgent string) error
 	GetActiveSessions(userID string) ([]models.UserSession, error)
+	DeleteSession(sessionID, userID string) error
+	DeleteAllSessions(userID string) error
+	GetUserStats(userID string) (*models.UserStats, error)
+	SearchUsers(query string, page, limit int) ([]models.User, int, error)
 }
 
 // UserService handles user-related operations
@@ -193,6 +199,63 @@ func (s *UserService) CreateSession(userID, ipAddress, userAgent string) (*model
 	return session, nil
 }
 
+// Update updates an existing user
+func (s *UserService) Update(user *models.User) (*models.User, error) {
+	ctx := context.Background()
+
+	user.UpdatedAt = time.Now()
+
+	query := `
+		UPDATE users
+		SET name = $1, avatar_url = $2, preferences = $3, updated_at = $4
+		WHERE id = $5
+		RETURNING id, google_id, email, name, avatar_url, preferences, created_at, updated_at
+	`
+
+	err := s.db.QueryRowContext(ctx, query,
+		user.Name, user.AvatarURL, user.Preferences, user.UpdatedAt, user.ID).Scan(
+		&user.ID, &user.GoogleID, &user.Email, &user.Name, &user.AvatarURL,
+		&user.Preferences, &user.CreatedAt, &user.UpdatedAt)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return user, nil
+}
+
+// Delete deletes a user and all associated data
+func (s *UserService) Delete(userID string) error {
+	ctx := context.Background()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Delete user sessions first
+	_, err = tx.ExecContext(ctx, "DELETE FROM user_sessions WHERE user_id = $1", userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user sessions: %w", err)
+	}
+
+	// TODO: Delete user's notes and tags when those tables are created
+
+	// Delete the user
+	_, err = tx.ExecContext(ctx, "DELETE FROM users WHERE id = $1", userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 // UpdateSessionActivity updates the last seen time for a session
 func (s *UserService) UpdateSessionActivity(sessionID, ipAddress, userAgent string) error {
 	ctx := context.Background()
@@ -246,30 +309,133 @@ func (s *UserService) GetActiveSessions(userID string) ([]models.UserSession, er
 	return sessions, nil
 }
 
-// InvalidateSession invalidates a specific session
-func (s *UserService) InvalidateSession(sessionID string) error {
+// DeleteSession deletes a specific session for a user
+func (s *UserService) DeleteSession(sessionID, userID string) error {
 	ctx := context.Background()
 
-	query := `UPDATE user_sessions SET is_active = false WHERE id = $1`
-	_, err := s.db.ExecContext(ctx, query, sessionID)
+	query := `UPDATE user_sessions SET is_active = false WHERE id = $1 AND user_id = $2`
+	_, err := s.db.ExecContext(ctx, query, sessionID, userID)
 	if err != nil {
-		return fmt.Errorf("failed to invalidate session: %w", err)
+		return fmt.Errorf("failed to delete session: %w", err)
 	}
 
 	return nil
 }
 
-// InvalidateAllUserSessions invalidates all sessions for a user
-func (s *UserService) InvalidateAllUserSessions(userID string) error {
+// DeleteAllSessions deletes all active sessions for a user
+func (s *UserService) DeleteAllSessions(userID string) error {
 	ctx := context.Background()
 
 	query := `UPDATE user_sessions SET is_active = false WHERE user_id = $1`
 	_, err := s.db.ExecContext(ctx, query, userID)
 	if err != nil {
-		return fmt.Errorf("failed to invalidate user sessions: %w", err)
+		return fmt.Errorf("failed to delete all sessions: %w", err)
 	}
 
 	return nil
+}
+
+// GetUserStats retrieves user statistics
+func (s *UserService) GetUserStats(userID string) (*models.UserStats, error) {
+	ctx := context.Background()
+
+	stats := &models.UserStats{}
+
+	// Get user info for account age
+	var createdAt time.Time
+	err := s.db.QueryRowContext(ctx, "SELECT created_at FROM users WHERE id = $1", userID).Scan(&createdAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user creation time: %w", err)
+	}
+
+	// Calculate account age in days
+	stats.AccountAgeDays = int(time.Since(createdAt).Hours() / 24)
+
+	// Get total notes (placeholder - will be implemented when notes table exists)
+	err = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM notes WHERE user_id = $1", userID).Scan(&stats.TotalNotes)
+	if err != nil {
+		stats.TotalNotes = 0 // Set to 0 if notes table doesn't exist yet
+	}
+
+	// Get total tags (placeholder - will be implemented when tags table exists)
+	err = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tags WHERE user_id = $1", userID).Scan(&stats.TotalTags)
+	if err != nil {
+		stats.TotalTags = 0 // Set to 0 if tags table doesn't exist yet
+	}
+
+	// Get active sessions count
+	err = s.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM user_sessions WHERE user_id = $1 AND is_active = true",
+		userID).Scan(&stats.ActiveSessions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active sessions count: %w", err)
+	}
+
+	// Get last login time
+	var lastLogin sql.NullTime
+	err = s.db.QueryRowContext(ctx,
+		"SELECT MAX(last_seen) FROM user_sessions WHERE user_id = $1",
+		userID).Scan(&lastLogin)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get last login time: %w", err)
+	}
+
+	if lastLogin.Valid {
+		stats.LastLoginAt = lastLogin.Time.Format(time.RFC3339)
+	} else {
+		stats.LastLoginAt = createdAt.Format(time.RFC3339)
+	}
+
+	return stats, nil
+}
+
+// SearchUsers searches for users by name or email
+func (s *UserService) SearchUsers(query string, page, limit int) ([]models.User, int, error) {
+	ctx := context.Background()
+
+	offset := (page - 1) * limit
+
+	// Get total count
+	var total int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM users
+		 WHERE name ILIKE $1 OR email ILIKE $1`,
+		"%"+query+"%").Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get total users count: %w", err)
+	}
+
+	// Get users with pagination
+	dbQuery := `
+		SELECT id, google_id, email, name, avatar_url, preferences, created_at, updated_at
+		FROM users
+		WHERE name ILIKE $1 OR email ILIKE $1
+		ORDER BY name
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := s.db.QueryContext(ctx, dbQuery, "%"+query+"%", limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to search users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var user models.User
+		err := rows.Scan(&user.ID, &user.GoogleID, &user.Email, &user.Name, &user.AvatarURL,
+			&user.Preferences, &user.CreatedAt, &user.UpdatedAt)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("error iterating users: %w", err)
+	}
+
+	return users, total, nil
 }
 
 // Private helper methods
