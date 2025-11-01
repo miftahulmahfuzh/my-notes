@@ -159,6 +159,18 @@ make clean             # Clean build artifacts
 
 ## 🧪 Testing
 
+### Backend Build
+```bash
+# Build the Go backend
+go build -C /mnt/c/Users/GPD/Downloads/my_github/my-notes/backend ./cmd/server
+```
+
+### Backend Run
+```bash
+# Run the Go backend
+./backend/server
+```
+
 ### Backend Tests
 ```bash
 go clean -testcache && go -C backend test ./tests/... -v

@@ -8,9 +8,10 @@ This guide covers how to set up, manage, and test with PostgreSQL using Docker f
 2. [Docker PostgreSQL Setup](#docker-postgresql-setup)
 3. [Database Management](#database-management)
 4. [Database Inspection](#database-inspection)
-5. [Testing with PostgreSQL](#testing-with-postgresql)
-6. [Troubleshooting](#troubleshooting)
-7. [Advanced Operations](#advanced-operations)
+5. [Server Startup and Database Migrations](#server-startup-and-database-migrations)
+6. [Testing with PostgreSQL](#testing-with-postgresql)
+7. [Troubleshooting](#troubleshooting)
+8. [Advanced Operations](#advanced-operations)
 
 ## Quick Start
 
@@ -23,12 +24,33 @@ docker run --name my-notes-postgres \
   -p 5432:5432 \
   -d postgres:15
 
-# Run tests
+# Build and run the backend server (automatically runs migrations)
+go -C backend build -o server ./cmd/server/main.go
+./backend/server
+
+# Server will start on http://localhost:8080
+# Check health endpoint: curl http://localhost:8080/api/v1/health
+
+# Run tests (in separate terminal)
 export TEST_DB_HOST=localhost \
   TEST_DB_PORT=5432 \
   TEST_DB_USER=test_user \
   TEST_DB_PASSWORD=test_password
 go -C backend test -v ./tests
+```
+
+**Expected server startup output:**
+```
+🚀 Starting Silence Notes Backend API...
+✅ Configuration loaded successfully
+🌐 Server will start on localhost:8080
+🗄️  Database: localhost:5432/my_notes_test
+🔧 Environment: test
+📊 Initializing database connection...
+✅ Database connection established
+🔄 Running database migrations...
+✅ Database migrations completed
+🚀 Server starting on localhost:8080
 ```
 
 ## Docker PostgreSQL Setup
@@ -57,8 +79,11 @@ docker run --name my-notes-postgres \
 
 ### Environment Variables
 
-Create a `.env` file in the `backend/` directory:
+The application loads environment variables from multiple `.env` files in this order:
+1. `backend/.env` (backend-specific)
+2. `.env` (root directory, overrides backend settings)
 
+**Root `.env` file (takes precedence):**
 ```bash
 # Database Configuration
 DB_HOST=localhost
@@ -75,7 +100,66 @@ TEST_DB_NAME=my_notes_test
 TEST_DB_USER=test_user
 TEST_DB_PASSWORD=test_password
 TEST_DB_SSLMODE=disable
+
+# Application Configuration
+APP_ENV=test
+APP_DEBUG=true
+APP_LOG_LEVEL=debug
+
+# Server Configuration
+SERVER_HOST=localhost
+SERVER_PORT=8080
+
+# Auth Configuration
+JWT_SECRET=test_jwt_secret_key_at_least_32_characters_long_for_testing
 ```
+
+**Backend `.env` file (can be overridden by root .env):**
+```bash
+# Server Configuration
+SERVER_HOST=localhost
+SERVER_PORT=8080
+READ_TIMEOUT=30
+WRITE_TIMEOUT=30
+
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=my_notes_test
+DB_USER=test_user
+DB_PASSWORD=test_password
+DB_SSLMODE=disable
+
+# Test Database Configuration (for tests)
+TEST_DB_HOST=localhost
+TEST_DB_PORT=5432
+TEST_DB_NAME=my_notes_test
+TEST_DB_USER=test_user
+TEST_DB_PASSWORD=test_password
+TEST_DB_SSLMODE=disable
+
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# Authentication
+JWT_SECRET=test_jwt_secret_make_it_long_and_random_for_development_only
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URL=http://localhost:8080/api/v1/auth/google/callback
+
+# Application
+APP_ENV=test
+APP_DEBUG=true
+APP_LOG_LEVEL=info
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3000,chrome-extension://*
+```
+
+**⚠️ Important:** The root `.env` file overrides the backend `.env` file. Make sure database configuration is consistent between both files.
 
 ### Container Management Commands
 
@@ -174,9 +258,82 @@ docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "SELECT * FR
 
 ## Database Inspection
 
-### Checking Application Tables
+### Database Schema and Migrations
 
-The Silence Notes application creates the following tables:
+The application uses a migration system located in `backend/migrations/`. Migrations are automatically applied when the server starts in development or test mode.
+
+#### Migration Files (in execution order):
+
+1. **`001_create_users_table.up.sql`** - Creates users table with Google OAuth support
+2. **`002_create_notes_table.up.sql`** - Creates notes table with versioning support
+3. **`002_create_user_sessions.up.sql`** - Creates user_sessions and token_blacklist tables
+4. **`003_create_tags_table.up.sql`** - Creates tags table for hashtag support
+5. **`004_create_note_tags_table.up.sql`** - Creates note_tags junction table
+6. **`005_add_user_preferences.up.sql`** - Adds preferences column and optimized indexes
+
+#### Database Tables:
+
+```sql
+-- Users table (Google OAuth)
+users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    google_id VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    avatar_url TEXT,
+    preferences JSONB DEFAULT '{"theme":"light","language":"en","timezone":"UTC","email_notifications":true,"auto_save":true,"default_note_view":"grid"}'::jsonb NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Notes table with optimistic locking
+notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    version INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tags table for hashtag support
+tags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Note Tags junction table (many-to-many relationship)
+note_tags (
+    note_id UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (note_id, tag_id)
+);
+
+-- User sessions for authentication management
+user_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ip_address INET NOT NULL,
+    user_agent TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    last_seen TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- Token blacklist for JWT invalidation
+token_blacklist (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    token_id TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+```
+
+#### Checking Application Tables:
 
 ```bash
 # Check if all tables exist
@@ -199,6 +356,15 @@ docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "\d tags"
 
 echo "=== Note Tags Table ==="
 docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "\d note_tags"
+
+echo "=== User Sessions Table ==="
+docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "\d user_sessions"
+
+echo "=== Token Blacklist Table ==="
+docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "\d token_blacklist"
+
+# Check migration status
+docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "SELECT * FROM schema_migrations ORDER BY version;"
 ```
 
 ### Checking Data and Constraints
@@ -279,6 +445,91 @@ SELECT id, email, name, created_at FROM users WHERE google_id = 'google_test_123
 SELECT 'Notes:' as table_name;
 SELECT id, title, content, version, created_at FROM notes ORDER BY created_at DESC LIMIT 5;
 "
+```
+
+## Server Startup and Database Migrations
+
+### Application Server
+
+The Go backend server automatically handles database migrations when started in development or test mode.
+
+```bash
+# Build and run the server
+go -C backend build -o server ./cmd/server/main.go
+./backend/server
+
+# Or run directly from project root
+./backend/server
+```
+
+**Server Startup Process:**
+1. Loads configuration from `.env` files
+2. Establishes database connection
+3. Automatically runs pending migrations (if in dev/test mode)
+4. Starts HTTP server on configured port
+
+### Migration Management
+
+The application uses a custom migration system that tracks applied migrations in the `schema_migrations` table.
+
+```bash
+# Check migration status
+docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "SELECT * FROM schema_migrations ORDER BY version;"
+
+# Manually run migrations (if needed)
+go -C backend run cmd/migrate/main.go up
+
+# Check migration files
+ls -la backend/migrations/*.sql | sort
+```
+
+### Common Migration Issues
+
+#### Migration Naming Conflicts
+Migrations are sorted alphabetically and executed in order. Ensure migration files follow the naming pattern:
+```
+XXX_description.up.sql  (e.g., 001_create_users_table.up.sql)
+XXX_description.down.sql (e.g., 001_create_users_table.down.sql)
+```
+
+#### Database Name Conflicts
+The application loads `.env` files in this order:
+1. `backend/.env` (loaded first)
+2. `.env` (root directory, overrides backend settings)
+
+Ensure database names are consistent between both files:
+```bash
+# Check which database name is being used
+grep DB_NAME .env backend/.env
+```
+
+#### Migration Path Issues
+When running the server from the project root, migrations are located at `backend/migrations/`. The server is configured to look in this directory automatically.
+
+#### Index Conflicts
+If migrations fail due to existing indexes, check for conflicts:
+```bash
+# List existing indexes
+docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "\di"
+
+# Drop conflicting indexes if needed
+docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "DROP INDEX IF EXISTS index_name;"
+```
+
+### Reset Database
+
+If you need to completely reset the database:
+
+```bash
+# Stop the server first
+pkill backend/server
+
+# Drop and recreate database
+docker exec my-notes-postgres psql -U test_user -d postgres -c "DROP DATABASE IF EXISTS my_notes_test;"
+docker exec my-notes-postgres psql -U test_user -d postgres -c "CREATE DATABASE my_notes_test;"
+
+# Restart server (will re-run migrations)
+./backend/server
 ```
 
 ## Testing with PostgreSQL
@@ -397,6 +648,44 @@ docker exec my-notes-postgres psql -U test_user -d postgres -c "\l"
 
 # Create database if missing
 docker exec my-notes-postgres psql -U test_user -d postgres -c "CREATE DATABASE my_notes_test;"
+```
+
+#### Migration Failures
+
+**Error: "relation does not exist"**
+- Caused by migrations running in wrong order due to naming
+- Check migration file names: `ls -la backend/migrations/*.sql | sort`
+- Ensure migration files use proper numbering: 001_, 002_, 003_, etc.
+
+**Error: "database 'wrong_name' does not exist"**
+- Check environment variable precedence: `.env` (root) overrides `backend/.env`
+- Verify database names: `grep DB_NAME .env backend/.env`
+- Ensure both files use the same database name
+
+**Error: "no such file or directory" for migrations**
+- Server looks for migrations in `backend/migrations/` when run from root
+- If running from backend directory, migrations path should be `migrations/`
+- Check server startup logs for migration path
+
+**Error: "index already exists"**
+- Check for duplicate index creation across migrations
+- List existing indexes: `docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "\di"`
+- Use `IF NOT EXISTS` or unique index names
+
+#### Server Startup Issues
+
+```bash
+# Check server logs for detailed error messages
+./backend/server
+
+# Verify configuration loading
+grep -E "(DB_|APP_|SERVER_)" .env backend/.env
+
+# Manual migration check
+docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "SELECT * FROM schema_migrations ORDER BY version;"
+
+# Reset database if needed
+docker exec my-notes-postgres psql -U test_user -d postgres -c "DROP DATABASE IF EXISTS my_notes_test; CREATE DATABASE my_notes_test;"
 ```
 
 #### Permission Issues

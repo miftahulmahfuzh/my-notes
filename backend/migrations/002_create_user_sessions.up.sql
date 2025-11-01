@@ -26,15 +26,3 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
 CREATE INDEX IF NOT EXISTS idx_token_blacklist_token_id ON token_blacklist(token_id);
 CREATE INDEX IF NOT EXISTS idx_token_blacklist_expires_at ON token_blacklist(expires_at);
 
--- Add preferences column to users table if it doesn't exist
-ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}';
-
--- Set default preferences for existing users
-UPDATE users SET preferences = '{
-    "theme": "light",
-    "language": "en",
-    "timezone": "UTC",
-    "email_notifications": true,
-    "auto_save": true,
-    "default_note_view": "grid"
-}'::jsonb WHERE preferences = '{}'::jsonb OR preferences IS NULL;

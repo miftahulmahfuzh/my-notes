@@ -51,7 +51,7 @@ func main() {
 	// Run migrations if in development or test mode
 	if cfg.IsDevelopment() || cfg.IsTest() {
 		log.Println("🔄 Running database migrations...")
-		migrator := database.NewMigrator(db, "migrations")
+		migrator := database.NewMigrator(db, "backend/migrations")
 		if err := migrator.Up(); err != nil {
 			log.Fatalf("❌ Failed to run migrations: %v", err)
 		}
@@ -64,7 +64,7 @@ func main() {
 
 	// Create server
 	log.Println("🖥️  Creating HTTP server...")
-	srv := server.NewServer(cfg, handlers)
+	srv := server.NewServer(cfg, handlers, db)
 
 	// Start server in a goroutine
 	go func() {

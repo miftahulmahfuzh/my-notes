@@ -11,11 +11,12 @@ import (
 
 // Claims represents the JWT claims structure
 type Claims struct {
-	UserID   string `json:"user_id"`
-	Email    string `json:"email"`
-	Name     string `json:"name"`
-	Issuer   string `json:"iss"`
-	Audience string `json:"aud"`
+	UserID    string `json:"user_id"`
+	SessionID string `json:"session_id"`
+	Email     string `json:"email"`
+	Name      string `json:"name"`
+	Issuer    string `json:"iss"`
+	Audience  string `json:"aud"`
 	jwt.RegisteredClaims
 }
 
@@ -51,14 +52,16 @@ func NewTokenService(secretKey string, accessExpiry, refreshExpiry time.Duration
 func (s *TokenService) GenerateTokenPair(user *models.User) (*TokenPair, error) {
 	now := time.Now()
 	tokenID := generateTokenID()
+	sessionID := generateTokenID()
 
 	// Generate access token
 	accessClaims := &Claims{
-		UserID:   user.ID.String(),
-		Email:    user.Email,
-		Name:     user.Name,
-		Issuer:   s.issuer,
-		Audience: s.audience,
+		UserID:    user.ID.String(),
+		SessionID: sessionID,
+		Email:     user.Email,
+		Name:      user.Name,
+		Issuer:    s.issuer,
+		Audience:  s.audience,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.accessExpiry)),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -77,11 +80,12 @@ func (s *TokenService) GenerateTokenPair(user *models.User) (*TokenPair, error) 
 	// Generate refresh token
 	refreshTokenID := generateTokenID()
 	refreshClaims := &Claims{
-		UserID:   user.ID.String(),
-		Email:    user.Email,
-		Name:     user.Name,
-		Issuer:   s.issuer,
-		Audience: s.audience,
+		UserID:    user.ID.String(),
+		SessionID: sessionID,
+		Email:     user.Email,
+		Name:      user.Name,
+		Issuer:    s.issuer,
+		Audience:  s.audience,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.refreshExpiry)),
 			IssuedAt:  jwt.NewNumericDate(now),

@@ -2,54 +2,145 @@ package server
 
 import (
 	"context"
+	"database/sql"
+	"log"
 	"net/http"
 	"time"
 
+	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/config"
 	"github.com/gpd/my-notes/internal/handlers"
 	"github.com/gpd/my-notes/internal/middleware"
+	"github.com/gpd/my-notes/internal/services"
 	"github.com/gorilla/mux"
 )
 
 // Server represents the HTTP server
 type Server struct {
-	config   *config.Config
-	router   *mux.Router
-	httpServ *http.Server
-	handlers *handlers.Handlers
+	config        *config.Config
+	router        *mux.Router
+	httpServ      *http.Server
+	handlers      *handlers.Handlers
+	db            *sql.DB
+	userService   services.UserServiceInterface
+	tokenService  *auth.TokenService
+	securityMW    *middleware.SecurityMiddleware
+	sessionMW     *middleware.SessionMiddleware
+	rateLimitMW   *middleware.RateLimitingMiddleware
 }
 
 // NewServer creates a new server instance
-func NewServer(cfg *config.Config, h *handlers.Handlers) *Server {
+func NewServer(cfg *config.Config, h *handlers.Handlers, db *sql.DB) *Server {
 	s := &Server{
 		config:   cfg,
 		router:   mux.NewRouter(),
 		handlers: h,
+		db:       db,
 	}
 
+	s.initializeServices()
 	s.setupMiddleware()
 	s.setupRoutes()
 
 	return s
 }
 
+// initializeServices initializes all services needed for middleware
+func (s *Server) initializeServices() {
+	// Initialize user service
+	s.userService = services.NewUserService(s.db)
+
+	// Initialize token service
+	tokenSecret := s.config.Auth.JWTSecret
+	if tokenSecret == "" {
+		log.Println("⚠️  Warning: Using default JWT secret key - please set JWT_SECRET in production")
+		tokenSecret = "your-secret-key-change-in-production"
+	}
+	s.tokenService = auth.NewTokenService(
+		tokenSecret,
+		time.Duration(s.config.Auth.TokenExpiry)*time.Hour,
+		time.Duration(s.config.Auth.RefreshExpiry)*time.Hour,
+		"silence-notes",
+		"silence-notes-users",
+	)
+
+	// Initialize security configuration
+	var securityConfig *config.SecurityConfig
+	switch s.config.App.Environment {
+	case "development":
+		securityConfig = config.GetDevelopmentSecurityConfig()
+	case "production":
+		securityConfig = config.GetProductionSecurityConfig()
+	default:
+		securityConfig = config.GetDefaultSecurityConfig()
+	}
+
+	// Initialize security middleware
+	s.securityMW = middleware.NewSecurityMiddleware(
+		s.tokenService,
+		s.userService,
+		securityConfig,
+		&securityConfig.CORS,
+	)
+
+	// Initialize session middleware
+	sessionConfig := &middleware.SessionConfig{
+		SessionTimeout:     securityConfig.Session.SessionTimeout,
+		MaxSessions:        securityConfig.Session.MaxSessions,
+		EnableConcurrency:  securityConfig.Session.EnableConcurrency,
+		InactiveTimeout:    securityConfig.Session.InactiveTimeout,
+		RefreshThreshold:   securityConfig.Session.RefreshThreshold,
+	}
+	s.sessionMW = middleware.NewSessionMiddleware(s.userService, sessionConfig)
+
+	// Initialize rate limiting middleware
+	rateLimitConfig := &middleware.RateLimitConfig{
+		GlobalRequestsPerSecond: securityConfig.RateLimiting.GlobalRequestsPerSecond,
+		GlobalBurstSize:         securityConfig.RateLimiting.GlobalBurstSize,
+		UserRequestsPerMinute:   securityConfig.RateLimiting.UserRequestsPerMinute,
+		UserRequestsPerHour:     securityConfig.RateLimiting.UserRequestsPerHour,
+		UserRequestsPerDay:      securityConfig.RateLimiting.UserRequestsPerDay,
+		AuthRequestsPerMinute:   securityConfig.RateLimiting.AuthRequestsPerMinute,
+		ProfileRequestsPerMinute: securityConfig.RateLimiting.ProfileRequestsPerMinute,
+		SearchRequestsPerMinute: securityConfig.RateLimiting.SearchRequestsPerMinute,
+		WhitelistedIPs:          securityConfig.RateLimiting.WhitelistedIPs,
+		WhitelistedUsers:        securityConfig.RateLimiting.WhitelistedUsers,
+	}
+	s.rateLimitMW = middleware.NewRateLimitingMiddleware(s.userService, s.tokenService, rateLimitConfig)
+
+	// Initialize security handler with middleware dependencies
+	s.handlers.SetSecurityMiddleware(s.rateLimitMW, s.sessionMW)
+
+	log.Printf("✅ Security services initialized")
+	log.Printf("🔒 Security mode: %s", s.config.App.Environment)
+	log.Printf("🚦 Rate limiting: %.0f req/sec global, %d req/min per user",
+		securityConfig.RateLimiting.GlobalRequestsPerSecond,
+		securityConfig.RateLimiting.UserRequestsPerMinute)
+}
+
 // setupMiddleware configures the middleware stack
 func (s *Server) setupMiddleware() {
-	// Apply middleware in order
+	// Apply core middleware first
 	s.router.Use(middleware.Recovery)
 	s.router.Use(middleware.RequestID)
 	s.router.Use(middleware.Logging)
 	s.router.Use(middleware.ContentType)
-	s.router.Use(middleware.SecurityHeaders)
 
-	// CORS middleware
-	corsMiddleware := middleware.CORS(
-		s.config.CORS.AllowedOrigins,
-		s.config.CORS.AllowedMethods,
-		s.config.CORS.AllowedHeaders,
-		s.config.CORS.MaxAge,
-	)
-	s.router.Use(corsMiddleware)
+	// Apply comprehensive security middleware
+	if s.securityMW != nil {
+		s.router.Use(s.securityMW.Security)
+	}
+
+	// Apply rate limiting middleware
+	if s.rateLimitMW != nil {
+		s.router.Use(s.rateLimitMW.RateLimit)
+	}
+
+	// Apply session management middleware (only to authenticated routes)
+	if s.sessionMW != nil {
+		// Session middleware will be applied selectively to protected routes
+		// to avoid session checks on public endpoints like health check
+	}
 
 	// Timeout middleware (disabled for tests to prevent interference)
 	if !s.config.IsTest() {
@@ -57,11 +148,7 @@ func (s *Server) setupMiddleware() {
 		s.router.Use(middleware.Timeout(timeoutDuration))
 	}
 
-	// Rate limiting (100 requests per minute for development, stricter in production)
-	if s.config.IsProduction() {
-		rateLimitMiddleware := middleware.RateLimit(100, time.Minute)
-		s.router.Use(rateLimitMiddleware)
-	}
+	log.Printf("✅ Middleware stack configured")
 }
 
 // setupRoutes configures the API routes
@@ -71,15 +158,36 @@ func (s *Server) setupRoutes() {
 	// Health check endpoint (no authentication required)
 	api.HandleFunc("/health", s.handlers.Health.HealthCheck).Methods("GET")
 
-	// API routes (will be implemented in subsequent phases)
-	// Authentication routes
-	// api.HandleFunc("/auth/google", s.handlers.Auth.GoogleAuth).Methods("POST")
-	// api.HandleFunc("/auth/refresh", s.handlers.Auth.RefreshToken).Methods("POST")
-	// api.HandleFunc("/auth/logout", s.handlers.Auth.Logout).Methods("DELETE")
+	// Public authentication routes (no session middleware needed)
+	// auth := api.PathPrefix("/auth").Subrouter()
+	// These will be implemented when we create auth handlers
+	// auth.HandleFunc("/google", s.handlers.Auth.GoogleAuth).Methods("POST")
+	// auth.HandleFunc("/validate", s.handlers.Auth.ValidateToken).Methods("GET")
 
-	// Protected routes (authentication middleware will be added in Phase 2)
-	// protected := api.PathPrefix("/").Subrouter()
-	// protected.Use(s.handlers.Auth.AuthenticationMiddleware)
+	// Protected routes with authentication and session management
+	protected := api.PathPrefix("/").Subrouter()
+
+	// Apply authentication middleware
+	if s.securityMW != nil {
+		protected.Use(s.securityMW.EnhancedAuth)
+	}
+
+	// Apply session management middleware
+	if s.sessionMW != nil {
+		protected.Use(s.sessionMW.SessionManager)
+	}
+
+	// Token management routes
+	// protected.HandleFunc("/auth/refresh", s.handlers.Auth.RefreshToken).Methods("POST")
+	// protected.HandleFunc("/auth/logout", s.handlers.Auth.Logout).Methods("DELETE")
+
+	// User profile routes
+	// protected.HandleFunc("/user/profile", s.handlers.User.GetProfile).Methods("GET")
+	// protected.HandleFunc("/user/profile", s.handlers.User.UpdateProfile).Methods("PUT")
+	// protected.HandleFunc("/user/preferences", s.handlers.User.GetPreferences).Methods("GET")
+	// protected.HandleFunc("/user/preferences", s.handlers.User.UpdatePreferences).Methods("PUT")
+	// protected.HandleFunc("/user/sessions", s.handlers.User.GetSessions).Methods("GET")
+	// protected.HandleFunc("/user/sessions/{id}", s.handlers.User.DeleteSession).Methods("DELETE")
 
 	// Note routes
 	// protected.HandleFunc("/notes", s.handlers.Notes.GetNotes).Methods("GET")
@@ -97,15 +205,21 @@ func (s *Server) setupRoutes() {
 	// protected.HandleFunc("/search/notes", s.handlers.Search.SearchNotes).Methods("GET")
 	// protected.HandleFunc("/search/tags", s.handlers.Search.SearchTags).Methods("GET")
 
-	// User routes
-	// protected.HandleFunc("/user/profile", s.handlers.User.GetProfile).Methods("GET")
-	// protected.HandleFunc("/user/profile", s.handlers.User.UpdateProfile).Methods("PUT")
+	// Security and monitoring routes
+	if s.handlers.Security != nil {
+		protected.HandleFunc("/security/rate-limit", s.handlers.Security.GetRateLimitInfo).Methods("GET")
+		protected.HandleFunc("/security/session-info", s.handlers.Security.GetSessionInfo).Methods("GET")
+		protected.HandleFunc("/security/metrics", s.handlers.Security.GetSecurityMetrics).Methods("GET")
+	}
 
 	// Static routes for serving assets (if needed)
 	// s.router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 
 	// Catch-all route for 404
 	s.router.PathPrefix("/").HandlerFunc(s.notFoundHandler)
+
+	log.Printf("✅ Routes configured - Public: /api/v1/health, /api/v1/auth/*")
+	log.Printf("🔒 Protected routes: /api/v1/* (requires authentication + session)")
 }
 
 // Start starts the HTTP server

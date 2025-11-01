@@ -66,10 +66,12 @@ type AppConfig struct {
 
 // CORSConfig represents CORS configuration
 type CORSConfig struct {
-	AllowedOrigins []string `yaml:"allowed_origins" env:"ALLOWED_ORIGINS" envDefault:"*"`
-	AllowedMethods []string `yaml:"allowed_methods" env:"ALLOWED_METHODS" envDefault:"GET,POST,PUT,DELETE,OPTIONS"`
-	AllowedHeaders []string `yaml:"allowed_headers" env:"ALLOWED_HEADERS" envDefault:"*"`
-	MaxAge         int      `yaml:"max_age" env:"MAX_AGE" envDefault:"86400"`
+	AllowedOrigins   []string `yaml:"allowed_origins" env:"ALLOWED_ORIGINS" envDefault:"*"`
+	AllowedMethods   []string `yaml:"allowed_methods" env:"ALLOWED_METHODS" envDefault:"GET,POST,PUT,DELETE,OPTIONS"`
+	AllowedHeaders   []string `yaml:"allowed_headers" env:"ALLOWED_HEADERS" envDefault:"*"`
+	ExposedHeaders   []string `yaml:"exposed_headers" env:"EXPOSED_HEADERS" envDefault:""`
+	AllowCredentials bool     `yaml:"allow_credentials" env:"ALLOW_CREDENTIALS" envDefault:"false"`
+	MaxAge           int      `yaml:"max_age" env:"MAX_AGE" envDefault:"86400"`
 }
 
 // LoadConfig loads configuration from environment variables and optional config file
@@ -129,10 +131,12 @@ func LoadConfig(configPath string) (*Config, error) {
 			Version:     getEnv("APP_VERSION", "1.0.0"),
 		},
 		CORS: CORSConfig{
-			AllowedOrigins: getEnvSlice("CORS_ALLOWED_ORIGINS", []string{"*"}),
-			AllowedMethods: getEnvSlice("CORS_ALLOWED_METHODS", []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
-			AllowedHeaders: getEnvSlice("CORS_ALLOWED_HEADERS", []string{"*"}),
-			MaxAge:         getEnvInt("CORS_MAX_AGE", 86400),
+			AllowedOrigins:   getEnvSlice("CORS_ALLOWED_ORIGINS", []string{"*"}),
+			AllowedMethods:   getEnvSlice("CORS_ALLOWED_METHODS", []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+			AllowedHeaders:   getEnvSlice("CORS_ALLOWED_HEADERS", []string{"*"}),
+			ExposedHeaders:   getEnvSlice("CORS_EXPOSED_HEADERS", []string{}),
+			AllowCredentials: getEnvBool("CORS_ALLOW_CREDENTIALS", false),
+			MaxAge:           getEnvInt("CORS_MAX_AGE", 86400),
 		},
 	}
 

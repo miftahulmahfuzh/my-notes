@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +14,19 @@ import (
 	"github.com/gpd/my-notes/internal/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	_ "github.com/lib/pq"
 )
+
+// createTestDB creates a test database connection for testing
+func createTestDB() *sql.DB {
+	// Try to connect to a test database
+	db, err := sql.Open("postgres", "postgres://user:password@localhost/testdb?sslmode=disable")
+	if err != nil {
+		// Return nil if connection fails - some tests might not need a real DB
+		return nil
+	}
+	return db
+}
 
 func TestServerInitialization(t *testing.T) {
 	cfg := &config.Config{
@@ -26,15 +39,20 @@ func TestServerInitialization(t *testing.T) {
 			Debug:       false,
 		},
 		CORS: config.CORSConfig{
-			AllowedOrigins: []string{"*"},
-			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowedHeaders: []string{"*"},
-			MaxAge:         86400,
+			AllowedOrigins:   []string{"*"},
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"*"},
+			AllowCredentials: false,
+			MaxAge:           86400,
+		},
+		Auth: config.AuthConfig{
+			JWTSecret: "test-secret-key-that-is-long-enough-for-validation",
 		},
 	}
 
-	handlers := handlers.NewHandlers()
-	srv := server.NewServer(cfg, handlers)
+	db := createTestDB()
+	handlersInstance := handlers.NewHandlers()
+	srv := server.NewServer(cfg, handlersInstance, db)
 
 	require.NotNil(t, srv)
 	require.NotNil(t, srv.GetRouter())
@@ -51,15 +69,20 @@ func TestHealthEndpoint(t *testing.T) {
 			Debug:       false,
 		},
 		CORS: config.CORSConfig{
-			AllowedOrigins: []string{"*"},
-			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowedHeaders: []string{"*"},
-			MaxAge:         86400,
+			AllowedOrigins:   []string{"*"},
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"*"},
+			AllowCredentials: false,
+			MaxAge:           86400,
+		},
+		Auth: config.AuthConfig{
+			JWTSecret: "test-secret-key-that-is-long-enough-for-validation",
 		},
 	}
 
 	handlers := handlers.NewHandlers()
-	srv := server.NewServer(cfg, handlers)
+	db := createTestDB()
+	srv := server.NewServer(cfg, handlers, db)
 	router := srv.GetRouter()
 
 	// Create request
@@ -105,7 +128,8 @@ func TestCORSMiddleware(t *testing.T) {
 	}
 
 	handlers := handlers.NewHandlers()
-	srv := server.NewServer(cfg, handlers)
+	db := createTestDB()
+	srv := server.NewServer(cfg, handlers, db)
 	router := srv.GetRouter()
 
 	tests := []struct {
@@ -177,7 +201,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 		CORS: config.CORSConfig{
 			AllowedOrigins: []string{"*"},
 		},
-	}, handlers)
+	}, handlers, createTestDB())
 	router := srv.GetRouter()
 
 	req, err := http.NewRequest("GET", "/api/v1/health", nil)
@@ -208,7 +232,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 		CORS: config.CORSConfig{
 			AllowedOrigins: []string{"*"},
 		},
-	}, handlers)
+	}, handlers, createTestDB())
 	router := srv.GetRouter()
 
 	req, err := http.NewRequest("GET", "/api/v1/health", nil)
@@ -235,7 +259,7 @@ func TestContentTypeMiddleware(t *testing.T) {
 		CORS: config.CORSConfig{
 			AllowedOrigins: []string{"*"},
 		},
-	}, handlers)
+	}, handlers, createTestDB())
 	router := srv.GetRouter()
 
 	tests := []struct {
@@ -277,7 +301,7 @@ func TestNotFoundHandler(t *testing.T) {
 		CORS: config.CORSConfig{
 			AllowedOrigins: []string{"*"},
 		},
-	}, handlers)
+	}, handlers, createTestDB())
 	router := srv.GetRouter()
 
 	req, err := http.NewRequest("GET", "/nonexistent/path", nil)
@@ -304,7 +328,7 @@ func TestServerGracefulShutdown(t *testing.T) {
 		CORS: config.CORSConfig{
 			AllowedOrigins: []string{"*"},
 		},
-	}, handlers)
+	}, handlers, createTestDB())
 
 	// Test that shutdown doesn't panic
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
