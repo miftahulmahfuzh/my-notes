@@ -165,14 +165,12 @@ describe('AuthService', () => {
 
     it('should handle initialization errors gracefully', async () => {
       // Mock storage error
-      (chrome.storage.local.get as jest.Mock).mockImplementation(() => {
-        throw new Error('Storage error');
-      });
+      (chrome.storage.local.get as jest.Mock).mockRejectedValue(new Error('Storage error'));
 
       const authState = await authService.initialize();
 
       expect(authState.isAuthenticated).toBe(false);
-      expect(authState.error).toBe('Unknown error occurred');
+      expect(authState.error).toBe('Storage error');
     });
   });
 
@@ -266,6 +264,29 @@ describe('AuthService', () => {
           expires_in: 900
         })
       });
+
+      // Mock OAuth state storage and retrieval
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys) => {
+        if (typeof keys === 'string') {
+          if (keys === 'silence_notes_oauth_state') {
+            return Promise.resolve({
+              [keys]: { state: 'test-state', timestamp: Date.now() }
+            });
+          }
+          return Promise.resolve({ [keys]: null });
+        } else if (Array.isArray(keys)) {
+          const result: Record<string, any> = {};
+          keys.forEach(key => {
+            if (key === 'silence_notes_oauth_state') {
+              result[key] = { state: 'test-state', timestamp: Date.now() };
+            } else {
+              result[key] = null;
+            }
+          });
+          return Promise.resolve(result);
+        }
+        return Promise.resolve({});
+      });
     });
 
     it('should launch Google OAuth flow', async () => {
@@ -325,6 +346,20 @@ describe('AuthService', () => {
           expires_in: 900
         })
       });
+
+      // Mock token storage to handle refresh operations
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys) => {
+        if (typeof keys === 'string') {
+          return Promise.resolve({ [keys]: null });
+        } else if (Array.isArray(keys)) {
+          const result: Record<string, any> = {};
+          keys.forEach(key => {
+            result[key] = null;
+          });
+          return Promise.resolve(result);
+        }
+        return Promise.resolve({});
+      });
     });
 
     it('should refresh tokens successfully', async () => {
@@ -372,12 +407,24 @@ describe('AuthService', () => {
   describe('logout', () => {
     beforeEach(() => {
       // Mock existing tokens
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys) => {
         if (typeof keys === 'string') {
-          callback?.({ [keys]: mockTokens });
-        } else {
-          callback?.({ 'silence_notes_tokens': mockTokens });
+          if (keys === 'silence_notes_tokens') {
+            return Promise.resolve({ [keys]: mockTokens });
+          }
+          return Promise.resolve({ [keys]: null });
+        } else if (Array.isArray(keys)) {
+          const result: Record<string, any> = {};
+          keys.forEach(key => {
+            if (key === 'silence_notes_tokens') {
+              result[key] = mockTokens;
+            } else {
+              result[key] = null;
+            }
+          });
+          return Promise.resolve(result);
         }
+        return Promise.resolve({});
       });
 
       (fetch as jest.Mock).mockResolvedValue({
@@ -428,16 +475,28 @@ describe('AuthService', () => {
   describe('isAuthenticated', () => {
     it('should return true when authenticated', async () => {
       // Mock authenticated state
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys) => {
         if (typeof keys === 'string') {
-          callback?.({ [keys]: true });
-        } else {
-          callback?.({
-            'silence_notes_auth_state': true,
-            'silence_notes_tokens': mockTokens,
-            'silence_notes_user_data': mockUser
+          if (keys === 'silence_notes_auth_state') {
+            return Promise.resolve({ [keys]: true });
+          }
+          return Promise.resolve({ [keys]: null });
+        } else if (Array.isArray(keys)) {
+          const result: Record<string, any> = {};
+          keys.forEach(key => {
+            if (key === 'silence_notes_auth_state') {
+              result[key] = true;
+            } else if (key === 'silence_notes_tokens') {
+              result[key] = mockTokens;
+            } else if (key === 'silence_notes_user_data') {
+              result[key] = mockUser;
+            } else {
+              result[key] = null;
+            }
           });
+          return Promise.resolve(result);
         }
+        return Promise.resolve({});
       });
 
       const result = await authService.isAuthenticated();
@@ -453,8 +512,24 @@ describe('AuthService', () => {
   describe('getAccessToken', () => {
     it('should return valid access token', async () => {
       // Mock existing valid tokens
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        callback?.({ 'silence_notes_tokens': mockTokens });
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys) => {
+        if (typeof keys === 'string') {
+          if (keys === 'silence_notes_tokens') {
+            return Promise.resolve({ [keys]: mockTokens });
+          }
+          return Promise.resolve({ [keys]: null });
+        } else if (Array.isArray(keys)) {
+          const result: Record<string, any> = {};
+          keys.forEach(key => {
+            if (key === 'silence_notes_tokens') {
+              result[key] = mockTokens;
+            } else {
+              result[key] = null;
+            }
+          });
+          return Promise.resolve(result);
+        }
+        return Promise.resolve({});
       });
 
       const token = await authService.getAccessToken();
@@ -468,8 +543,24 @@ describe('AuthService', () => {
         expiresAt: Date.now() - 1000
       };
 
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        callback?.({ 'silence_notes_tokens': expiredTokens });
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys) => {
+        if (typeof keys === 'string') {
+          if (keys === 'silence_notes_tokens') {
+            return Promise.resolve({ [keys]: expiredTokens });
+          }
+          return Promise.resolve({ [keys]: null });
+        } else if (Array.isArray(keys)) {
+          const result: Record<string, any> = {};
+          keys.forEach(key => {
+            if (key === 'silence_notes_tokens') {
+              result[key] = expiredTokens;
+            } else {
+              result[key] = null;
+            }
+          });
+          return Promise.resolve(result);
+        }
+        return Promise.resolve({});
       });
 
       (fetch as jest.Mock).mockResolvedValue({
@@ -564,8 +655,8 @@ describe('AuthStorage', () => {
         expiresAt: Date.now() + (60 * 1000) // 1 minute from now
       };
 
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        callback?.({ 'silence_notes_tokens': tokens });
+      (chrome.storage.local.get as jest.Mock).mockResolvedValue({
+        'silence_notes_tokens': tokens
       });
 
       const shouldRefresh = await AuthStorage.shouldRefreshTokens();
@@ -581,8 +672,8 @@ describe('AuthStorage', () => {
         expiresAt: Date.now() + (30 * 60 * 1000) // 30 minutes from now
       };
 
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        callback?.({ 'silence_notes_tokens': tokens });
+      (chrome.storage.local.get as jest.Mock).mockResolvedValue({
+        'silence_notes_tokens': tokens
       });
 
       const shouldRefresh = await AuthStorage.shouldRefreshTokens();
