@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/gpd/my-notes/internal/config"
@@ -25,9 +24,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// Global parameter to control PostgreSQL usage during tests
-// Set to false by default to skip PostgreSQL-dependent tests
-var USE_POSTGRE_DURING_TEST = getEnvBool("USE_POSTGRE_DURING_TEST", false)
 
 // TestConfig holds configuration for testing
 type TestConfig struct {
@@ -239,28 +235,3 @@ func AssertNotExists(t *testing.T, db *sql.DB, table, condition string, args ...
 	}
 }
 
-// Helper functions for environment variables
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
-}
-
-func getEnvBool(key string, defaultValue bool) bool {
-	if value := os.Getenv(key); value != "" {
-		if boolValue, err := strconv.ParseBool(value); err == nil {
-			return boolValue
-		}
-	}
-	return defaultValue
-}
