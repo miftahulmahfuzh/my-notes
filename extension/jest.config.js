@@ -8,8 +8,8 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
   },
-  globals: {
-    'ts-jest': {
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
       useESM: true,
       tsconfig: {
         target: 'ES2020',
@@ -22,11 +22,6 @@ module.exports = {
           '@/types/*': ['types/*'],
         },
       },
-    },
-  },
-  transform: {
-    '^.+\\.ts$': ['ts-jest', {
-      useESM: true,
     }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
