@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -78,7 +79,81 @@ func (m *MockNoteRepository) List(ctx context.Context, userID string, limit, off
 			notes = append(notes, note)
 		}
 	}
-	return notes, int64(len(notes)), nil
+
+	// Sort notes based on orderBy and orderDir parameters
+	switch orderBy {
+	case "created_at":
+		if orderDir == "desc" {
+			sort.Slice(notes, func(i, j int) bool {
+				return notes[i].CreatedAt.After(notes[j].CreatedAt)
+			})
+		} else {
+			sort.Slice(notes, func(i, j int) bool {
+				return notes[i].CreatedAt.Before(notes[j].CreatedAt)
+			})
+		}
+	case "updated_at":
+		if orderDir == "desc" {
+			sort.Slice(notes, func(i, j int) bool {
+				return notes[i].UpdatedAt.After(notes[j].UpdatedAt)
+			})
+		} else {
+			sort.Slice(notes, func(i, j int) bool {
+				return notes[i].UpdatedAt.Before(notes[j].UpdatedAt)
+			})
+		}
+	case "title":
+		if orderDir == "desc" {
+			sort.Slice(notes, func(i, j int) bool {
+				titleI := ""
+				titleJ := ""
+				if notes[i].Title != nil {
+					titleI = *notes[i].Title
+				}
+				if notes[j].Title != nil {
+					titleJ = *notes[j].Title
+				}
+				return titleI > titleJ
+			})
+		} else {
+			sort.Slice(notes, func(i, j int) bool {
+				titleI := ""
+				titleJ := ""
+				if notes[i].Title != nil {
+					titleI = *notes[i].Title
+				}
+				if notes[j].Title != nil {
+					titleJ = *notes[j].Title
+				}
+				return titleI < titleJ
+			})
+		}
+	default:
+		// Default to created_at desc
+		sort.Slice(notes, func(i, j int) bool {
+			return notes[i].CreatedAt.After(notes[j].CreatedAt)
+		})
+	}
+
+	// Apply pagination
+	total := int64(len(notes))
+
+	// Handle bounds checking
+	if offset < 0 {
+		offset = 0
+	}
+	if offset >= len(notes) {
+		return []models.Note{}, total, nil
+	}
+
+	end := offset + limit
+	if end > len(notes) {
+		end = len(notes)
+	}
+
+	paginatedNotes := notes[offset:end]
+
+	return paginatedNotes, total, nil
 }
 
 func (m *MockNoteRepository) Search(ctx context.Context, userID string, query string, limit, offset int) ([]models.Note, int64, error) {
