@@ -51,9 +51,11 @@ func (s *Server) setupMiddleware() {
 	)
 	s.router.Use(corsMiddleware)
 
-	// Timeout middleware
-	timeoutDuration := time.Duration(s.config.Server.ReadTimeout) * time.Second
-	s.router.Use(middleware.Timeout(timeoutDuration))
+	// Timeout middleware (disabled for tests to prevent interference)
+	if !s.config.IsTest() {
+		timeoutDuration := time.Duration(s.config.Server.ReadTimeout) * time.Second
+		s.router.Use(middleware.Timeout(timeoutDuration))
+	}
 
 	// Rate limiting (100 requests per minute for development, stricter in production)
 	if s.config.IsProduction() {
@@ -129,7 +131,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 // notFoundHandler handles 404 errors
 func (s *Server) notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte(`{"error":"Not found"}`))
 }

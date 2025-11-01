@@ -76,8 +76,9 @@ func CORS(allowedOrigins, allowedMethods, allowedHeaders []string, maxAge int) f
 			// Set headers for preflight requests
 			if r.Method == http.MethodOptions {
 				w.Header().Set("Access-Control-Allow-Origin", getAllowedOrigin(origin, allowedOrigins))
-				w.Header().Set("Access-Control-Allow-Methods", strings.Join(allowedMethods, ", "))
-				w.Header().Set("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ", "))
+				w.Header().Set("Access-Control-Allow-Methods", strings.Join(allowedMethods, ","))
+				w.Header().Set("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ","))
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
 				w.Header().Set("Access-Control-Max-Age", fmt.Sprintf("%d", maxAge))
 				w.WriteHeader(http.StatusOK)
 				return
@@ -204,13 +205,27 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 // getAllowedOrigin returns the appropriate origin for CORS
 func getAllowedOrigin(requestOrigin string, allowedOrigins []string) string {
+	// Check for exact match first
+	for _, origin := range allowedOrigins {
+		if origin == requestOrigin {
+			return origin
+		}
+	}
+
+	// Check for wildcard patterns (chrome-extension://*)
+	for _, origin := range allowedOrigins {
+		if strings.HasSuffix(origin, "://*") {
+			prefix := strings.TrimSuffix(origin, "*")
+			if strings.HasPrefix(requestOrigin, prefix) {
+				return requestOrigin
+			}
+		}
+	}
+
 	// If wildcard is allowed, return the request origin
 	for _, origin := range allowedOrigins {
 		if origin == "*" {
 			return requestOrigin
-		}
-		if origin == requestOrigin {
-			return origin
 		}
 	}
 

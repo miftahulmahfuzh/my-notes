@@ -58,6 +58,11 @@ func (t *Tag) SanitizeName() {
 	// Remove leading/trailing whitespace
 	t.Name = strings.TrimSpace(t.Name)
 
+	// Return empty if input is empty after trimming
+	if t.Name == "" {
+		return
+	}
+
 	// Ensure it starts with #
 	if !strings.HasPrefix(t.Name, "#") {
 		t.Name = "#" + t.Name
@@ -150,8 +155,9 @@ func (r *CreateTagRequest) ToTag() *Tag {
 
 // ExtractTagsFromContent extracts all hashtags from content
 func ExtractTagsFromContent(content string) []string {
-	// Regular expression to match hashtags
-	hashtagRegex := regexp.MustCompile(`#\w+`)
+	// Regular expression to match hashtags (including those with spaces)
+	// This regex matches # followed by optional spaces, then word characters
+	hashtagRegex := regexp.MustCompile(`#\s*\w+`)
 	matches := hashtagRegex.FindAllString(content, -1)
 
 	// Remove duplicates and normalize
@@ -159,12 +165,17 @@ func ExtractTagsFromContent(content string) []string {
 	var tags []string
 
 	for _, match := range matches {
-		// Convert to lowercase and trim
-		normalized := strings.ToLower(strings.TrimSpace(match))
+		// Remove spaces and convert to lowercase
+		normalized := strings.ToLower(strings.ReplaceAll(match, " ", ""))
 		if !uniqueTags[normalized] && len(normalized) > 1 {
 			uniqueTags[normalized] = true
 			tags = append(tags, normalized)
 		}
+	}
+
+	// Return empty slice instead of nil if no tags found
+	if len(tags) == 0 {
+		return []string{}
 	}
 
 	return tags

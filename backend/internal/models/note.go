@@ -84,6 +84,11 @@ func (n *Note) ExtractHashtags() []string {
 		}
 	}
 
+	// Return empty slice instead of nil if no tags found
+	if len(tags) == 0 {
+		return []string{}
+	}
+
 	return tags
 }
 
