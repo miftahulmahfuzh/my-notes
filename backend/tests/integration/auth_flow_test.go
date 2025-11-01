@@ -15,6 +15,7 @@ import (
 	"github.com/gpd/my-notes/internal/handlers"
 	"github.com/gpd/my-notes/internal/server"
 	"github.com/gpd/my-notes/internal/models"
+	"github.com/gpd/my-notes/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -30,6 +31,11 @@ type AuthFlowTestSuite struct {
 
 // SetupSuite runs once before all tests
 func (suite *AuthFlowTestSuite) SetupSuite() {
+	// Check if PostgreSQL tests are enabled
+	if !tests.USE_POSTGRE_DURING_TEST {
+		suite.T().Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
+	}
+
 	// Load test configuration
 	testConfig := &config.Config{
 		App: config.AppConfig{

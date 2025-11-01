@@ -173,7 +173,15 @@ go build -C /mnt/c/Users/GPD/Downloads/my_github/my-notes/backend ./cmd/server
 
 ### Backend Tests
 ```bash
+# Run all backend tests (excludes PostgreSQL integration tests by default)
 go clean -testcache && go -C backend test ./tests/... -v
+
+# Run PostgreSQL integration tests (requires PostgreSQL to be running)
+go clean -testcache && USE_POSTGRE_DURING_TEST=true go -C backend test ./tests/integration/... -v
+
+# Run specific integration test suites
+go clean -testcache && USE_POSTGRE_DURING_TEST=true go -C backend test ./tests/integration/auth_flow_test.go -v
+go clean -testcache && USE_POSTGRE_DURING_TEST=true go -C backend test ./tests/integration/security_test.go -v
 ```
 
 ### Frontend Tests

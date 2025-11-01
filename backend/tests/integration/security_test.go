@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gpd/my-notes/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -18,6 +19,17 @@ import (
 // SecurityTestSuite tests security features
 type SecurityTestSuite struct {
 	AuthFlowTestSuite
+}
+
+// SetupSuite runs once before all security tests
+func (suite *SecurityTestSuite) SetupSuite() {
+	// Check if PostgreSQL tests are enabled
+	if !tests.USE_POSTGRE_DURING_TEST {
+		suite.T().Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
+	}
+
+	// Call parent SetupSuite
+	suite.AuthFlowTestSuite.SetupSuite()
 }
 
 // createTestRequest creates a test request with required headers
