@@ -326,6 +326,19 @@ export class AuthService {
       // Get token if not provided
       const accessToken = token || await this.getAccessToken();
 
+      // Create timeout signal for older Node.js versions
+      let controller: AbortController;
+      let signal: AbortSignal;
+
+      if (typeof AbortSignal.timeout !== 'undefined') {
+        signal = AbortSignal.timeout(CONFIG.TIMEOUTS.API_REQUEST);
+      } else {
+        // Fallback for older Node.js versions
+        controller = new AbortController();
+        signal = controller.signal;
+        setTimeout(() => controller.abort(), CONFIG.TIMEOUTS.API_REQUEST);
+      }
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -333,7 +346,7 @@ export class AuthService {
           ...(accessToken && { Authorization: `Bearer ${accessToken}` })
         },
         body: body ? JSON.stringify(body) : undefined,
-        signal: AbortSignal.timeout(CONFIG.TIMEOUTS.API_REQUEST)
+        signal
       });
 
       if (!response.ok) {
@@ -431,11 +444,7 @@ export class AuthService {
     const message = error.message || ERROR_MESSAGES.UNKNOWN_ERROR;
     const code = error.code || 'UNKNOWN_ERROR';
 
-    return {
-      error: message,
-      code,
-      details: error
-    };
+    return new AuthError(message, code, error);
   }
 }
 

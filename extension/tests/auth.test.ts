@@ -84,24 +84,24 @@ describe('AuthService', () => {
     };
 
     // Default successful storage operations
-    (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
+    (chrome.storage.local.get as jest.Mock).mockImplementation((keys) => {
+      let result: Record<string, any> = {};
       if (typeof keys === 'string') {
-        callback?.({ [keys]: null });
+        result[keys] = null;
       } else if (Array.isArray(keys)) {
-        const result: Record<string, any> = {};
         keys.forEach(key => {
           result[key] = null;
         });
-        callback?.(result);
       }
+      return Promise.resolve(result);
     });
 
-    (chrome.storage.local.set as jest.Mock).mockImplementation((data, callback) => {
-      callback?.();
+    (chrome.storage.local.set as jest.Mock).mockImplementation(() => {
+      return Promise.resolve();
     });
 
-    (chrome.storage.local.remove as jest.Mock).mockImplementation((keys, callback) => {
-      callback?.();
+    (chrome.storage.local.remove as jest.Mock).mockImplementation(() => {
+      return Promise.resolve();
     });
   });
 
@@ -126,16 +126,32 @@ describe('AuthService', () => {
 
     it('should return authenticated state when valid auth data exists', async () => {
       // Mock existing auth data
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys) => {
         if (typeof keys === 'string') {
-          callback?.({ [keys]: keys === 'silence_notes_auth_state' ? true : mockTokens });
-        } else {
-          callback?.({
-            'silence_notes_auth_state': true,
-            'silence_notes_tokens': mockTokens,
-            'silence_notes_user_data': mockUser
+          if (keys === 'silence_notes_auth_state') {
+            return Promise.resolve({ [keys]: true });
+          } else if (keys === 'silence_notes_tokens') {
+            return Promise.resolve({ [keys]: mockTokens });
+          } else if (keys === 'silence_notes_user_data') {
+            return Promise.resolve({ [keys]: mockUser });
+          }
+          return Promise.resolve({ [keys]: null });
+        } else if (Array.isArray(keys)) {
+          const result: Record<string, any> = {};
+          keys.forEach(key => {
+            if (key === 'silence_notes_auth_state') {
+              result[key] = true;
+            } else if (key === 'silence_notes_tokens') {
+              result[key] = mockTokens;
+            } else if (key === 'silence_notes_user_data') {
+              result[key] = mockUser;
+            } else {
+              result[key] = null;
+            }
           });
+          return Promise.resolve(result);
         }
+        return Promise.resolve({});
       });
 
       const authState = await authService.initialize();

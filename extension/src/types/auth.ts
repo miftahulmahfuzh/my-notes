@@ -55,10 +55,16 @@ export interface RefreshTokenRequest {
   refresh_token: string;
 }
 
-export interface AuthError {
-  error: string;
-  code?: string;
-  details?: any;
+export class AuthError extends Error {
+  public readonly code?: string;
+  public readonly details?: any;
+
+  constructor(message: string, code?: string, details?: any) {
+    super(message);
+    this.name = 'AuthError';
+    this.code = code;
+    this.details = details;
+  }
 }
 
 // Extension storage keys
