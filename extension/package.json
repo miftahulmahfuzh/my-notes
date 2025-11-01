@@ -1,11 +1,13 @@
 {
   "name": "silence-notes-extension",
   "version": "1.0.0",
-  "description": "Chrome extension for Silence Notes",
+  "description": "Chrome extension for note-taking with hashtag filtering",
+  "main": "background.js",
   "scripts": {
-    "dev": "webpack --mode development --watch",
+    "dev": "webpack --watch --mode development",
     "build": "webpack --mode production",
     "test": "jest",
+    "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "ESLINT_USE_FLAT_CONFIG=false npx eslint 'src/**/*.ts'",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false npx eslint 'src/**/*.ts' --fix",
@@ -16,21 +18,39 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@types/chrome": "^0.0.246",
+    "@types/chrome": "^0.0.258",
+    "@types/jest": "^29.5.8",
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.33.0",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "html-webpack-plugin": "^5.5.0",
     "jest": "^29.6.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "postcss": "^8.4.31",
+    "postcss-loader": "^7.3.3",
+    "postcss-preset-env": "^9.3.0",
+    "style-loader": "^3.3.3",
+    "tailwindcss": "^3.3.5",
     "ts-jest": "^29.1.0",
     "ts-loader": "^9.4.0",
     "typescript": "^5.1.0",
     "webpack": "^5.88.0",
     "webpack-cli": "^5.1.0",
-    "copy-webpack-plugin": "^11.0.0",
-    "html-webpack-plugin": "^5.5.0"
-  }
+    "zip-webpack-plugin": "^4.0.1"
+  },
+  "keywords": [
+    "chrome-extension",
+    "notes",
+    "productivity",
+    "react",
+    "typescript"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
 }

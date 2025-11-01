@@ -5,19 +5,33 @@
   "description": "A brutalist note-taking Chrome extension with hashtag filtering",
   "permissions": [
     "storage",
-    "activeTab"
+    "identity",
+    "activeTab",
+    "background"
   ],
   "host_permissions": [
-    "http://localhost:8080/*",
-    "https://localhost:8080/*"
+    "http://localhost:*/*",
+    "https://localhost:*/*",
+    "https://accounts.google.com/*",
+    "https://www.googleapis.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Silence Notes"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["popup.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

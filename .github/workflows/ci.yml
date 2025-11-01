@@ -20,4 +20,4 @@ jobs:
         go-version: '1.21'
 
     - name: Run tests
-      run: go -C backend test -v ./tests
+      run: go clean -testcache && GOOS=linux GOARCH=amd64 go -C backend test ./tests/... -v

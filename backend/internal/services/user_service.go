@@ -11,6 +11,15 @@ import (
 	"github.com/google/uuid"
 )
 
+// UserServiceInterface defines the interface for user service operations
+type UserServiceInterface interface {
+	CreateOrUpdateFromGoogle(userInfo *auth.GoogleUserInfo) (*models.User, error)
+	GetByID(userID string) (*models.User, error)
+	CreateSession(userID, ipAddress, userAgent string) (*models.UserSession, error)
+	UpdateSessionActivity(sessionID, ipAddress, userAgent string) error
+	GetActiveSessions(userID string) ([]models.UserSession, error)
+}
+
 // UserService handles user-related operations
 type UserService struct {
 	db *sql.DB

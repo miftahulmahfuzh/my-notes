@@ -9,16 +9,17 @@ import (
 
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/models"
+	"github.com/gpd/my-notes/internal/services"
 )
 
 // AuthMiddleware handles JWT token validation and user context
 type AuthMiddleware struct {
 	tokenService *auth.TokenService
-	userService  auth.UserServiceInterface
+	userService  services.UserServiceInterface
 }
 
 // NewAuthMiddleware creates a new AuthMiddleware instance
-func NewAuthMiddleware(tokenService *auth.TokenService, userService auth.UserServiceInterface) *AuthMiddleware {
+func NewAuthMiddleware(tokenService *auth.TokenService, userService services.UserServiceInterface) *AuthMiddleware {
 	return &AuthMiddleware{
 		tokenService: tokenService,
 		userService:  userService,
@@ -144,7 +145,8 @@ func (m *AuthMiddleware) RequireRole(role string) func(http.Handler) http.Handle
 
 			// In a real implementation, you would check user roles
 			// For now, all authenticated users are considered to have all roles
-			_ = role // Suppress unused variable warning
+			_ = role   // Suppress unused variable warning
+			_ = user   // User is available for future role checking
 
 			next.ServeHTTP(w, r)
 		})

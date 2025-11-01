@@ -7,6 +7,7 @@ import (
 
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/models"
+	"github.com/gpd/my-notes/internal/services"
 	"github.com/gorilla/sessions"
 )
 
@@ -14,24 +15,15 @@ import (
 type AuthHandler struct {
 	oauthService *auth.OAuthService
 	tokenService *auth.TokenService
-	userService  UserServiceInterface
+	userService  services.UserServiceInterface
 	sessionStore sessions.Store
-}
-
-// UserServiceInterface defines the interface for user service operations
-type UserServiceInterface interface {
-	CreateOrUpdateFromGoogle(userInfo *auth.GoogleUserInfo) (*models.User, error)
-	GetByID(userID string) (*models.User, error)
-	CreateSession(userID, ipAddress, userAgent string) (*models.UserSession, error)
-	UpdateSessionActivity(sessionID, ipAddress, userAgent string) error
-	GetActiveSessions(userID string) ([]models.UserSession, error)
 }
 
 // NewAuthHandler creates a new AuthHandler instance
 func NewAuthHandler(
 	oauthService *auth.OAuthService,
 	tokenService *auth.TokenService,
-	userService UserServiceInterface,
+	userService services.UserServiceInterface,
 	sessionStore sessions.Store,
 ) *AuthHandler {
 	return &AuthHandler{
