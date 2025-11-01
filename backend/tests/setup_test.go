@@ -54,7 +54,7 @@ func SetupTestDB(t *testing.T) *sql.DB {
 	}
 
 	// Run migrations
-	migrator := database.NewMigrator(db, "../../migrations")
+	migrator := database.NewMigrator(db, "../migrations")
 	if err := migrator.Up(); err != nil {
 		// Clean up database if migrations fail
 		database.DropTestDatabase(db)
