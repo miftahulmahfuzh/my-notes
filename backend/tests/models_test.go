@@ -56,7 +56,7 @@ func TestUserValidation(t *testing.T) {
 			name: "Email too long",
 			user: &models.User{
 				GoogleID: "google_123",
-				Email:    "verylongemailaddressthatexceedsthemaximumallowedlengthoffivehundredandfiftyfivecharacters@example.com",
+				Email:    "verylongemailaddressthatdefinitelyexceedsthesecondhundredandfiftyfivecharacterlimitforvalidationpurposesandsomeextratexttomakesureitlongenoughandthiswilldefinitelybeover255characterslongenoughforvalidationtotriggeranerrorandmoretexttoensureitexceedsthelimit@example.com",
 				Name:     "Test User",
 			},
 			expectError: true,

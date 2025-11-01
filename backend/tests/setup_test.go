@@ -6,10 +6,10 @@ import (
 	"os"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/gpd/my-notes/internal/config"
 	"github.com/gpd/my-notes/internal/database"
+	"github.com/google/uuid"
 )
 
 // TestConfig holds configuration for testing
@@ -74,7 +74,8 @@ func CleanupTestDB(t *testing.T, db *sql.DB) {
 func CreateTestUser(t *testing.T, db *sql.DB, email string) string {
 	t.Helper()
 
-	userID := fmt.Sprintf("test_user_%d", time.Now().UnixNano())
+	userID := uuid.New()
+	googleID := fmt.Sprintf("google_%s", userID.String())
 
 	query := `
 		INSERT INTO users (id, google_id, email, name, created_at, updated_at)
@@ -83,7 +84,7 @@ func CreateTestUser(t *testing.T, db *sql.DB, email string) string {
 	`
 
 	var id string
-	err := db.QueryRow(query, userID, "google_"+userID, email, "Test User").Scan(&id)
+	err := db.QueryRow(query, userID, googleID, email, "Test User").Scan(&id)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -95,7 +96,7 @@ func CreateTestUser(t *testing.T, db *sql.DB, email string) string {
 func CreateTestNote(t *testing.T, db *sql.DB, userID string, title, content string) string {
 	t.Helper()
 
-	noteID := fmt.Sprintf("test_note_%d", time.Now().UnixNano())
+	noteID := uuid.New()
 
 	query := `
 		INSERT INTO notes (id, user_id, title, content, created_at, updated_at, version)
@@ -116,7 +117,7 @@ func CreateTestNote(t *testing.T, db *sql.DB, userID string, title, content stri
 func CreateTestTag(t *testing.T, db *sql.DB, name string) string {
 	t.Helper()
 
-	tagID := fmt.Sprintf("test_tag_%d", time.Now().UnixNano())
+	tagID := uuid.New()
 
 	query := `
 		INSERT INTO tags (id, name, created_at)

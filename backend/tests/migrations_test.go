@@ -46,7 +46,7 @@ func TestMigrationsRollback(t *testing.T) {
 	defer CleanupTestDB(t, db)
 
 	// Get migrator
-	migrator := database.NewMigrator(db, "../../migrations")
+	migrator := database.NewMigrator(db, "../migrations")
 
 	// Check that we can rollback (at least one migration)
 	err := migrator.Down()
@@ -96,7 +96,7 @@ func TestMigrationStatus(t *testing.T) {
 	defer CleanupTestDB(t, db)
 
 	// Get migrator
-	migrator := database.NewMigrator(db, "../../migrations")
+	migrator := database.NewMigrator(db, "../migrations")
 
 	// Check status (this should not error)
 	err := migrator.Status()
