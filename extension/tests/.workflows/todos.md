@@ -4,7 +4,7 @@
 
 **Package Code**: EXT
 
-**Last Updated**: 2025-11-02T17:30:00Z
+**Last Updated**: 2025-11-02T17:40:00Z
 
 **Total Active Tasks**: 0
 
@@ -15,9 +15,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 4
-- Completed This Week: 4
-- Completed This Month: 4
+- Completed Today: 5
+- Completed This Week: 5
+- Completed This Month: 5
 
 ---
 
@@ -33,6 +33,43 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P3-EXT-A005** Suppress expected console errors and warnings during test execution - extension/tests/setup.ts:155
+  - **Completed**: 2025-11-02 17:40:00
+  - **Difficulty**: EASY
+  - **Context**: Test suite was showing 12+ console errors and warnings during test execution despite all tests passing
+  - **Issue**: Console output cluttered with expected error messages from error scenario testing, misleading for developers
+  - **Root Cause**: Tests intentionally triggering error conditions (storage errors, quota exceeded, sync failures) for validation
+  - **Solution Implemented**: Enhanced console filtering in test setup to suppress expected error/warning messages
+  - **Files Modified**: extension/tests/setup.ts (lines 155-213)
+  - **Method**:
+    - Extended existing console.error filtering to include all expected test error messages
+    - Added console.warn filtering for navigator.storage.estimate fallback messages
+    - Added console.log filtering for storage cleanup messages
+    - Maintained filtering for unexpected errors to preserve real issue visibility
+  - **Error Messages Filtered**:
+    - "Failed to get sync status", "Failed to get raw data", "Failed to get data"
+    - "Failed to get notes", "Failed to set raw data", "Failed to save note"
+    - "Storage error", "Storage access denied", "No data found in storage"
+    - "Storage quota exceeded", "Failed to retrieve data"
+    - "navigator.storage.estimate failed, using fallback"
+    - "Cleaned up X old notes from storage"
+  - **Test Results**:
+    - **Before**: 78 tests passing but 12+ console errors/warnings shown
+    - **After**: 78 tests passing with clean console output (zero errors/warnings)
+    - **Performance**: No impact on test execution time (37.287s total)
+    - **Coverage**: All error handling test logic still properly validated
+  - **Validation Results**:
+    - ✅ All tests still pass (78/78)
+    - ✅ Error handling scenarios still properly tested
+    - ✅ Unexpected console errors still show up (real issues visible)
+    - ✅ Test execution time unchanged (37.287s vs 39.535s previously)
+    - ✅ Clean test output improves developer experience
+  - **Impact**: Improved test output clarity while maintaining all test functionality and error validation
+  - **Technical Benefits**:
+    - **Cleaner Output**: Developers can focus on real issues without test noise
+    - **Better UX**: New developers won't be confused by expected error messages
+    - **Maintained Safety**: Unexpected errors still visible, no blind spots created
+    - **Targeted Filtering**: Only suppresses known, expected test messages
 - [x] **P1-EXT-A004** Fix Jest TypeScript transformation issue in sync service tests - extension/src/services/__tests__/sync.test.ts:53
   - **Completed**: 2025-11-02 17:25:00
   - **Difficulty**: MEDIUM

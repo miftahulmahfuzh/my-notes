@@ -152,20 +152,62 @@ global.createMockNote = (overrides: Partial<Note> = {}): Note => ({
   ...overrides,
 });
 
-// Silence console warnings about React act in tests
+// Silence console warnings and errors that are expected during tests
 const originalError = console.error;
+const originalWarn = console.warn;
+const originalLog = console.log;
+
 beforeAll(() => {
   console.error = (...args: any[]) => {
+    // Filter out expected error messages that are part of testing error scenarios
     if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render is deprecated')
+      typeof args[0] === 'string' && (
+        args[0].includes('Warning: ReactDOM.render is deprecated') ||
+        args[0].includes('Failed to get sync status') ||
+        args[0].includes('Failed to get raw data') ||
+        args[0].includes('Failed to get data') ||
+        args[0].includes('Failed to get notes') ||
+        args[0].includes('Failed to set raw data') ||
+        args[0].includes('Failed to save note') ||
+        args[0].includes('Storage error') ||
+        args[0].includes('Storage access denied') ||
+        args[0].includes('No data found in storage') ||
+        args[0].includes('Storage quota exceeded') ||
+        args[0].includes('Failed to retrieve data')
+      )
     ) {
       return;
     }
     originalError.call(console, ...args);
   };
+
+  console.warn = (...args: any[]) => {
+    // Filter out expected warning messages that are part of testing fallback scenarios
+    if (
+      typeof args[0] === 'string' && (
+        args[0].includes('navigator.storage.estimate failed, using fallback')
+      )
+    ) {
+      return;
+    }
+    originalWarn.call(console, ...args);
+  };
+
+  console.log = (...args: any[]) => {
+    // Filter out expected log messages that are part of testing cleanup scenarios
+    if (
+      typeof args[0] === 'string' && (
+        args[0].includes('Cleaned up') && args[0].includes('old notes from storage')
+      )
+    ) {
+      return;
+    }
+    originalLog.call(console, ...args);
+  };
 });
 
 afterAll(() => {
   console.error = originalError;
+  console.warn = originalWarn;
+  console.log = originalLog;
 });
