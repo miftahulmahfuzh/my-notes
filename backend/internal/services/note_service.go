@@ -27,6 +27,8 @@ type NoteServiceInterface interface {
 		Request *models.UpdateNoteRequest
 	}) ([]models.Note, error)
 	IncrementVersion(noteID string) error
+	GetNotesForSync(userID string, limit, offset int, since *time.Time, includeDeleted bool) ([]models.Note, int, error)
+	DetectConflicts(userID string, notes []models.Note) ([]models.NoteConflict, error)
 }
 
 // NoteService handles note-related operations
@@ -790,4 +792,179 @@ func (s *NoteService) getNoteTags(ctx context.Context, noteID string) ([]string,
 	}
 
 	return tags, nil
+}
+
+// GetNotesForSync retrieves notes for synchronization with filtering options
+func (s *NoteService) GetNotesForSync(userID string, limit, offset int, since *time.Time, includeDeleted bool) ([]models.Note, int, error) {
+	ctx := context.Background()
+
+	// Convert userID to UUID
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, 0, fmt.Errorf("invalid user ID: %w", err)
+	}
+
+	// Build base query
+	baseQuery := `
+		SELECT id, user_id, title, content, created_at, updated_at, version
+		FROM notes
+		WHERE user_id = $1
+	`
+
+	countQuery := "SELECT COUNT(*) FROM notes WHERE user_id = $1"
+
+	args := []interface{}{userUUID}
+	argIndex := 2
+
+	// Add timestamp filter if provided
+	if since != nil {
+		baseQuery += fmt.Sprintf(" AND updated_at > $%d", argIndex)
+		countQuery += fmt.Sprintf(" AND updated_at > $%d", argIndex)
+		args = append(args, *since)
+		argIndex++
+	}
+
+	// Add ordering and pagination
+	baseQuery += fmt.Sprintf(" ORDER BY updated_at ASC LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
+	args = append(args, limit, offset)
+
+	// Get total count
+	var total int
+	err = s.db.QueryRowContext(ctx, countQuery, args[:len(args)-2]...).Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get total count: %w", err)
+	}
+
+	// Execute main query
+	rows, err := s.db.QueryContext(ctx, baseQuery, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query notes for sync: %w", err)
+	}
+	defer rows.Close()
+
+	var notes []models.Note
+	for rows.Next() {
+		var note models.Note
+		err := rows.Scan(
+			&note.ID,
+			&note.UserID,
+			&note.Title,
+			&note.Content,
+			&note.CreatedAt,
+			&note.UpdatedAt,
+			&note.Version,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan note: %w", err)
+		}
+		notes = append(notes, note)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("error iterating notes: %w", err)
+	}
+
+	return notes, total, nil
+}
+
+// DetectConflicts detects conflicts between local and remote note versions
+func (s *NoteService) DetectConflicts(userID string, notes []models.Note) ([]models.NoteConflict, error) {
+	ctx := context.Background()
+
+	if len(notes) == 0 {
+		return []models.NoteConflict{}, nil
+	}
+
+	// Convert userID to UUID
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID: %w", err)
+	}
+
+	// Create a map of local notes by ID for easy lookup
+	localNotes := make(map[uuid.UUID]models.Note)
+	for _, note := range notes {
+		localNotes[note.ID] = note
+	}
+
+	// Get note IDs to check
+	noteIDs := make([]uuid.UUID, 0, len(localNotes))
+	for id := range localNotes {
+		noteIDs = append(noteIDs, id)
+	}
+
+	// Build query to get remote versions of these notes
+	placeholders := make([]string, len(noteIDs))
+	args := make([]interface{}, len(noteIDs)+1)
+	args[0] = userUUID
+
+	for i, id := range noteIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+2)
+		args[i+1] = id
+	}
+
+	query := fmt.Sprintf(`
+		SELECT id, user_id, title, content, created_at, updated_at, version
+		FROM notes
+		WHERE user_id = $1 AND id IN (%s)
+	`, strings.Join(placeholders, ","))
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query remote notes: %w", err)
+	}
+	defer rows.Close()
+
+	var conflicts []models.NoteConflict
+	for rows.Next() {
+		var remoteNote models.Note
+		err := rows.Scan(
+			&remoteNote.ID,
+			&remoteNote.UserID,
+			&remoteNote.Title,
+			&remoteNote.Content,
+			&remoteNote.CreatedAt,
+			&remoteNote.UpdatedAt,
+			&remoteNote.Version,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan remote note: %w", err)
+		}
+
+		// Check if there's a local version to compare against
+		localNote, exists := localNotes[remoteNote.ID]
+		if !exists {
+			continue
+		}
+
+		// Detect conflicts
+		if localNote.Version != remoteNote.Version {
+			conflict := models.NoteConflict{
+				NoteID:      remoteNote.ID,
+				LocalNote:   &localNote,
+				RemoteNote:  &remoteNote,
+				ConflictType: "version",
+				Reason:      fmt.Sprintf("Version mismatch: local=%d, remote=%d", localNote.Version, remoteNote.Version),
+				Resolved:    false,
+			}
+			conflicts = append(conflicts, conflict)
+		} else if localNote.UpdatedAt.After(remoteNote.UpdatedAt) {
+			// Same version but local has newer timestamp (possible clock skew)
+			conflict := models.NoteConflict{
+				NoteID:      remoteNote.ID,
+				LocalNote:   &localNote,
+				RemoteNote:  &remoteNote,
+				ConflictType: "timestamp",
+				Reason:      "Timestamp mismatch with same version",
+				Resolved:    false,
+			}
+			conflicts = append(conflicts, conflict)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating remote notes: %w", err)
+	}
+
+	return conflicts, nil
 }

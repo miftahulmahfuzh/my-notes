@@ -568,7 +568,7 @@ func TestNoteService_UpdateNote(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, createdNote.ID, updatedNote.ID)
 		assert.Equal(t, updateRequest.Title, updatedNote.Title)
-		assert.Equal(t, updateRequest.Content, updatedNote.Content)
+		assert.Equal(t, *updateRequest.Content, updatedNote.Content)
 		assert.Equal(t, 2, updatedNote.Version)
 		assert.True(t, updatedNote.UpdatedAt.After(updatedNote.CreatedAt))
 	})

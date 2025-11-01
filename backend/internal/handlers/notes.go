@@ -329,6 +329,10 @@ func (h *NotesHandler) SyncNotes(w http.ResponseWriter, r *http.Request) {
 	syncToken := r.URL.Query().Get("sync_token")
 	includeDeleted := r.URL.Query().Get("include_deleted") == "true"
 
+	// TODO: Implement proper sync token validation and refresh logic
+	// For now, we just acknowledge the received sync token
+	_ = syncToken // Prevent unused variable error
+
 	// Set defaults
 	if limit <= 0 || limit > 1000 {
 		limit = 1000 // Higher limit for sync operations

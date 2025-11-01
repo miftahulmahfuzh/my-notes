@@ -24,14 +24,15 @@ type Note struct {
 
 // NoteResponse is the safe response format for note data
 type NoteResponse struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Title     *string   `json:"title,omitempty"`
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Version   int       `json:"version"`
-	Tags      []string  `json:"tags,omitempty"`
+	ID           uuid.UUID                `json:"id"`
+	UserID       uuid.UUID                `json:"user_id"`
+	Title        *string                  `json:"title,omitempty"`
+	Content      string                   `json:"content"`
+	CreatedAt    time.Time                `json:"created_at"`
+	UpdatedAt    time.Time                `json:"updated_at"`
+	Version      int                      `json:"version"`
+	Tags         []string                 `json:"tags,omitempty"`
+	SyncMetadata map[string]interface{}   `json:"sync_metadata,omitempty"`
 }
 
 // ToResponse converts Note to NoteResponse
@@ -283,4 +284,36 @@ type NoteStats struct {
 	TotalNotes int64     `json:"total_notes"`
 	OldestNote time.Time `json:"oldest_note"`
 	NewestNote time.Time `json:"newest_note"`
+}
+
+// NoteConflict represents a conflict between local and remote note versions
+type NoteConflict struct {
+	NoteID     uuid.UUID `json:"note_id"`
+	LocalNote  *Note     `json:"local_note,omitempty"`
+	RemoteNote *Note     `json:"remote_note,omitempty"`
+	ConflictType string  `json:"conflict_type"` // "version", "content", "deleted"
+	Reason     string    `json:"reason,omitempty"`
+	Resolved   bool      `json:"resolved"`
+}
+
+// SyncResponse represents the response from a sync operation
+type SyncResponse struct {
+	Notes      []NoteResponse   `json:"notes"`
+	Total      int              `json:"total"`
+	Limit      int              `json:"limit"`
+	Offset     int              `json:"offset"`
+	HasMore    bool             `json:"has_more"`
+	SyncToken  string           `json:"sync_token"`
+	ServerTime string           `json:"server_time"`
+	Conflicts  []NoteConflict   `json:"conflicts,omitempty"`
+	Metadata   SyncMetadata     `json:"metadata"`
+}
+
+// SyncMetadata contains metadata about sync operations
+type SyncMetadata struct {
+	LastSyncAt   string `json:"last_sync_at"`
+	ServerTime   string `json:"server_time"`
+	TotalNotes   int    `json:"total_notes"`
+	UpdatedNotes int    `json:"updated_notes"`
+	HasConflicts bool   `json:"has_conflicts"`
 }
