@@ -2,20 +2,82 @@
  * Tests for Sync Service
  */
 
-import { SyncService, SyncOptions } from '../sync';
-import { storageService } from '../storage';
-import { ApiService } from '../../utils/api';
-import { offlineDetector } from '../utils/offline';
-import { Note } from '../../types';
+import { Note } from '@/types';
 
-// Mock dependencies
-jest.mock('../storage');
-jest.mock('../../utils/api');
-jest.mock('../utils/offline');
+// Mock the modules before importing
+const mockStorageService = {
+  // Core storage methods
+  getData: jest.fn(),
+  getNotes: jest.fn(),
+  saveNote: jest.fn(),
+  deleteNote: jest.fn(),
+  getNote: jest.fn(),
+  saveNotesBatch: jest.fn(),
 
-const mockStorageService = storageService as jest.Mocked<typeof storageService>;
-const mockApiService = ApiService as jest.Mocked<typeof ApiService>;
-const mockOfflineDetector = offlineDetector as jest.Mocked<typeof offlineDetector>;
+  // Storage management methods
+  get: jest.fn(),
+  set: jest.fn(),
+  remove: jest.fn(),
+  clear: jest.fn(),
+
+  // Utility methods
+  getStorageQuota: jest.fn(),
+  getStorageStats: jest.fn(),
+  cleanupOldData: jest.fn(),
+
+  // Internal methods (accessed via bracket notation)
+  'setRawData': jest.fn(),
+
+  // Legacy methods for compatibility
+  saveNotes: jest.fn(),
+};
+
+const mockApiService = {
+  // Core API methods
+  syncNotes: jest.fn(),
+  getNotes: jest.fn(),
+  createNote: jest.fn(),
+  updateNote: jest.fn(),
+  deleteNote: jest.fn(),
+
+  // Sync-specific methods
+  forceSync: jest.fn(),
+
+  // Utility methods
+  uploadNote: jest.fn(),
+  downloadNotes: jest.fn(),
+};
+
+const mockOfflineDetector = {
+  // Core status methods
+  isOnline: jest.fn(),
+  isCurrentlyOnline: jest.fn(),
+
+  // Event listener methods
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  addListener: jest.fn(),
+  removeListener: jest.fn(),
+
+  // Execution methods
+  executeWhenOnline: jest.fn(),
+};
+
+jest.mock('../storage', () => ({
+  storageService: mockStorageService,
+}));
+
+jest.mock('@/utils/api', () => ({
+  ApiService: mockApiService,
+}));
+
+jest.mock('@/utils/offline', () => ({
+  offlineDetector: mockOfflineDetector,
+}));
+
+// Import after mocking
+const { SyncService } = require('../sync');
+const { SyncOptions } = require('../sync');
 
 // Test data
 const mockNotes: Note[] = [
@@ -38,6 +100,9 @@ const mockNotes: Note[] = [
     version: 1,
   },
 ];
+
+// Individual mock note for testing
+const mockNote = mockNotes[0];
 
 const mockSyncResult = {
   success: true,
@@ -67,6 +132,16 @@ describe('SyncService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Reset all mock implementations to defaults
+    mockOfflineDetector.isCurrentlyOnline.mockReturnValue(true);
+    mockOfflineDetector.executeWhenOnline.mockImplementation(async (callback) => {
+      if (mockOfflineDetector.isCurrentlyOnline()) {
+        return await callback();
+      } else {
+        throw new Error('Cannot sync while offline');
+      }
+    });
+
     mockOptions = {
       autoSync: true,
       syncInterval: 5000,
@@ -81,6 +156,9 @@ describe('SyncService', () => {
   afterEach(() => {
     jest.restoreAllMocks();
     syncService.destroy();
+
+    // Reset the singleton instance for clean testing
+    (SyncService as any).instance = null;
   });
 
   describe('Configuration', () => {
@@ -156,8 +234,44 @@ describe('SyncService', () => {
       });
 
       mockStorageService.getNotes.mockResolvedValue(mockNotes);
-      mockApiService.syncNotes.mockResolvedValue(mockSyncResult);
+      mockApiService.syncNotes.mockResolvedValue({
+        success: true,
+        data: mockSyncResult
+      });
       mockStorageService.saveNotesBatch.mockResolvedValue({ success: true });
+
+      // Set up individual API method responses
+      mockApiService.createNote.mockResolvedValue({
+        success: true,
+        data: { ...mockNotes[0], id: 'remote-note-1', version: 2 }
+      });
+
+      mockApiService.updateNote.mockResolvedValue({
+        success: true,
+        data: { ...mockNotes[0], version: 2 }
+      });
+
+      mockApiService.getNotes.mockResolvedValue({
+        success: true,
+        data: {
+          notes: mockNotes.map(note => ({
+            ...note,
+            updated_at: '2023-01-01T12:00:00Z', // Later than lastSyncAt
+            version: note.version + 1
+          })),
+          total: mockNotes.length,
+          hasMore: false
+        }
+      });
+
+      // Mock executeWhenOnline to actually execute the callback when online
+      mockOfflineDetector.executeWhenOnline.mockImplementation(async (callback) => {
+        if (mockOfflineDetector.isCurrentlyOnline()) {
+          return await callback();
+        } else {
+          throw new Error('Cannot sync while offline');
+        }
+      });
     });
 
     test('performs successful sync when online', async () => {

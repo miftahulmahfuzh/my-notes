@@ -32,42 +32,8 @@ jest.mock('../src/utils/storage', () => ({
   },
 }));
 
-// Mock Chrome APIs
-const mockChrome = {
-  runtime: {
-    sendMessage: jest.fn(),
-    onMessage: {
-      addListener: jest.fn(),
-    },
-    getURL: jest.fn((path: string) => `chrome-extension://test/${path}`),
-    getManifest: jest.fn(() => ({ version: '1.0.0' })),
-  },
-  identity: {
-    getRedirectURL: jest.fn(() => 'https://test.auth.redirect'),
-    launchWebAuthFlow: jest.fn(),
-  },
-  storage: {
-    local: {
-      get: jest.fn(),
-      set: jest.fn(),
-      remove: jest.fn(),
-      clear: jest.fn(),
-    },
-  },
-  alarms: {
-    create: jest.fn(),
-    clearAll: jest.fn(),
-    onAlarm: {
-      addListener: jest.fn(),
-    },
-  },
-  notifications: {
-    create: jest.fn(),
-  },
-};
-
-global.chrome = mockChrome as any;
-global.fetch = jest.fn();
+// Chrome API is already mocked in tests/setup.ts
+// No need to override it here
 
 describe('AuthService', () => {
   let authService: AuthService;

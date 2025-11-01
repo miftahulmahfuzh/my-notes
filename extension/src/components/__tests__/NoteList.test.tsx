@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { NoteList } from '../NoteList';
-import { Note } from '../../types';
+import { Note } from '@/types';
 
 // Mock the Chrome storage API
 const mockChromeStorage = {

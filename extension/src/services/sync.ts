@@ -43,7 +43,17 @@ export class SyncService {
   private listeners: StorageEventListener[] = [];
 
   private constructor() {
-    this.initializeSync();
+    // Don't initialize during module load - will be initialized lazily
+    this.isInitialized = false;
+  }
+
+  private isInitialized: boolean = false;
+
+  private async ensureInitialized(): Promise<void> {
+    if (!this.isInitialized) {
+      await this.initializeSync();
+      this.isInitialized = true;
+    }
   }
 
   public static getInstance(): SyncService {
@@ -71,6 +81,7 @@ export class SyncService {
    */
   public async getStatus(): Promise<SyncStatus> {
     try {
+      await this.ensureInitialized();
       const data = await storageService.getData();
       const pendingChanges = data.sync.pendingChanges.length;
       const failedChanges = data.sync.conflicts.filter(c => !c.resolved).length;
@@ -336,6 +347,24 @@ export class SyncService {
     if (index > -1) {
       this.listeners.splice(index, 1);
     }
+  }
+
+  /**
+   * Pause sync operations
+   */
+  public async pauseSync(): Promise<void> {
+    this.stopAutoSync();
+    // Any additional pause logic can be added here
+  }
+
+  /**
+   * Resume sync operations
+   */
+  public async resumeSync(): Promise<void> {
+    if (this.options.autoSync) {
+      this.startAutoSync();
+    }
+    // Any additional resume logic can be added here
   }
 
   /**

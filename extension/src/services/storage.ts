@@ -3,7 +3,7 @@
  * Handles offline data storage, caching, and data persistence
  */
 
-import { Note } from '../types';
+import { Note } from '@/types';
 import {
   LocalStorageData,
   StorageQuota,
@@ -17,7 +17,7 @@ import {
   CacheConfig,
   DataMigration,
   StorageStats
-} from '../types/storage';
+} from '@/types/storage';
 
 const STORAGE_KEY = 'silence_notes_data';
 const CURRENT_VERSION = '1.0.0';
@@ -30,9 +30,10 @@ export class StorageService {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     cleanupThreshold: 80 // 80% of quota
   };
+  private initializationPromise: Promise<void> | null = null;
 
   private constructor() {
-    this.initializeStorage();
+    this.initializationPromise = this.initializeStorage();
   }
 
   public static getInstance(): StorageService {
@@ -40,6 +41,16 @@ export class StorageService {
       StorageService.instance = new StorageService();
     }
     return StorageService.instance;
+  }
+
+  /**
+   * Ensure initialization is complete before proceeding
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (this.initializationPromise) {
+      await this.initializationPromise;
+      this.initializationPromise = null; // Clear the promise after completion
+    }
   }
 
   /**
@@ -91,6 +102,7 @@ export class StorageService {
    */
   public async getData(): Promise<LocalStorageData> {
     try {
+      await this.ensureInitialized();
       const data = await this.getRawData();
       if (!data) {
         throw new Error('No data found in storage');
@@ -137,12 +149,13 @@ export class StorageService {
    * Save a note (create or update)
    */
   public async saveNote(note: Note): Promise<StorageResult<Note>> {
-    const operation: StorageOperation = note.id ? 'update' : 'create';
     const timestamp = new Date().toISOString();
+    let operation: StorageOperation = 'create'; // Default operation
 
     try {
       const data = await this.getData();
       const existingIndex = data.notes.findIndex(n => n.id === note.id);
+      operation = existingIndex >= 0 ? 'update' : 'create';
 
       if (existingIndex >= 0) {
         // Update existing note
@@ -160,6 +173,9 @@ export class StorageService {
       }
 
       // Add to pending changes for sync
+      if (!data.sync.pendingChanges) {
+        data.sync.pendingChanges = [];
+      }
       if (data.sync.pendingChanges.indexOf(note.id) === -1) {
         data.sync.pendingChanges.push(note.id);
       }
@@ -169,7 +185,13 @@ export class StorageService {
       data.metadata.storageSize = await this.calculateStorageSize(data);
 
       await this.setRawData(data);
-      await this.checkQuotaAndCleanup();
+
+      // Check quota and cleanup if needed, but don't fail the operation
+      try {
+        await this.checkQuotaAndCleanup();
+      } catch (quotaError) {
+        console.warn('Quota check failed, but note was saved:', quotaError);
+      }
 
       this.emitEvent('change', { operation, noteId: note.id });
 
@@ -201,7 +223,7 @@ export class StorageService {
       if (noteIndex === -1) {
         return {
           success: false,
-          error: 'Note not found',
+          error: 'Failed to delete note locally',
           operation: 'delete',
           timestamp: new Date().toISOString()
         };
@@ -211,6 +233,9 @@ export class StorageService {
       data.notes.splice(noteIndex, 1);
 
       // Add to pending changes for sync
+      if (!data.sync.pendingChanges) {
+        data.sync.pendingChanges = [];
+      }
       if (data.sync.pendingChanges.indexOf(id) === -1) {
         data.sync.pendingChanges.push(id);
       }
@@ -281,7 +306,13 @@ export class StorageService {
       data.metadata.storageSize = await this.calculateStorageSize(data);
 
       await this.setRawData(data);
-      await this.checkQuotaAndCleanup();
+
+      // Check quota and cleanup if needed, but don't fail the operation
+      try {
+        await this.checkQuotaAndCleanup();
+      } catch (quotaError) {
+        console.warn('Quota check failed, but notes were saved:', quotaError);
+      }
 
       this.emitEvent('change', { operation: 'sync', noteIds: Array.from(noteIds) });
 
@@ -308,26 +339,31 @@ export class StorageService {
   public async getQuotaInfo(): Promise<StorageQuota> {
     try {
       if ('storage' in navigator && 'estimate' in navigator.storage) {
-        const estimate = await navigator.storage.estimate();
-        const usageInBytes = estimate.usage || 0;
-        const quotaInBytes = estimate.quota || 0;
-        const usagePercentage = quotaInBytes > 0 ? (usageInBytes / quotaInBytes) * 100 : 0;
+        try {
+          const estimate = await navigator.storage.estimate();
+          const usageInBytes = estimate.usage || 0;
+          const quotaInBytes = estimate.quota || 0;
+          const usagePercentage = quotaInBytes > 0 ? Math.round((usageInBytes / quotaInBytes) * 100) : 0;
 
-        return {
-          usageInBytes,
-          quotaInBytes,
-          usagePercentage,
-          availableInBytes: quotaInBytes - usageInBytes,
-          isNearLimit: usagePercentage > this.cacheConfig.cleanupThreshold,
-          isOverLimit: usagePercentage >= 100
-        };
+          return {
+            usageInBytes,
+            quotaInBytes,
+            usagePercentage,
+            availableInBytes: quotaInBytes - usageInBytes,
+            isNearLimit: usagePercentage > this.cacheConfig.cleanupThreshold,
+            isOverLimit: usagePercentage >= 100
+          };
+        } catch (estimateError) {
+          // If navigator.storage.estimate fails, fall back to manual calculation
+          console.warn('navigator.storage.estimate failed, using fallback:', estimateError);
+        }
       }
 
       // Fallback for browsers without storage.estimate
       const data = await this.getData();
       const sizeInBytes = await this.calculateStorageSize(data);
       const assumedQuota = 5 * 1024 * 1024; // 5MB assumed quota
-      const usagePercentage = (sizeInBytes / assumedQuota) * 100;
+      const usagePercentage = Math.round((sizeInBytes / assumedQuota) * 100);
 
       return {
         usageInBytes: sizeInBytes,
@@ -416,6 +452,40 @@ export class StorageService {
         undefined,
         error
       );
+    }
+  }
+
+  /**
+   * Perform manual cleanup of old notes
+   * This method can be called explicitly to trigger cleanup
+   */
+  public async performManualCleanup(): Promise<{
+    success: boolean;
+    removedCount: number;
+    error?: string;
+  }> {
+    try {
+      const quotaInfo = await this.getQuotaInfo();
+      const wasNearLimit = quotaInfo.isNearLimit || quotaInfo.isOverLimit;
+
+      await this.performCleanup();
+
+      // Get updated data to see what was removed
+      const data = await this.getData();
+      const removedCount = quotaInfo.isNearLimit || quotaInfo.isOverLimit ?
+        Math.max(0, (quotaInfo.totalNotes || 0) - data.notes.length) : 0;
+
+      return {
+        success: true,
+        removedCount
+      };
+    } catch (error) {
+      console.error('Failed to perform manual cleanup:', error);
+      return {
+        success: false,
+        removedCount: 0,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 
