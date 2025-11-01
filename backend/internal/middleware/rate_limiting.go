@@ -371,6 +371,15 @@ func (rlm *RateLimitingMiddleware) GetMetrics() *RateLimitMetrics {
 	}
 }
 
+// ResetGlobalRateLimiter resets the global rate limiter (for testing)
+func (rlm *RateLimitingMiddleware) ResetGlobalRateLimiter() {
+	rlm.mu.Lock()
+	defer rlm.mu.Unlock()
+
+	// Create a new global token bucket
+	rlm.globalLimiter = NewTokenBucket(float64(rlm.config.GlobalBurstSize), rlm.config.GlobalRequestsPerSecond)
+}
+
 // AdaptiveRateLimiting adjusts rate limits based on system load
 type AdaptiveRateLimiting struct {
 	baseLimit    float64

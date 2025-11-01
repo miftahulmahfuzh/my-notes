@@ -302,3 +302,11 @@ func (s *Server) notFoundHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetRouter() *mux.Router {
 	return s.router
 }
+
+// ResetRateLimiters resets all rate limiters (for testing)
+func (s *Server) ResetRateLimiters() {
+	if s.rateLimitMW != nil {
+		s.rateLimitMW.ResetGlobalRateLimiter()
+	}
+	middleware.ClearUserRateLimiters()
+}
