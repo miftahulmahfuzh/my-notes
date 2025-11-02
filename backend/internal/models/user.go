@@ -19,6 +19,40 @@ type UserPreferences struct {
 	DefaultNoteView    string `json:"default_note_view" db:"default_note_view"`
 }
 
+// DefaultUserPreferences returns default preferences for new users
+func DefaultUserPreferences() UserPreferences {
+	return UserPreferences{
+		Theme:              "dark",
+		Language:           "en",
+		TimeZone:           "UTC",
+		EmailNotifications: true,
+		AutoSave:           true,
+		DefaultNoteView:    "grid",
+	}
+}
+
+// Scan implements the sql.Scanner interface for UserPreferences
+func (up *UserPreferences) Scan(value interface{}) error {
+	if value == nil {
+		*up = DefaultUserPreferences()
+		return nil
+	}
+
+	switch v := value.(type) {
+	case []byte:
+		return json.Unmarshal(v, up)
+	case string:
+		return json.Unmarshal([]byte(v), up)
+	default:
+		return fmt.Errorf("cannot scan %T into UserPreferences", value)
+	}
+}
+
+// Value implements the driver.Valuer interface for UserPreferences
+func (up UserPreferences) Value() (driver.Value, error) {
+	return json.Marshal(up)
+}
+
 // UserSession represents a user session
 type UserSession struct {
 	ID        string    `json:"id" db:"id"`

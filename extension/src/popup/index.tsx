@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { authService, AuthState } from '../auth';
 import { apiService, Note, CreateNoteRequest } from '../api';
+import { LoginForm } from '../components/LoginForm';
+import { SimpleUserProfile } from '../components/SimpleUserProfile';
 
 // Styles
 import './popup.css';
 
 interface AppState {
+  authState: AuthState;
   notes: Note[];
   isLoading: boolean;
   error: string | null;
@@ -17,6 +21,12 @@ interface AppState {
 
 const PopupApp: React.FC = () => {
   const [state, setState] = useState<AppState>({
+    authState: {
+      isAuthenticated: false,
+      isLoading: false,
+      user: null,
+      error: null
+    },
     notes: [],
     isLoading: false,
     error: null,
@@ -26,29 +36,33 @@ const PopupApp: React.FC = () => {
     newNoteContent: ''
   });
 
-  // Load notes on component mount
+  // Initialize auth on component mount
   useEffect(() => {
-    checkBackendConnection();
-  }, []);
-
-  const checkBackendConnection = async () => {
-    try {
-      const healthCheck = await apiService.healthCheck();
-      if (!healthCheck.success) {
+    const initializeApp = async () => {
+      try {
+        const authState = await authService.initialize();
+        setState(prev => ({ ...prev, authState }));
+      } catch (error) {
         setState(prev => ({
           ...prev,
-          error: 'Backend not available. Please ensure the server is running.'
+          error: 'Failed to initialize application'
         }));
       }
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        error: 'Cannot connect to backend. Please ensure the server is running on localhost:8080'
-      }));
-    }
-  };
+    };
+
+    initializeApp();
+
+    // Subscribe to auth state changes
+    const unsubscribe = authService.subscribe((authState) => {
+      setState(prev => ({ ...prev, authState }));
+    });
+
+    return unsubscribe;
+  }, []);
 
   const loadNotes = async () => {
+    if (!state.authState.isAuthenticated) return;
+
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -123,6 +137,23 @@ const PopupApp: React.FC = () => {
     }
   };
 
+  const handleAuthSuccess = () => {
+    // Auth state will be updated via subscription
+    // Load notes after successful authentication
+    loadNotes();
+  };
+
+  const handleLogout = () => {
+    setState(prev => ({
+      ...prev,
+      showCreateForm: false,
+      showNotesList: false,
+      notes: [],
+      newNoteTitle: '',
+      newNoteContent: ''
+    }));
+  };
+
   const handleCreateNoteClick = () => {
     setState(prev => ({
       ...prev,
@@ -155,6 +186,22 @@ const PopupApp: React.FC = () => {
   };
 
   const renderContent = () => {
+    // Show loading state during initialization
+    if (state.authState.isLoading) {
+      return (
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Initializing...</p>
+        </div>
+      );
+    }
+
+    // Show login form if not authenticated
+    if (!state.authState.isAuthenticated) {
+      return <LoginForm onAuthSuccess={handleAuthSuccess} />;
+    }
+
+    // Show error message
     if (state.error) {
       return (
         <div className="error-message">
@@ -166,6 +213,7 @@ const PopupApp: React.FC = () => {
       );
     }
 
+    // Show loading state during API calls
     if (state.isLoading) {
       return (
         <div className="loading-state">
@@ -175,10 +223,14 @@ const PopupApp: React.FC = () => {
       );
     }
 
+    // Show create note form
     if (state.showCreateForm) {
       return (
         <div className="note-creator">
-          <h3>Create New Note</h3>
+          <div className="note-header">
+            <SimpleUserProfile onLogout={handleLogout} />
+            <h3>Create New Note</h3>
+          </div>
 
           <div className="form-group">
             <input
@@ -222,11 +274,15 @@ const PopupApp: React.FC = () => {
       );
     }
 
+    // Show notes list
     if (state.showNotesList) {
       return (
         <div className="notes-list">
           <div className="notes-header">
-            <h3>Your Notes ({state.notes.length})</h3>
+            <div className="header-left">
+              <SimpleUserProfile onLogout={handleLogout} />
+              <h3>Your Notes ({state.notes.length})</h3>
+            </div>
             <button
               onClick={handleCreateNoteClick}
               className="create-btn"
@@ -283,12 +339,16 @@ const PopupApp: React.FC = () => {
       );
     }
 
-    // Default view
+    // Default view (authenticated)
     return (
       <div className="main">
+        <div className="popup-header">
+          <SimpleUserProfile onLogout={handleLogout} />
+        </div>
+
         <div className="welcome-section">
           <h1>Silence Notes</h1>
-          <p>Extension loaded successfully!</p>
+          <p>Welcome, {state.authState.user?.name}!</p>
           <p className="subtitle">Your brutalist note-taking companion</p>
         </div>
 

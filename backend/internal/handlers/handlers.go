@@ -6,15 +6,16 @@ import (
 
 // Handlers groups all API handlers
 type Handlers struct {
-	Health   *HealthHandler
-	Security *SecurityHandler
-	Auth     *AuthHandler
-	User     *UserHandler
-	Notes       *NotesHandler
-	Tags        *TagsHandler
-	Markdown    *MarkdownHandler
-	Templates   *TemplateHandler
-	ExportImport *ExportImportHandler
+	Health       *HealthHandler
+	Security     *SecurityHandler
+	Auth         *AuthHandler
+	ChromeAuth   *ChromeAuthHandler
+	User         *UserHandler
+	Notes        *NotesHandler
+	Tags         *TagsHandler
+	Markdown     *MarkdownHandler
+	Templates    *TemplateHandler
+	ExportImport  *ExportImportHandler
 	// Additional handlers will be added in subsequent phases:
 	// Search *SearchHandler
 }
@@ -42,8 +43,9 @@ func (h *Handlers) SetSecurityMiddleware(rateLimitMW *middleware.RateLimitingMid
 }
 
 // SetAuthHandlers initializes the auth and user handlers with service dependencies
-func (h *Handlers) SetAuthHandlers(authHandler *AuthHandler, userHandler *UserHandler) {
+func (h *Handlers) SetAuthHandlers(authHandler *AuthHandler, chromeAuthHandler *ChromeAuthHandler, userHandler *UserHandler) {
 	h.Auth = authHandler
+	h.ChromeAuth = chromeAuthHandler
 	h.User = userHandler
 }
 

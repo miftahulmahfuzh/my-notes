@@ -28,7 +28,10 @@
     "types": ["chrome", "jest", "@types/jest", "@testing-library/jest-dom"]
   },
   "include": [
+    "src/auth.ts",
     "src/api.ts",
+    "src/components/LoginForm.tsx",
+    "src/components/SimpleUserProfile.tsx",
     "src/popup/index.tsx",
     "src/popup/popup.html",
     "src/background/index.ts",

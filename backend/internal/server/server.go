@@ -148,6 +148,12 @@ func (s *Server) initializeServices() {
 		s.sessionStore,
 	)
 
+	// Initialize Chrome extension auth handler
+	chromeAuthHandler := handlers.NewChromeAuthHandler(
+		s.tokenService,
+		s.userService,
+	)
+
 	userHandler := handlers.NewUserHandler(s.userService)
 
 	// Initialize note service and handler
@@ -158,7 +164,7 @@ func (s *Server) initializeServices() {
 	s.handlers.SetSecurityMiddleware(s.rateLimitMW, s.sessionMW)
 
 	// Initialize auth handlers
-	s.handlers.SetAuthHandlers(authHandler, userHandler)
+	s.handlers.SetAuthHandlers(authHandler, chromeAuthHandler, userHandler)
 
 	// Initialize notes handler
 	s.handlers.SetNotesHandler(notesHandler)
@@ -231,6 +237,11 @@ func (s *Server) setupRoutes() {
 		auth.HandleFunc("/exchange", s.handlers.Auth.GoogleCallback).Methods("POST") // for test compatibility
 		auth.HandleFunc("/refresh", s.handlers.Auth.RefreshToken).Methods("POST") // token refresh doesn't need auth
 		auth.HandleFunc("/validate", s.handlers.Auth.ValidateToken).Methods("GET")
+	}
+
+	// Chrome extension specific authentication route
+	if s.handlers.ChromeAuth != nil {
+		auth.HandleFunc("/chrome", s.handlers.ChromeAuth.ExchangeChromeToken).Methods("POST")
 	}
 
 	// Protected routes with authentication and session management

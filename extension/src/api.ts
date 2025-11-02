@@ -47,24 +47,11 @@ class ApiService {
   }
 
   /**
-   * Set authentication token
+   * Get authentication service (for direct access)
    */
-  setAuthToken(token: string) {
-    this.authToken = token;
-  }
-
-  /**
-   * Get authentication token
-   */
-  getAuthToken(): string | null {
-    return this.authToken;
-  }
-
-  /**
-   * Clear authentication token
-   */
-  clearAuthToken() {
-    this.authToken = null;
+  async getAuthService() {
+    const { authService } = await import('./auth');
+    return authService;
   }
 
   /**
@@ -81,10 +68,10 @@ class ApiService {
         'Content-Type': 'application/json',
       };
 
-      // Add auth token if available
-      if (this.authToken) {
-        headers['Authorization'] = `Bearer ${this.authToken}`;
-      }
+      // Add auth header dynamically
+      const { authService } = await import('./auth');
+      const authHeader = await authService.getAuthHeader();
+      Object.assign(headers, authHeader);
 
       const response = await fetch(url, {
         ...options,

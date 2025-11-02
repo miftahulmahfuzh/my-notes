@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Silence Notes Auth Test",
+  "version": "1.0.0",
+  "description": "Test Chrome Identity API authentication",
+  "permissions": [
+    "storage",
+    "identity"
+  ],
+  "host_permissions": [
+    "http://localhost:*/*",
+    "https://localhost:*/*",
+    "https://accounts.google.com/*",
+    "https://www.googleapis.com/*"
+  ],
+  "action": {
+    "default_popup": "dist/test-popup.html",
+    "default_title": "Test Auth"
+  },
+  "oauth2": {
+    "client_id": "1019738114244-kqgnrd63277seo32g4g8bq12ijtivqmj.apps.googleusercontent.com",
+    "scopes": [
+      "openid",
+      "email",
+      "profile"
+    ]
+  },
+  "background": {
+    "service_worker": "dist/background.js"
+  }
+}
