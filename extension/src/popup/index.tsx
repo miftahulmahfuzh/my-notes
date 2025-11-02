@@ -15,7 +15,7 @@ interface AppState {
   authState: AuthState;
 
   // Data state
-  notes: Note[];
+  notes: NoteResponse[];
 
   // UI state
   isLoading: boolean;
@@ -29,7 +29,7 @@ interface AppState {
   currentNote: NoteResponse | null;   // Currently selected note for detail view (from API)
   showNoteDetail: boolean;            // Show full note detail view
   showNoteEditor: boolean;            // Show note editor for editing
-  editingNote: Note | null;           // Note currently being edited (for editor component)
+  editingNote: NoteResponse | null;   // Note currently being edited (for editor component)
 
   // Form state for creating notes
   newNoteTitle: string;
@@ -296,9 +296,8 @@ const PopupApp: React.FC = () => {
    * Navigate to edit mode for a specific note
    * @param note - The note object to edit
    */
-  const handleEditNote = (note: Note): void => {
+  const handleEditNote = (note: NoteResponse): void => {
     console.log('handleEditNote called with note:', note.id);
-    // TODO: Implement edit navigation
     setState(prev => ({
       ...prev,
       editingNote: note,

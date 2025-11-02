@@ -1052,3 +1052,335 @@ body {
 }
 
 /* =========================================== */
+
+/* ===== NOTE VIEW COMPONENT STYLES ===== */
+
+/* Note view main container */
+.note-view {
+  padding: var(--space-6);
+  background-color: var(--white);
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Note view header section */
+.note-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 2px solid var(--neutral-200);
+}
+
+/* Note title section */
+.note-view-title {
+  flex: 1;
+  min-width: 0; /* Allows text truncation */
+}
+
+.note-view-title h2 {
+  font-family: 'Archivo', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--neutral-950);
+  margin: 0 0 var(--space-2) 0;
+  line-height: 1.2;
+  word-wrap: break-word;
+}
+
+/* Note metadata */
+.note-view-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.note-date {
+  font-size: 0.875rem;
+  color: var(--neutral-500);
+  font-weight: 500;
+}
+
+.note-version {
+  font-size: 0.75rem;
+  background-color: var(--neutral-100);
+  color: var(--neutral-600);
+  padding: var(--space-1) var(--space-2);
+  border-radius: 4px;
+  font-weight: 600;
+  border: 1px solid var(--neutral-200);
+}
+
+/* Action buttons container */
+.note-view-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  margin-left: var(--space-4);
+}
+
+/* Action button styling */
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--neutral-300);
+  border-radius: 6px;
+  background-color: var(--white);
+  color: var(--neutral-700);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+.action-btn:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Specific action button colors */
+.copy-btn:hover {
+  border-color: var(--neutral-500);
+  color: var(--neutral-800);
+  background-color: var(--neutral-50);
+}
+
+.edit-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: rgba(255, 77, 0, 0.05);
+}
+
+.delete-btn:hover {
+  border-color: #DC2626;
+  color: #DC2626;
+  background-color: rgba(220, 38, 38, 0.05);
+}
+
+.copy-btn.success {
+  border-color: #16A34A;
+  color: #16A34A;
+  background-color: rgba(22, 163, 74, 0.1);
+}
+
+/* Note content section */
+.note-view-content {
+  margin-bottom: var(--space-6);
+}
+
+.note-text {
+  background-color: var(--neutral-50);
+  border: 2px solid var(--neutral-200);
+  border-radius: 8px;
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+  min-height: 200px;
+}
+
+.note-text pre {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--neutral-800);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+/* Expand button */
+.expand-btn {
+  background: none;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  padding: var(--space-2) var(--space-4);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.expand-btn:hover {
+  background-color: var(--primary);
+  color: var(--white);
+  transform: translateY(-1px);
+}
+
+/* Hashtags section */
+.note-view-tags {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background-color: var(--neutral-50);
+  border-radius: 8px;
+  border: 1px solid var(--neutral-200);
+}
+
+.tags-title {
+  font-family: 'Archivo', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--neutral-800);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tag {
+  background-color: var(--primary);
+  color: var(--white);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.tag:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(255, 77, 0, 0.3);
+}
+
+/* Note info section */
+.note-view-info {
+  background-color: var(--neutral-50);
+  border-radius: 8px;
+  padding: var(--space-5);
+  border: 1px solid var(--neutral-200);
+}
+
+.info-section {
+  margin-bottom: var(--space-4);
+}
+
+.info-section:last-child {
+  margin-bottom: 0;
+}
+
+.info-section h4 {
+  font-family: 'Archivo', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--neutral-600);
+  margin: 0 0 var(--space-2) 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.info-section p {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  color: var(--neutral-700);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Statistics grid */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2);
+  background-color: var(--white);
+  border-radius: 4px;
+  border: 1px solid var(--neutral-200);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--neutral-500);
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 0.875rem;
+  color: var(--neutral-800);
+  font-weight: 600;
+  font-family: 'Archivo', sans-serif;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .note-view {
+    padding: var(--space-4);
+  }
+
+  .note-view-header {
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: stretch;
+  }
+
+  .note-view-actions {
+    justify-content: center;
+    margin-left: 0;
+    margin-top: var(--space-2);
+  }
+
+  .action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .note-view-title h2 {
+    font-size: 1.5rem;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .tags-list {
+    gap: var(--space-1);
+  }
+
+  .tag {
+    font-size: 0.75rem;
+    padding: var(--space-1) var(--space-2);
+  }
+}
+
+/* Animation for note view entrance */
+@keyframes noteViewSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.note-view {
+  animation: noteViewSlideIn 0.3s ease-out;
+}
+
+/* =========================================== */
