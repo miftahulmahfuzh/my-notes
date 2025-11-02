@@ -81,7 +81,43 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Create a session for Chrome extension first (Chrome extensions can't use traditional cookie sessions)
+	// Check if user already has an existing Chrome extension session
+	existingSessions, err := h.userService.GetActiveSessions(user.ID.String())
+	if err != nil {
+		log.Printf("DEBUG: Failed to get existing sessions: %v", err)
+	} else {
+		// Look for existing Chrome extension sessions
+		for _, existingSession := range existingSessions {
+			if existingSession.UserAgent == "Chrome-Extension" && existingSession.IsActive {
+				// Reuse existing Chrome extension session
+				sessionID := existingSession.ID
+				log.Printf("DEBUG: Reusing existing Chrome session: %s", sessionID)
+
+				// Generate JWT tokens with the existing session ID
+				tokenPair, err := h.tokenService.GenerateTokenPairWithSession(user, sessionID)
+				if err != nil {
+					respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to generate tokens: %v", err))
+					return
+				}
+
+				response := ChromeAuthResponse{
+					User:         user.ToResponse(),
+					AccessToken:  tokenPair.AccessToken,
+					RefreshToken: tokenPair.RefreshToken,
+					TokenType:    tokenPair.TokenType,
+					ExpiresIn:    tokenPair.ExpiresIn,
+					SessionID:    sessionID,
+				}
+
+				log.Printf("DEBUG: Reused session response - User email: %s, Name: %s, Session: %s", response.User.Email, response.User.Name, sessionID)
+				respondWithJSON(w, http.StatusOK, response)
+				return
+			}
+		}
+	}
+
+	// No existing Chrome session found, create a new one
+	log.Printf("DEBUG: No existing Chrome session found, creating new session for user: %s", user.ID.String())
 	session, err := h.userService.CreateSession(user.ID.String(), "127.0.0.1", "Chrome-Extension")
 	var sessionID string
 	if err != nil {
@@ -90,7 +126,7 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 		log.Printf("DEBUG: Created simple Chrome session ID: %s", sessionID)
 	} else {
 		sessionID = session.ID
-		log.Printf("DEBUG: Created session for Chrome extension: %s", sessionID)
+		log.Printf("DEBUG: Created new session for Chrome extension: %s", sessionID)
 	}
 
 	// Generate JWT tokens with the actual session ID

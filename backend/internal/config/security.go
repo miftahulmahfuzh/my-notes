@@ -57,7 +57,7 @@ type RateLimitConfig struct {
 // SessionConfig holds session management configuration
 type SessionConfig struct {
 	SessionTimeout     time.Duration `yaml:"session_timeout" default:"24h"`
-	MaxSessions        int           `yaml:"max_sessions" default:"5"`
+	MaxSessions        int           `yaml:"max_sessions" default:"10"` // Increased from 5 to accommodate Chrome extension behavior
 	EnableConcurrency  bool          `yaml:"enable_concurrency" default:"true"`
 	InactiveTimeout    time.Duration `yaml:"inactive_timeout" default:"168h"` // 7 days
 	RefreshThreshold   time.Duration `yaml:"refresh_threshold" default:"5m"`
@@ -204,7 +204,7 @@ func GetDefaultSecurityConfig() *SecurityConfig {
 		},
 		Session: SessionConfig{
 			SessionTimeout:     24 * time.Hour,
-			MaxSessions:        5,
+			MaxSessions:        10, // Increased from 5 to accommodate Chrome extension behavior
 			EnableConcurrency:  true,
 			InactiveTimeout:    7 * 24 * time.Hour,
 			RefreshThreshold:   5 * time.Minute,

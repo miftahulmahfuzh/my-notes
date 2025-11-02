@@ -33,7 +33,7 @@ func NewSessionMiddleware(userService services.UserServiceInterface, config *Ses
 	if config == nil {
 		config = &SessionConfig{
 			SessionTimeout:    24 * time.Hour,
-			MaxSessions:       5,
+			MaxSessions:       10, // Increased from 5 to accommodate Chrome extension behavior
 			EnableConcurrency: true,
 			InactiveTimeout:   7 * 24 * time.Hour, // 7 days
 			RefreshThreshold:  5 * time.Minute,
