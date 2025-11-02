@@ -465,13 +465,17 @@ const PopupApp: React.FC = () => {
 
       const result = await response.json();
       console.log('Template application result:', result);
+      console.log('Response structure check - success:', result.success);
+      console.log('Response structure check - data exists:', !!result.data);
+      console.log('Response structure check - results exists:', !!result.data?.results);
+      console.log('Response structure check - content exists:', !!result.data?.results?.content);
 
-      if (result.success && result.data && result.data.content) {
+      if (result.success && result.data && result.data.results && result.data.results.content) {
         // Update the note with the template content
         const updatedNote = {
           ...state.editingNote,
-          content: result.data.content,
-          title: result.data.title || state.editingNote.title
+          content: result.data.results.content,
+          title: result.data.results.title || state.editingNote.title
         };
 
         // Update state to show the template content in the editor
@@ -486,7 +490,15 @@ const PopupApp: React.FC = () => {
 
         console.log('Template applied successfully');
       } else {
-        throw new Error(result.error || 'Failed to apply template');
+        console.error('Template application failed - result structure:', {
+          success: result.success,
+          hasData: !!result.data,
+          hasResults: !!result.data?.results,
+          hasContent: !!result.data?.results?.content,
+          error: result.error,
+          fullResult: result
+        });
+        throw new Error(result.error || 'Failed to apply template - invalid response structure');
       }
     } catch (error) {
       console.error('Error applying template:', error);
