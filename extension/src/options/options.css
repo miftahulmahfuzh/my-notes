@@ -1,5 +1,5 @@
 /* Brutalist Design for Options Page */
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&family=Inter:wght@400;600&display=swap');
+/* Font imports removed for CSP compliance - using system fonts instead */
 
 :root {
   --primary-color: #FF4D00;
@@ -19,7 +19,7 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   background-color: var(--white);
   color: var(--black);
   line-height: 1.6;

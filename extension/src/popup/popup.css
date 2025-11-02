@@ -3,7 +3,7 @@
  * Brutalist design with high contrast and bold typography
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&family=Inter:wght@400;600;700&display=swap');
+/* Font imports removed for CSP compliance - using system fonts instead */
 
 /* Base styles */
 * {
@@ -13,7 +13,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   background-color: #FFFFFF;
   color: #0A0A0A;
   line-height: 1.5;

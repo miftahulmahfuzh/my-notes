@@ -28,6 +28,7 @@
     "types": ["chrome", "jest", "@types/jest", "@testing-library/jest-dom"]
   },
   "include": [
+    "src/api.ts",
     "src/popup/index.tsx",
     "src/popup/popup.html",
     "src/background/index.ts",

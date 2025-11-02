@@ -47,6 +47,8 @@ module.exports = (env, argv) => {
       new CopyWebpackPlugin({
         patterns: [
           { from: 'manifest.json', to: 'manifest.json' },
+          { from: 'src/popup/popup.css', to: 'popup.css' },
+          { from: 'src/options/options.css', to: 'options.css' },
           { from: 'assets', to: 'assets', noErrorOnMissing: true }
         ]
       })
