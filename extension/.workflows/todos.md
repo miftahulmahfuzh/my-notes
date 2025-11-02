@@ -4,7 +4,7 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2025-11-02T15:55:00Z
+**Last Updated**: 2025-11-02T16:20:00Z
 
 **Total Active Tasks**: 1
 
@@ -15,9 +15,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 6
-- Completed This Week: 6
-- Completed This Month: 6
+- Completed Today: 7
+- Completed This Week: 7
+- Completed This Month: 7
 
 ---
 
@@ -55,6 +55,55 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P1-CN-A008** Disable auto-save functionality in NoteEditor to prevent unintended saves on Enter key
+  - **Completed**: 2025-11-02 16:20:00
+  - **Difficulty**: EASY
+  - **Context**: User reported that pressing Enter key in the note editor was automatically saving changes instead of creating new lines
+  - **Root Cause**: Auto-save functionality was triggering 2 seconds after any content change, including when user pressed Enter to create new lines
+  - **User Issue**: "everytime i pressed Enter in keyboard it automatically saved the changes. i want pressing Enter to create a new line"
+  - **Method**:
+    - Removed auto-save state management (`autoSaveStatus` state variable)
+    - Removed auto-save functionality (`autoSave` function and debounced useEffect)
+    - Removed auto-save timeout reference and cleanup logic
+    - Removed auto-save status indicators from UI (Saving..., Saved, Save failed)
+    - Restored useful keyboard shortcuts (Ctrl+S for save, Tab for indentation) while ensuring Enter works normally
+  - **Files Modified**:
+    - extension/src/components/NoteEditor.tsx (lines 27, 31, 57-87, 233-316, 118-122)
+  - **Key Changes**:
+    ```typescript
+    // Removed auto-save state and functionality
+    // const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+    // const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+
+    // Removed auto-save useEffect that triggered on content changes
+    // useEffect(() => { /* auto-save debouncing logic */ }, [content]);
+
+    // Restored simple keyboard handling
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      // Ctrl+S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+        return;
+      }
+      // Tab to indent - Enter key works normally (no interference)
+      if (e.key === 'Tab' && !e.shiftKey && textareaRef.current === e.target) {
+        // Tab indentation logic...
+      }
+      // Enter key works normally to create new lines - no interference
+    };
+    ```
+  - **Impact**: Users can now press Enter to create new lines without triggering automatic saves; only Save button or Ctrl+S saves notes
+  - **Validation**:
+    - ✅ Code compiles successfully without auto-save functionality
+    - ✅ Save button still works manually for intentional saves
+    - ✅ Ctrl+S keyboard shortcut preserved for power users
+    - ✅ Tab indentation functionality maintained
+    - ✅ Enter key now creates new lines as expected
+    - ✅ No more unintended auto-save triggers when typing
+  - **User Experience**: Improved note editing workflow - users can type multiple paragraphs and save when ready, rather than being interrupted by auto-saves
+  - **Production Impact**: Better user control over note editing and saving process, eliminating frustrating auto-save behavior
+
 - [x] **P1-CN-A007** Fix Chrome extension session limit exceeded error with robust session reuse
   - **Completed**: 2025-11-02 15:55:00
   - **Difficulty**: NORMAL

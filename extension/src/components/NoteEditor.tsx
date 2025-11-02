@@ -24,12 +24,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [charCount, setCharCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Auto-generate title from first line if not provided
   const generateTitleFromContent = useCallback((text: string): string => {
@@ -53,39 +51,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   }, [content, title, note, generateTitleFromContent]);
 
-  // Auto-save functionality
-  const autoSave = useCallback(async () => {
-    if (!content.trim()) return;
-
-    setAutoSaveStatus('saving');
-    try {
-      await onSave({ title: title || undefined, content });
-      setAutoSaveStatus('saved');
-    } catch (error) {
-      setAutoSaveStatus('error');
-      console.error('Auto-save failed:', error);
-    }
-  }, [title, content, onSave]);
-
-  // Debounced auto-save
-  useEffect(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      if (content.trim() && content !== note?.content) {
-        autoSave();
-      }
-    }, 2000); // 2 second debounce
-
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, [content, note?.content, autoSave]);
-
+  
   // Auto-focus on mount
   useEffect(() => {
     if (autoFocus && textareaRef.current) {
@@ -116,7 +82,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Only keyboard shortcut: Ctrl+S to save
+    // Ctrl+S to save
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
       handleSave();
@@ -138,6 +104,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         }
       }, 0);
     }
+    // Enter key works normally to create new lines - no interference
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,37 +250,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
               </span>
             </div>
 
-            <div className="editor-status">
-              {autoSaveStatus === 'saving' && (
-                <span className="auto-save-status saving">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                  </svg>
-                  Saving...
-                </span>
-              )}
-              {autoSaveStatus === 'saved' && hasChanges && (
-                <span className="auto-save-status saved">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Saved
-                </span>
-              )}
-              {autoSaveStatus === 'error' && (
-                <span className="auto-save-status error">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                  </svg>
-                  Save failed
-                </span>
-              )}
-            </div>
-          </div>
+                      </div>
         </div>
 
         {hashtags.length > 0 && (
