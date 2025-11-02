@@ -8,21 +8,6 @@ interface TemplateSelectorProps {
   initialCategory?: string;
 }
 
-interface Template {
-  id: string;
-  name: string;
-  description: string;
-  content: string;
-  category: string;
-  variables: string[];
-  is_built_in: boolean;
-  usage_count: number;
-  icon: string;
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-}
-
 const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   onTemplateSelect,
   onClose,

@@ -1,37 +1,69 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { authService, AuthState } from '../auth';
-import { apiService, Note, CreateNoteRequest } from '../api';
+import { apiService, Note, NoteResponse, CreateNoteRequest, UpdateNoteRequest } from '../api';
 import { LoginForm } from '../components/LoginForm';
 import { SimpleUserProfile } from '../components/SimpleUserProfile';
+import NoteView from '../components/NoteView';
+import NoteEditor from '../components/NoteEditor';
 
 // Styles
 import './popup.css';
 
 interface AppState {
+  // Authentication and user state
   authState: AuthState;
+
+  // Data state
   notes: Note[];
+
+  // UI state
   isLoading: boolean;
   error: string | null;
+
+  // Navigation state - existing views
   showCreateForm: boolean;
   showNotesList: boolean;
+
+  // Navigation state - new detail and edit views
+  currentNote: NoteResponse | null;   // Currently selected note for detail view (from API)
+  showNoteDetail: boolean;            // Show full note detail view
+  showNoteEditor: boolean;            // Show note editor for editing
+  editingNote: Note | null;           // Note currently being edited (for editor component)
+
+  // Form state for creating notes
   newNoteTitle: string;
   newNoteContent: string;
 }
 
 const PopupApp: React.FC = () => {
   const [state, setState] = useState<AppState>({
+    // Authentication and user state
     authState: {
       isAuthenticated: false,
       isLoading: false,
       user: null,
       error: null
     },
+
+    // Data state
     notes: [],
+
+    // UI state
     isLoading: false,
     error: null,
+
+    // Navigation state - existing views
     showCreateForm: false,
     showNotesList: false,
+
+    // Navigation state - new detail and edit views
+    currentNote: null,
+    showNoteDetail: false,
+    showNoteEditor: false,
+    editingNote: null,
+
+    // Form state for creating notes
     newNoteTitle: '',
     newNoteContent: ''
   });
@@ -202,6 +234,240 @@ const PopupApp: React.FC = () => {
     return 'ME';
   };
 
+  // ===== NAVIGATION FUNCTIONS FOR NOTE DETAIL AND EDIT VIEWS =====
+
+  /**
+   * Navigate to note detail view when a note is clicked
+   * @param noteId - The ID of the note to view
+   */
+  const handleNoteClick = async (noteId: string): Promise<void> => {
+    console.log('handleNoteClick called with noteId:', noteId);
+
+    // Set loading state and navigate to detail view
+    setState(prev => ({
+      ...prev,
+      isLoading: true,
+      error: null,
+      showNotesList: false,
+      showNoteDetail: true,
+      currentNote: null // Clear previous note while loading
+    }));
+
+    try {
+      // Fetch note details from API
+      const response = await apiService.getNote(noteId);
+
+      if (response.success && response.data) {
+        // Successfully fetched note data
+        setState(prev => ({
+          ...prev,
+          currentNote: response.data || null,
+          isLoading: false,
+          error: null
+        }));
+        console.log('Successfully loaded note:', response.data);
+      } else {
+        // API returned an error or no data
+        const errorMessage = response.error || 'Note not found';
+        setState(prev => ({
+          ...prev,
+          error: errorMessage,
+          isLoading: false,
+          showNoteDetail: false,
+          showNotesList: true // Return to notes list on error
+        }));
+        console.error('Failed to load note:', errorMessage);
+      }
+    } catch (error) {
+      // Network or unexpected error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setState(prev => ({
+        ...prev,
+        error: `Failed to load note: ${errorMessage}`,
+        isLoading: false,
+        showNoteDetail: false,
+        showNotesList: true // Return to notes list on error
+      }));
+      console.error('Error loading note:', error);
+    }
+  };
+
+  /**
+   * Navigate to edit mode for a specific note
+   * @param note - The note object to edit
+   */
+  const handleEditNote = (note: Note): void => {
+    console.log('handleEditNote called with note:', note.id);
+    // TODO: Implement edit navigation
+    setState(prev => ({
+      ...prev,
+      editingNote: note,
+      showNoteDetail: false,
+      showNoteEditor: true
+    }));
+  };
+
+  /**
+   * Handle note deletion with confirmation
+   * @param noteId - The ID of the note to delete
+   */
+  const handleDeleteNote = async (noteId: string): Promise<void> => {
+    console.log('handleDeleteNote called with noteId:', noteId);
+
+    // Show confirmation dialog
+    if (!confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
+      return; // User cancelled the deletion
+    }
+
+    // Set loading state for deletion process
+    setState(prev => ({
+      ...prev,
+      isLoading: true,
+      error: null
+    }));
+
+    try {
+      // Call API to delete the note
+      const response = await apiService.deleteNote(noteId);
+
+      if (response.success) {
+        // Successfully deleted the note
+        console.log('Successfully deleted note:', noteId);
+
+        // Navigate back to notes list and refresh the list
+        await loadNotes();
+
+        setState(prev => ({
+          ...prev,
+          showNoteDetail: false,
+          currentNote: null,
+          isLoading: false,
+          error: null
+        }));
+      } else {
+        // API returned an error
+        const errorMessage = response.error || 'Failed to delete note';
+        setState(prev => ({
+          ...prev,
+          error: errorMessage,
+          isLoading: false
+        }));
+        console.error('Failed to delete note:', errorMessage);
+      }
+    } catch (error) {
+      // Network or unexpected error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setState(prev => ({
+        ...prev,
+        error: `Failed to delete note: ${errorMessage}`,
+        isLoading: false
+      }));
+      console.error('Error deleting note:', error);
+    }
+  };
+
+  /**
+   * Navigate back to the notes list from detail/edit views
+   */
+  const handleBackToNotes = (): void => {
+    console.log('handleBackToNotes called');
+    setState(prev => ({
+      ...prev,
+      showNoteDetail: false,
+      showNoteEditor: false,
+      currentNote: null,
+      editingNote: null,
+      showNotesList: true
+    }));
+  };
+
+  /**
+   * Update an existing note with new content
+   * @param noteData - The updated note data
+   */
+  const updateNote = async (noteData: { title?: string; content: string }): Promise<void> => {
+    console.log('updateNote called with:', noteData);
+
+    // Validate input
+    if (!noteData.content || noteData.content.trim().length === 0) {
+      setState(prev => ({
+        ...prev,
+        error: 'Note content cannot be empty',
+        isLoading: false
+      }));
+      return;
+    }
+
+    if (!state.editingNote) {
+      setState(prev => ({
+        ...prev,
+        error: 'No note is currently being edited',
+        isLoading: false
+      }));
+      return;
+    }
+
+    // Set loading state
+    setState(prev => ({
+      ...prev,
+      isLoading: true,
+      error: null
+    }));
+
+    try {
+      // Prepare update request with optimistic locking
+      const updateRequest: UpdateNoteRequest = {
+        title: noteData.title?.trim() || undefined,
+        content: noteData.content.trim(),
+        version: state.editingNote.version || 1
+      };
+
+      console.log('Sending update request:', updateRequest);
+
+      // Call API to update the note
+      const response = await apiService.updateNote(state.editingNote.id, updateRequest);
+
+      if (response.success && response.data) {
+        // Successfully updated the note
+        console.log('Successfully updated note:', response.data);
+
+        // Update both currentNote and editingNote with the updated data
+        setState(prev => ({
+          ...prev,
+          currentNote: response.data || null,
+          editingNote: null,
+          showNoteEditor: false,
+          showNoteDetail: true,
+          isLoading: false,
+          error: null
+        }));
+
+        // Refresh the notes list to show updated data
+        await loadNotes();
+      } else {
+        // Handle API error
+        const errorMessage = response.error || 'Failed to update note';
+        setState(prev => ({
+          ...prev,
+          error: errorMessage,
+          isLoading: false
+        }));
+        console.error('Failed to update note:', errorMessage);
+      }
+    } catch (error) {
+      // Handle network or unexpected error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setState(prev => ({
+        ...prev,
+        error: `Failed to update note: ${errorMessage}`,
+        isLoading: false
+      }));
+      console.error('Error updating note:', error);
+    }
+  };
+
+  // =============================================================
+
   const renderContent = () => {
     // Show loading state during initialization
     if (state.authState.isLoading) {
@@ -358,18 +624,55 @@ const PopupApp: React.FC = () => {
           ) : (
             <div className="grid-cols-1">
               {state.notes.map(note => (
-                <div key={note.id} className="note-item">
-                  <div className="note-title">
-                    {note.title || 'Untitled Note'}
-                  </div>
-                  <div className="note-content">
-                    <p>{note.content.length > 200
-                      ? note.content.substring(0, 200) + '...'
-                      : note.content}
-                    </p>
-                  </div>
-                  <div className="note-meta">
-                    <span className="text-sm">{formatDate(note.created_at)}</span>
+                <div
+                  key={note.id}
+                  className="note-item clickable"
+                  onClick={() => handleNoteClick(note.id)}
+                  title="Click to view full note"
+                >
+                  <div className="note-content-wrapper">
+                    <div className="note-title">
+                      {note.title || 'Untitled Note'}
+                    </div>
+                    <div className="note-content">
+                      <p>{note.content.length > 200
+                        ? note.content.substring(0, 200) + '...'
+                        : note.content}
+                      </p>
+                    </div>
+                    <div className="note-meta">
+                      <span className="note-date">{formatDate(note.created_at)}</span>
+                      <div className="note-actions">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditNote(note);
+                          }}
+                          className="mini-action-btn edit-mini-btn"
+                          title="Edit note"
+                          aria-label={`Edit note: ${note.title || 'Untitled Note'}`}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteNote(note.id);
+                          }}
+                          className="mini-action-btn delete-mini-btn"
+                          title="Delete note"
+                          aria-label={`Delete note: ${note.title || 'Untitled Note'}`}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -395,6 +698,60 @@ const PopupApp: React.FC = () => {
         </div>
       );
     }
+
+    // ===== NEW NAVIGATION VIEWS - PLACEHOLDERS =====
+
+    // Show note detail view
+    if (state.showNoteDetail) {
+      // Handle case where no note is loaded yet
+      if (!state.currentNote) {
+        return (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p className="loading-text">Loading note...</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="note-detail-view">
+          <NoteView
+            note={state.currentNote}
+            onEdit={() => handleEditNote(state.currentNote!)}
+            onDelete={() => handleDeleteNote(state.currentNote!.id)}
+            onClose={handleBackToNotes}
+          />
+        </div>
+      );
+    }
+
+    // Show note editor view
+    if (state.showNoteEditor) {
+      // Handle case where no note is being edited
+      if (!state.editingNote) {
+        return (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p className="loading-text">Loading editor...</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="note-editor-view">
+          <NoteEditor
+            note={state.editingNote}
+            onSave={updateNote}
+            onCancel={handleBackToNotes}
+            loading={state.isLoading}
+            autoFocus={true}
+            placeholder="Start editing your note..."
+          />
+        </div>
+      );
+    }
+
+    // ================================================
 
     // Default view (authenticated)
     return (

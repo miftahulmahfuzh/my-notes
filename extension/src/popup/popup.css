@@ -792,3 +792,263 @@ body {
 .flex-1 {
   flex: 1;
 }
+
+/* ===== NAVIGATION PLACEHOLDER STYLES ===== */
+
+/* Note detail view container */
+.note-detail-view {
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: var(--white);
+}
+
+/* Note editor view container */
+.note-editor-view {
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: var(--white);
+}
+
+/* Placeholder view containers */
+.note-detail-placeholder,
+.note-editor-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: var(--space-8);
+  background-color: var(--neutral-100);
+  border: 3px solid var(--primary);
+  margin: var(--space-4);
+}
+
+.placeholder-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.placeholder-content h2 {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--neutral-950);
+  margin-bottom: var(--space-4);
+}
+
+.placeholder-content p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: var(--neutral-500);
+  margin-bottom: var(--space-2);
+}
+
+.placeholder-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  justify-content: center;
+}
+
+.placeholder-actions .btn-primary,
+.placeholder-actions .btn-secondary {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--neutral-950);
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.placeholder-actions .btn-primary {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+.placeholder-actions .btn-primary:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+.placeholder-actions .btn-secondary {
+  background-color: var(--white);
+  color: var(--neutral-950);
+}
+
+.placeholder-actions .btn-secondary:hover {
+  background-color: var(--neutral-200);
+  transform: translateY(-2px);
+}
+
+/* =========================================== */
+
+/* ===== CLICKABLE NOTE ITEMS STYLES ===== */
+
+/* Base clickable note item styling */
+.note-item.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  position: relative;
+  user-select: none;
+}
+
+.note-item.clickable:hover {
+  border-color: var(--primary);
+  background-color: var(--neutral-100);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.note-item.clickable:active {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Note content wrapper for better layout */
+.note-content-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Updated note meta layout for action buttons */
+.note-item.clickable .note-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--neutral-200);
+}
+
+.note-item.clickable .note-date {
+  font-size: 0.75rem;
+  color: var(--neutral-500);
+  font-weight: 500;
+}
+
+/* Mini action buttons container */
+.note-actions {
+  display: flex;
+  gap: var(--space-2);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.note-item.clickable:hover .note-actions {
+  opacity: 1;
+}
+
+/* Mini action buttons styling */
+.mini-action-btn {
+  background: none;
+  border: 2px solid var(--neutral-500);
+  color: var(--neutral-500);
+  padding: var(--space-1);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.mini-action-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mini-action-btn:active {
+  transform: scale(0.95);
+}
+
+.mini-action-btn:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Edit mini button styling */
+.edit-mini-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: rgba(255, 77, 0, 0.1);
+}
+
+/* Delete mini button styling */
+.delete-mini-btn:hover {
+  border-color: #DC2626;
+  color: #DC2626;
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+/* SVG icon styling */
+.mini-action-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+
+/* Accessibility enhancements */
+.note-item.clickable:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 77, 0, 0.2);
+}
+
+.mini-action-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 480px) {
+  .note-item.clickable .note-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .note-actions {
+    align-self: flex-end;
+  }
+
+  .mini-action-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Animation for note items entering the list */
+@keyframes noteItemSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.note-item.clickable {
+  animation: noteItemSlideIn 0.3s ease-out;
+}
+
+/* Loading state for clickable note items */
+.note-item.clickable.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.note-item.clickable.loading .note-actions {
+  opacity: 0;
+}
+
+/* =========================================== */
