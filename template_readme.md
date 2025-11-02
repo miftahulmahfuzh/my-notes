@@ -253,7 +253,9 @@ Q1 Planning Discussion
 
 #### 1. **Missing Database Tables**
 **Issue**: No database migrations exist for template-related tables
+
 **Impact**: Template features cannot persist data
+
 **Required Tables**:
 ```sql
 CREATE TABLE templates (
@@ -285,7 +287,9 @@ CREATE TABLE template_usages (
 
 #### 2. **Database Connection Issues in Handlers**
 **Issue**: `getDatabase()` function in `templates.go:555-559` returns `nil`
+
 **Impact**: All template operations will fail
+
 **Code Location**: `backend/internal/handlers/templates.go:555-559`
 ```go
 func getDatabase(r *http.Request) interface{} {
@@ -297,7 +301,9 @@ func getDatabase(r *http.Request) interface{} {
 
 #### 3. **Missing Template Service Initialization**
 **Issue**: Template handlers create new service instances per request instead of using dependency injection
+
 **Impact**: Poor performance and missing database connections
+
 **Code Pattern**: Multiple instances of this pattern throughout `templates.go`:
 ```go
 h.templateService = services.NewTemplateService(db)  // ❌ Should be injected once
@@ -305,32 +311,41 @@ h.templateService = services.NewTemplateService(db)  // ❌ Should be injected o
 
 #### 4. **Server Integration Gap**
 **Issue**: Template routes are registered but handlers are not properly initialized with dependencies
+
 **Impact**: Template endpoints return 500 errors or don't work
+
 **Missing Integration**: Template handlers need to be initialized in server setup with database connections
 
 ### Frontend Issues
 
 #### 1. **Authentication Token Handling**
 **Issue**: Inconsistent auth token retrieval between components
+
 **Impact**: Users may be unable to access templates
+
 **Locations**:
 - `NoteEditor.tsx:126` uses `localStorage.getItem('authToken')`
 - `useTemplates.ts:456-479` has complex async token resolution
 
 #### 2. **Error Handling**
 **Issue**: Generic error messages and poor user feedback
+
 **Impact**: Users don't understand why template operations fail
+
 **Example**: `alert('Failed to apply template. Please try again.')`
 
 ### Performance Issues
 
 #### 1. **N+1 Query Problem**
 **Issue**: Template loading might trigger multiple database queries
+
 **Impact**: Slow loading times for template selector
+
 **Solution**: Implement proper JOIN queries and caching
 
 #### 2. **Missing Caching**
 **Issue**: No caching for built-in templates or popular templates
+
 **Impact**: Unnecessary API calls and slower UX
 
 ## Feature Limitations

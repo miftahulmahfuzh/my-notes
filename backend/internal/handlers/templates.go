@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -59,32 +58,17 @@ type TemplatesResponse struct {
 	Total   int                   `json:"total,omitempty"`
 }
 
-// RegisterTemplateRoutes registers template-related routes
-func RegisterTemplateRoutes(router *mux.Router, authMiddleware mux.MiddlewareFunc) {
-	handler := NewTemplateHandler(nil) // Will be initialized with dependencies
-
-	// Apply authentication middleware to all template routes
-	templateRouter := router.PathPrefix("/api/v1/templates").Subrouter()
-	templateRouter.Use(authMiddleware)
-
-	// Template CRUD operations
-	templateRouter.HandleFunc("", handler.CreateTemplate).Methods("POST")
-	templateRouter.HandleFunc("", handler.GetTemplates).Methods("GET")
-	templateRouter.HandleFunc("/built-in", handler.GetBuiltInTemplates).Methods("GET")
-	templateRouter.HandleFunc("/popular", handler.GetPopularTemplates).Methods("GET")
-	templateRouter.HandleFunc("/search", handler.SearchTemplates).Methods("GET")
-	templateRouter.HandleFunc("/stats", handler.GetTemplateStats).Methods("GET")
-	templateRouter.HandleFunc("/{id}", handler.GetTemplate).Methods("GET")
-	templateRouter.HandleFunc("/{id}", handler.UpdateTemplate).Methods("PUT")
-	templateRouter.HandleFunc("/{id}", handler.DeleteTemplate).Methods("DELETE")
-
-	// Template application
-	templateRouter.HandleFunc("/{id}/apply", handler.ApplyTemplate).Methods("POST")
-	templateRouter.HandleFunc("/apply", handler.ApplyTemplateByName).Methods("POST")
-}
+// Note: Template routes are registered in server.go setupRoutes() function
+// This ensures proper dependency injection and middleware configuration
 
 // CreateTemplate handles template creation
 func (h *TemplateHandler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context (set by auth middleware)
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -116,23 +100,15 @@ func (h *TemplateHandler) CreateTemplate(w http.ResponseWriter, r *http.Request)
 		UpdatedAt:   getCurrentTime(),
 	}
 
-	// Initialize template service (in production, this would be dependency injected)
-	db, ok := getDatabase(r).(*sql.DB)
-	if !ok || db == nil {
-		respondWithError(w, http.StatusInternalServerError, "Database not available")
-		return
-	}
-	h.templateService = services.NewTemplateService(db)
-
 	// Validate template
 	if err := h.templateService.ValidateTemplate(template); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid template")
+		respondWithError(w, http.StatusBadRequest, "Invalid template: "+err.Error())
 		return
 	}
 
 	// Create template
 	if err := h.templateService.CreateTemplate(template); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to create template")
+		respondWithError(w, http.StatusInternalServerError, "Failed to create template: "+err.Error())
 		return
 	}
 
@@ -147,6 +123,12 @@ func (h *TemplateHandler) CreateTemplate(w http.ResponseWriter, r *http.Request)
 
 // GetTemplates retrieves templates for the authenticated user
 func (h *TemplateHandler) GetTemplates(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -166,13 +148,10 @@ func (h *TemplateHandler) GetTemplates(w http.ResponseWriter, r *http.Request) {
 		offset = 0
 	}
 
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
-
 	// Get templates
 	templates, err := h.templateService.GetTemplates(userID, category, limit, offset)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve templates")
+		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve templates: "+err.Error())
 		return
 	}
 
@@ -187,13 +166,16 @@ func (h *TemplateHandler) GetTemplates(w http.ResponseWriter, r *http.Request) {
 
 // GetBuiltInTemplates retrieves all built-in templates
 func (h *TemplateHandler) GetBuiltInTemplates(w http.ResponseWriter, r *http.Request) {
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
 
 	// Get built-in templates
 	templates, err := h.templateService.GetBuiltInTemplates()
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve built-in templates")
+		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve built-in templates: "+err.Error())
 		return
 	}
 
@@ -208,6 +190,12 @@ func (h *TemplateHandler) GetBuiltInTemplates(w http.ResponseWriter, r *http.Req
 
 // GetPopularTemplates retrieves popular templates
 func (h *TemplateHandler) GetPopularTemplates(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -221,13 +209,10 @@ func (h *TemplateHandler) GetPopularTemplates(w http.ResponseWriter, r *http.Req
 		limit = 10
 	}
 
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
-
 	// Get popular templates
 	templates, err := h.templateService.GetPopularTemplates(userID, limit)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve popular templates")
+		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve popular templates: "+err.Error())
 		return
 	}
 
@@ -242,6 +227,12 @@ func (h *TemplateHandler) GetPopularTemplates(w http.ResponseWriter, r *http.Req
 
 // SearchTemplates searches templates
 func (h *TemplateHandler) SearchTemplates(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -261,13 +252,10 @@ func (h *TemplateHandler) SearchTemplates(w http.ResponseWriter, r *http.Request
 		limit = 20
 	}
 
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
-
 	// Search templates
 	templates, err := h.templateService.SearchTemplates(userID, query, limit)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to search templates")
+		respondWithError(w, http.StatusInternalServerError, "Failed to search templates: "+err.Error())
 		return
 	}
 
@@ -282,6 +270,12 @@ func (h *TemplateHandler) SearchTemplates(w http.ResponseWriter, r *http.Request
 
 // GetTemplateStats retrieves template usage statistics
 func (h *TemplateHandler) GetTemplateStats(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -289,13 +283,10 @@ func (h *TemplateHandler) GetTemplateStats(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
-
 	// Get usage stats
 	stats, err := h.templateService.GetTemplateUsageStats(userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve template stats")
+		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve template stats: "+err.Error())
 		return
 	}
 
@@ -309,6 +300,12 @@ func (h *TemplateHandler) GetTemplateStats(w http.ResponseWriter, r *http.Reques
 
 // GetTemplate retrieves a specific template
 func (h *TemplateHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -324,13 +321,10 @@ func (h *TemplateHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
-
 	// Get template
 	template, err := h.templateService.GetTemplate(templateID, userID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Template not found")
+		respondWithError(w, http.StatusNotFound, "Template not found: "+err.Error())
 		return
 	}
 
@@ -344,6 +338,12 @@ func (h *TemplateHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 
 // UpdateTemplate updates an existing template
 func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -365,13 +365,10 @@ func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
-
 	// Get existing template
 	template, err := h.templateService.GetTemplate(templateID, userID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Template not found")
+		respondWithError(w, http.StatusNotFound, "Template not found: "+err.Error())
 		return
 	}
 
@@ -394,13 +391,13 @@ func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request)
 
 	// Validate template
 	if err := h.templateService.ValidateTemplate(template); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid template")
+		respondWithError(w, http.StatusBadRequest, "Invalid template: "+err.Error())
 		return
 	}
 
 	// Update template
 	if err := h.templateService.UpdateTemplate(template); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to update template")
+		respondWithError(w, http.StatusInternalServerError, "Failed to update template: "+err.Error())
 		return
 	}
 
@@ -415,6 +412,12 @@ func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request)
 
 // DeleteTemplate deletes a template
 func (h *TemplateHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -430,13 +433,10 @@ func (h *TemplateHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
-
 	// Get existing template to check permissions
 	template, err := h.templateService.GetTemplate(templateID, userID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Template not found")
+		respondWithError(w, http.StatusNotFound, "Template not found: "+err.Error())
 		return
 	}
 
@@ -448,7 +448,7 @@ func (h *TemplateHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request)
 
 	// Delete template
 	if err := h.templateService.DeleteTemplate(templateID, userID); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to delete template")
+		respondWithError(w, http.StatusInternalServerError, "Failed to delete template: "+err.Error())
 		return
 	}
 
@@ -462,6 +462,12 @@ func (h *TemplateHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request)
 
 // ApplyTemplate applies a template to create note content
 func (h *TemplateHandler) ApplyTemplate(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -483,13 +489,10 @@ func (h *TemplateHandler) ApplyTemplate(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
-
 	// Process template
 	result, err := h.templateService.ProcessTemplate(templateID, userID, req.Variables)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to process template")
+		respondWithError(w, http.StatusInternalServerError, "Failed to process template: "+err.Error())
 		return
 	}
 
@@ -504,6 +507,12 @@ func (h *TemplateHandler) ApplyTemplate(w http.ResponseWriter, r *http.Request) 
 
 // ApplyTemplateByName applies a template by name
 func (h *TemplateHandler) ApplyTemplateByName(w http.ResponseWriter, r *http.Request) {
+	// Ensure template service is initialized
+	if h.templateService == nil {
+		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
+		return
+	}
+
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
@@ -521,9 +530,6 @@ func (h *TemplateHandler) ApplyTemplateByName(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Initialize template service
-	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
-
 	// Search for template by name
 	templates, err := h.templateService.SearchTemplates(userID, req.TemplateName, 1)
 	if err != nil || len(templates) == 0 {
@@ -534,7 +540,7 @@ func (h *TemplateHandler) ApplyTemplateByName(w http.ResponseWriter, r *http.Req
 	// Process template
 	result, err := h.templateService.ProcessTemplate(templates[0].ID, userID, req.Variables)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to process template")
+		respondWithError(w, http.StatusInternalServerError, "Failed to process template: "+err.Error())
 		return
 	}
 
@@ -550,10 +556,4 @@ func (h *TemplateHandler) ApplyTemplateByName(w http.ResponseWriter, r *http.Req
 // Helper functions
 func getCurrentTime() time.Time {
 	return time.Now().UTC()
-}
-
-func getDatabase(r *http.Request) interface{} {
-	// In a real implementation, this would get the database instance from the request context
-	// For now, return nil as placeholder
-	return nil
 }

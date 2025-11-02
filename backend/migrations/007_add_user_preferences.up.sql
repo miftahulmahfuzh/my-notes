@@ -1,14 +1,21 @@
--- Test migration to isolate the issue
--- Add preferences column to users table
-ALTER TABLE users
-ADD COLUMN preferences JSONB DEFAULT '{
-    "theme": "light",
-    "language": "en",
-    "timezone": "UTC",
-    "email_notifications": true,
-    "auto_save": true,
-    "default_note_view": "grid"
-}'::jsonb NOT NULL;
+-- Add preferences column to users table if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'preferences'
+    ) THEN
+        ALTER TABLE users
+        ADD COLUMN preferences JSONB DEFAULT '{
+            "theme": "light",
+            "language": "en",
+            "timezone": "UTC",
+            "email_notifications": true,
+            "auto_save": true,
+            "default_note_view": "grid"
+        }'::jsonb NOT NULL;
+    END IF;
+END $$;
 
 -- Create index on preferences for faster queries
 CREATE INDEX IF NOT EXISTS idx_users_preferences_theme ON users USING GIN ((preferences->'theme'));
