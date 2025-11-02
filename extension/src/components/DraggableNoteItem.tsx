@@ -89,9 +89,7 @@ const DraggableNoteItem: React.FC<DraggableNoteItemProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm(`Are you sure you want to delete "${note.title || 'Untitled note'}"?`)) {
-      onDelete(note.id);
-    }
+    onDelete(note.id);
   };
 
   const handleEdit = (e: React.MouseEvent) => {

@@ -59,9 +59,7 @@ const NoteView: React.FC<NoteViewProps> = ({
   const displayContent = isExpanded ? note.content : note.content.substring(0, 500) + (shouldShowExpandButton ? '...' : '');
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this note?')) {
-      onDelete();
-    }
+    onDelete();
   };
 
   const handleCopyContent = async () => {

@@ -330,11 +330,6 @@ const PopupApp: React.FC = () => {
   const handleDeleteNote = async (noteId: string): Promise<void> => {
     console.log('handleDeleteNote called with noteId:', noteId);
 
-    // Show confirmation dialog
-    if (!confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
-      return; // User cancelled the deletion
-    }
-
     // Set loading state for deletion process
     setState(prev => ({
       ...prev,

@@ -112,10 +112,6 @@ const NoteList: React.FC<NoteListProps> = ({
   };
 
   const handleNoteDelete = async (noteId: string) => {
-    if (!confirm('Are you sure you want to delete this note?')) {
-      return;
-    }
-
     try {
       const response = await ApiService.deleteNote(noteId);
       if (response.success) {
