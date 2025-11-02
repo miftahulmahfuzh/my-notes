@@ -270,12 +270,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           <h4 className="shortcuts-title">Keyboard Shortcuts</h4>
           <div className="shortcuts-list">
             <div className="shortcut">
-              <kbd>Ctrl</kbd> + <kbd>S</kbd>
+              <kbd>Ctrl</kbd>+<kbd>s</kbd>
               <span>Save note</span>
-            </div>
-            <div className="shortcut">
-              <kbd>Tab</kbd>
-              <span>Indent text</span>
             </div>
           </div>
         </div>

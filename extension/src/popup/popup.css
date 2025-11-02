@@ -1679,12 +1679,12 @@ body {
 .shortcut {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 2px;
 }
 
 .shortcut kbd {
   background-color: var(--neutral-800);
-  color: var(--white);
+  color: #000000;
   padding: var(--space-1) var(--space-2);
   border-radius: 4px;
   font-size: 0.75rem;
