@@ -46,7 +46,9 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        setTemplates(userData.data || []);
+        console.log('User templates response:', userData);
+        const templates = Array.isArray(userData?.data) ? userData.data : [];
+        setTemplates(templates);
       } else if (userResponse.status === 401) {
         throw new Error('401 Unauthorized');
       }
@@ -58,7 +60,9 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
       if (builtInResponse.ok) {
         const builtInData = await builtInResponse.json();
-        setBuiltInTemplates(builtInData.data || []);
+        console.log('Built-in templates response:', builtInData);
+        const builtInTemplates = Array.isArray(builtInData?.data) ? builtInData.data : [];
+        setBuiltInTemplates(builtInTemplates);
       } else if (builtInResponse.status === 401) {
         throw new Error('401 Unauthorized');
       }
@@ -84,18 +88,22 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
   // Filter templates based on category and search
   const filteredTemplates = React.useMemo(() => {
-    let allTemplates = [...templates];
+    // Ensure arrays are properly initialized
+    const safeTemplates = Array.isArray(templates) ? templates : [];
+    const safeBuiltInTemplates = Array.isArray(builtInTemplates) ? builtInTemplates : [];
+
+    let allTemplates = [...safeTemplates];
 
     if (selectedCategory === 'all' || selectedCategory === 'built-in') {
       if (selectedCategory === 'built-in') {
-        allTemplates = builtInTemplates;
+        allTemplates = safeBuiltInTemplates;
       } else {
-        allTemplates = [...templates, ...builtInTemplates];
+        allTemplates = [...safeTemplates, ...safeBuiltInTemplates];
       }
     } else {
       allTemplates = [
-        ...templates.filter(t => t.category === selectedCategory),
-        ...builtInTemplates.filter(t => t.category === selectedCategory)
+        ...safeTemplates.filter(t => t.category === selectedCategory),
+        ...safeBuiltInTemplates.filter(t => t.category === selectedCategory)
       ];
     }
 

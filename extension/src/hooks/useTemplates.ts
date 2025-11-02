@@ -71,7 +71,9 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
       }
 
       const userData = await userResponse.json();
-      setTemplates(userData.data || []);
+      console.log('User templates response (hook):', userData);
+      const templates = Array.isArray(userData?.data) ? userData.data : [];
+      setTemplates(templates);
 
       // Load built-in templates if enabled
       if (includeBuiltIn) {
@@ -84,7 +86,9 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
 
         if (builtInResponse.ok) {
           const builtInData = await builtInResponse.json();
-          setBuiltInTemplates(builtInData.data || []);
+          console.log('Built-in templates response (hook):', builtInData);
+          const builtInTemplates = Array.isArray(builtInData?.data) ? builtInData.data : [];
+          setBuiltInTemplates(builtInTemplates);
         }
       }
 
@@ -388,9 +392,13 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
 
   // Filter templates by category
   const getTemplatesByCategory = useCallback((category: string) => {
-    const allTemplates = [...templates];
+    // Ensure arrays are properly initialized
+    const safeTemplates = Array.isArray(templates) ? templates : [];
+    const safeBuiltInTemplates = Array.isArray(builtInTemplates) ? builtInTemplates : [];
+
+    const allTemplates = [...safeTemplates];
     if (includeBuiltIn) {
-      allTemplates.push(...builtInTemplates);
+      allTemplates.push(...safeBuiltInTemplates);
     }
 
     if (category === 'all') {
