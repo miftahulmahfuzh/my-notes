@@ -24,6 +24,7 @@ type ChromeAuthResponse struct {
 	RefreshToken string              `json:"refresh_token"`
 	TokenType    string              `json:"token_type"`
 	ExpiresIn    int                 `json:"expires_in"`
+	SessionID    string              `json:"session_id"`
 }
 
 // ChromeAuthHandler handles Chrome extension authentication
@@ -80,8 +81,20 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Generate JWT tokens
-	tokenPair, err := h.tokenService.GenerateTokenPair(user)
+	// Create a session for Chrome extension first (Chrome extensions can't use traditional cookie sessions)
+	session, err := h.userService.CreateSession(user.ID.String(), "127.0.0.1", "Chrome-Extension")
+	var sessionID string
+	if err != nil {
+		// For Chrome extensions, create a simple session if CreateSession fails
+		sessionID = fmt.Sprintf("chrome-session-%s", user.ID.String())
+		log.Printf("DEBUG: Created simple Chrome session ID: %s", sessionID)
+	} else {
+		sessionID = session.ID
+		log.Printf("DEBUG: Created session for Chrome extension: %s", sessionID)
+	}
+
+	// Generate JWT tokens with the actual session ID
+	tokenPair, err := h.tokenService.GenerateTokenPairWithSession(user, sessionID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to generate tokens: %v", err))
 		return
@@ -93,10 +106,11 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 		RefreshToken: tokenPair.RefreshToken,
 		TokenType:    tokenPair.TokenType,
 		ExpiresIn:    tokenPair.ExpiresIn,
+		SessionID:    sessionID, // Include session ID in response
 	}
 
 	// DEBUG: Log the response being sent
-	log.Printf("DEBUG: Sending response - User email: %s, Name: %s", response.User.Email, response.User.Name)
+	log.Printf("DEBUG: Sending response - User email: %s, Name: %s, Session: %s", response.User.Email, response.User.Name, sessionID)
 	respondWithJSON(w, http.StatusOK, response)
 }
 

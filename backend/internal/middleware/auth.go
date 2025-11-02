@@ -77,9 +77,10 @@ func (m *AuthMiddleware) Auth(next http.Handler) http.Handler {
 			}
 		}()
 
-		// Add user and claims to context
+		// Add user, claims, and session ID to context
 		ctx := context.WithValue(r.Context(), "user", user)
 		ctx = context.WithValue(ctx, "claims", claims)
+		ctx = context.WithValue(ctx, "sessionID", claims.SessionID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -121,9 +122,10 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// Add user and claims to context
+		// Add user, claims, and session ID to context
 		ctx := context.WithValue(r.Context(), "user", user)
 		ctx = context.WithValue(ctx, "claims", claims)
+		ctx = context.WithValue(ctx, "sessionID", claims.SessionID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

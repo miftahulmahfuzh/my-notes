@@ -109,6 +109,66 @@ func (s *TokenService) GenerateTokenPair(user *models.User) (*TokenPair, error) 
 	}, nil
 }
 
+// GenerateTokenPairWithSession generates a new access token and refresh token pair with a specific session ID
+func (s *TokenService) GenerateTokenPairWithSession(user *models.User, sessionID string) (*TokenPair, error) {
+	now := time.Now()
+	tokenID := generateTokenID()
+
+	// Generate access token
+	accessClaims := &Claims{
+		UserID:    user.ID.String(),
+		SessionID: sessionID, // Use the provided session ID
+		Email:     user.Email,
+		Name:      user.Name,
+		Issuer:    s.issuer,
+		Audience:  s.audience,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(s.accessExpiry)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			Subject:   user.ID.String(),
+			ID:        tokenID,
+		},
+	}
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessTokenString, err := accessToken.SignedString(s.secretKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign access token: %w", err)
+	}
+
+	// Generate refresh token
+	refreshTokenID := generateTokenID()
+	refreshClaims := &Claims{
+		UserID:    user.ID.String(),
+		SessionID: sessionID, // Use the provided session ID
+		Email:     user.Email,
+		Name:      user.Name,
+		Issuer:    s.issuer,
+		Audience:  s.audience,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(s.refreshExpiry)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			Subject:   user.ID.String(),
+			ID:        refreshTokenID,
+		},
+	}
+
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	refreshTokenString, err := refreshToken.SignedString(s.secretKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign refresh token: %w", err)
+	}
+
+	return &TokenPair{
+		AccessToken:  accessTokenString,
+		RefreshToken: refreshTokenString,
+		TokenType:    "Bearer",
+		ExpiresIn:    int(s.accessExpiry.Seconds()),
+	}, nil
+}
+
 // ValidateToken validates a JWT token and returns the claims
 func (s *TokenService) ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {

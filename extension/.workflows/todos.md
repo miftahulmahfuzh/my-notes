@@ -1,0 +1,181 @@
+# Todos: Chrome Extension Restoration
+
+**Package Path**: `extension/`
+
+**Package Code**: CN
+
+**Last Updated**: 2025-11-02T14:30:00Z
+
+**Total Active Tasks**: 1
+
+## Quick Stats
+- P0 Critical: 0
+- P1 High: 0
+- P2 Medium: 1
+- P3 Low: 0
+- P4 Backlog: 0
+- Blocked: 0
+- Completed Today: 4
+- Completed This Week: 4
+- Completed This Month: 4
+
+---
+
+## Active Tasks
+
+### [P2] Medium
+- [ ] **P2-CN-A001** Test and verify note listing functionality end-to-end
+  - **Difficulty**: NORMAL
+  - **Context**: Note creation and saving to database verified, but note listing feature not yet tested
+  - **Risk**: Users can create notes but may not be able to view their list of existing notes
+  - **Current Status**: Backend GET /api/v1/notes endpoint exists, frontend UI needs verification
+  - **Test Requirements**:
+    - Verify frontend displays saved notes from database
+    - Test pagination (limit/offset functionality)
+    - Test sorting options (created_at, updated_at, title)
+    - Verify error handling for empty note list
+    - Test refresh/reload functionality
+  - **Files to Test**: Frontend popup UI, API service getNotes() method
+  - **Validation Method**: Create multiple test notes, verify they appear in extension UI
+  - **Impact**: Complete basic note CRUD functionality restoration
+  - **Status**: active
+  - **Identified**: 2025-11-02 authentication fix completion
+
+### [P3] Low
+- *No low tasks identified*
+
+### [P4] Backlog
+- *No backlog tasks identified*
+
+### 🚫 Blocked
+- *No blocked tasks identified*
+
+---
+
+## Completed Tasks
+
+### Recently Completed
+- [x] **P1-CN-A004** Fix authentication session management for Chrome extensions
+  - **Completed**: 2025-11-02 14:30:00
+  - **Difficulty**: HARD
+  - **Context**: Backend required both JWT auth AND session management, but session IDs weren't matching
+  - **Root Cause**: JWT tokens contained randomly generated session IDs, but database had different session IDs
+  - **Method**:
+    - Created GenerateTokenPairWithSession() method to use actual database session IDs
+    - Reordered Chrome auth handler to create session before generating JWT
+    - Updated auth middleware to set session ID in request context
+  - **Files Modified**:
+    - backend/internal/handlers/chrome_auth.go (reordered operations, new method call)
+    - backend/internal/auth/jwt.go (added GenerateTokenPairWithSession method)
+    - backend/internal/middleware/auth.go (added session ID to context)
+  - **Impact**: Authentication now works end-to-end for Chrome extensions
+  - **Validation**: Chrome extension can authenticate and create notes successfully
+  - **Evidence**: Server logs show POST /api/v1/notes 201 (created), notes verified in PostgreSQL database
+
+- [x] **P1-CN-A003** Fix API response parsing for wrapped APIResponse format
+  - **Completed**: 2025-11-02 13:45:00
+  - **Difficulty**: NORMAL
+  - **Context**: Backend returns responses wrapped in {success: true, data: {...}} format but frontend expected direct access
+  - **Root Cause**: Frontend was trying to access data.response.user instead of data.data.user
+  - **Files Modified**: extension/src/auth.ts (exchangeTokenForAuth method)
+  - **Key Change**: Added response parsing logic: `const responseData = data.success ? data.data : data;`
+  - **Impact**: Authentication responses now parsed correctly, user data extracted properly
+  - **Validation**: Chrome extension authentication now works, user info displayed correctly
+
+- [x] **P1-CN-A002** Fix API endpoint URLs to include /v1 prefix
+  - **Completed**: 2025-11-02 12:30:00
+  - **Difficulty**: EASY
+  - **Context**: Frontend was calling /api/notes but backend serves /api/v1/notes
+  - **Root Cause**: Missing version prefix in API endpoint URLs
+  - **Files Modified**: extension/src/api.ts (all API endpoint URLs)
+  - **Endpoints Fixed**:
+    - /api/notes → /api/v1/notes
+    - /api/auth/chrome → /api/v1/auth/chrome
+    - /api/auth/refresh → /api/v1/auth/refresh
+    - All other endpoints updated with /v1 prefix
+  - **Impact**: All API calls now reach correct backend endpoints
+  - **Validation**: No more 404 errors on API calls
+
+- [x] **P0-CN-A001** Restore basic note writing and database saving functionality
+  - **Completed**: 2025-11-02 14:27:00
+  - **Difficulty**: NORMAL
+  - **Context**: User requested restoration of basic note creation and listing functionality incrementally
+  - **Requirements**:
+    - Write new notes via Chrome extension
+    - Save notes to PostgreSQL database
+    - List existing notes from database
+  - **Current Status**: ✅ Note writing and saving verified working
+  - **Verification Method**: Direct PostgreSQL database query confirmation
+  - **Evidence**:
+    - 2 test notes successfully created: "kjfnsgfsfog" and "ok"
+    - Notes confirmed stored in PostgreSQL with correct timestamps
+    - User `mahfuzh74@gmail.com` successfully created and linked to notes
+    - Server logs show POST /api/v1/notes 201 responses
+  - **Remaining**: Note listing functionality needs testing (see P2-CN-A001)
+  - **Impact**: Basic note creation functionality fully restored and working
+  - **Database Confirmation**:
+    ```sql
+    id                  |    title    | content_preview |          created_at
+    --------------------------------------+-------------+-----------------+-------------------------------
+    d7aba2b1-33b8-407e-b03b-29216bc08cf3 | kjfnsgfsfog | sidf            | 2025-11-02 07:27:03.575782+00
+    d366262b-d161-485c-a6f4-2f6ecbaf1135 | ok          | ksjfdg          | 2025-11-02 07:26:46.831629+00
+    ```
+
+### This Week
+- *No additional completed tasks this week*
+
+### This Month
+- *No additional completed tasks this month*
+
+---
+
+## Notes
+
+### Current Restoration Status
+**Phase 1: Basic CRUD Operations** - In Progress
+- ✅ **Note Creation**: Chrome extension can create notes and save to database
+- ✅ **Authentication**: Google OAuth via Chrome Identity API working
+- ✅ **Backend Integration**: API endpoints functional and database connected
+- ⏳ **Note Listing**: Needs testing and verification (P2-CN-A001)
+- ⏳ **UI Verification**: Frontend display of notes needs confirmation
+
+### Technical Implementation Verified
+- ✅ Chrome Identity API authentication flow
+- ✅ JWT token generation and validation
+- ✅ Session management for Chrome extensions
+- ✅ PostgreSQL database integration
+- ✅ API request/response handling
+- ✅ Error handling and debugging
+
+### Next Steps
+1. **P2-CN-A001**: Test note listing functionality end-to-end
+2. Verify frontend UI displays notes correctly
+3. Test complete note CRUD cycle (create → list → edit → delete)
+4. Move to Phase 2 features (search, hashtags, advanced functionality)
+
+### Authentication Flow Fixed
+The critical authentication issue has been resolved:
+- Chrome Identity API → Google token → Backend validation → Session creation → JWT generation → Frontend storage → API calls with proper headers → Session validation → Success
+
+### Database Schema Confirmed
+```sql
+users: id, email, name, created_at, updated_at
+notes: id, user_id, title, content, created_at, updated_at, version
+user_sessions: id, user_id, ip_address, user_agent, created_at, last_seen, is_active
+```
+
+---
+
+## Task Lifecycle Guidelines
+
+### Completion Criteria
+- **Note Creation**: Must verify note appears in database via direct query
+- **Note Listing**: Must verify frontend displays saved notes correctly
+- **Authentication**: Must verify complete OAuth flow works end-to-end
+- **API Integration**: Must verify both request and response handling work
+
+### Testing Standards
+- **Database Verification**: Direct PostgreSQL queries to confirm data persistence
+- **End-to-End Testing**: Complete user workflow from Chrome extension to database
+- **Error Handling**: Verify proper error messages and fallback behaviors
+- **Authentication Flow**: Test complete OAuth and JWT token lifecycle

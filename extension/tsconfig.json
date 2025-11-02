@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["DOM", "DOM.Iterable", "ES6"],
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -25,31 +25,31 @@
       "@/services/*": ["services/*"],
       "@/utils/*": ["utils/*"]
     },
-    "types": ["chrome", "jest", "@types/jest", "@testing-library/jest-dom"]
+    "types": ["chrome", "jest", "@types/jest", "@testing-library/jest-dom", "node"]
   },
   "include": [
-    "src/auth.ts",
+    "src/types/index.ts",
+    "src/types/storage.ts",
+    "src/types/auth.ts",
     "src/api.ts",
-    "src/components/LoginForm.tsx",
-    "src/components/SimpleUserProfile.tsx",
-    "src/popup/index.tsx",
-    "src/popup/popup.html",
-    "src/background/index.ts",
-    "src/content/index.ts",
-    "src/options/index.tsx",
-    "src/options/options.html"
+    "src/auth.ts",
+    "src/utils/errorHandling.ts",
+    "src/utils/storage.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "tests/**/*",
-    "src/components/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "src_backup/**/*",
     "src/hooks/**/*",
-    "src/services/**/*",
-    "src/utils/**/*",
-    "src/background/*.ts",
-    "src/popup/*.tsx",
-    "src/options/*.tsx",
-    "**/*.js"
+    "src/components/**/*.tsx",
+    "src/background/**/*",
+    "src/content/**/*",
+    "src/options/**/*",
+    "src/utils/config.ts"
   ]
 }

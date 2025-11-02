@@ -18,6 +18,7 @@ export interface AuthTokens {
   refresh_token: string;
   token_type: string;
   expires_in: number;
+  session_id: string;
 }
 
 export interface AuthState {
@@ -33,6 +34,7 @@ export interface AuthResponse {
   refreshToken: string;
   tokenType: string;
   expiresIn: number;
+  sessionId: string;
 }
 
 // Storage Keys
@@ -41,6 +43,7 @@ const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
   REFRESH_TOKEN: 'refresh_token',
   TOKEN_EXPIRY: 'token_expiry',
+  SESSION_ID: 'session_id',
   USER_INFO: 'user_info'
 } as const;
 
@@ -101,17 +104,30 @@ class AuthService {
     const token = await this.getStoredToken(STORAGE_KEYS.ACCESS_TOKEN);
     const expiry = await this.getStoredToken(STORAGE_KEYS.TOKEN_EXPIRY);
 
+    console.log('[Auth] isAuthenticated - token exists:', !!token);
+    console.log('[Auth] isAuthenticated - expiry exists:', !!expiry);
+
     if (!token || !expiry) {
+      console.log('[Auth] isAuthenticated: false - missing token or expiry');
       return false;
     }
 
     // Check if token is expired
-    if (Date.now() >= parseInt(expiry)) {
+    const now = Date.now();
+    const expiryTime = parseInt(expiry);
+    console.log('[Auth] isAuthenticated - now:', now);
+    console.log('[Auth] isAuthenticated - expiry:', expiryTime);
+    console.log('[Auth] isAuthenticated - expired:', now >= expiryTime);
+
+    if (now >= expiryTime) {
+      console.log('[Auth] isAuthenticated: token expired, attempting refresh');
       // Try to refresh token
       const refreshed = await this.refreshToken();
+      console.log('[Auth] isAuthenticated: refresh result:', refreshed);
       return refreshed;
     }
 
+    console.log('[Auth] isAuthenticated: true - token valid');
     return true;
   }
 
@@ -243,13 +259,29 @@ class AuthService {
       }
 
       const data = await response.json();
-      return {
-        user: data.user,
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token,
-        tokenType: data.token_type,
-        expiresIn: data.expires_in
+      console.log('[Auth] Backend response (raw):', JSON.stringify(data, null, 2));
+
+      // The backend wraps responses in APIResponse format: { success: true, data: {...} }
+      const responseData = data.success ? data.data : data;
+
+      const authResponse = {
+        user: responseData.user,
+        accessToken: responseData.access_token,
+        refreshToken: responseData.refresh_token,
+        tokenType: responseData.token_type,
+        expiresIn: responseData.expires_in,
+        sessionId: responseData.session_id
       };
+
+      console.log('[Auth] Parsed auth response:');
+      console.log('[Auth] - User exists:', !!authResponse.user);
+      console.log('[Auth] - Access token exists:', !!authResponse.accessToken);
+      console.log('[Auth] - Refresh token exists:', !!authResponse.refreshToken);
+      console.log('[Auth] - Token type:', authResponse.tokenType);
+      console.log('[Auth] - Expires in:', authResponse.expiresIn);
+      console.log('[Auth] - Session ID exists:', !!authResponse.sessionId);
+
+      return authResponse;
     } catch (error) {
       console.error('Token exchange failed:', error);
       return null;
@@ -336,12 +368,21 @@ class AuthService {
    */
   async getAuthHeader(): Promise<Record<string, string>> {
     const isAuth = await this.isAuthenticated();
+    console.log('[Auth] isAuthenticated:', isAuth);
 
     if (isAuth) {
       const token = await this.getStoredToken(STORAGE_KEYS.ACCESS_TOKEN);
-      return {
-        'Authorization': `Bearer ${token}`
-      };
+      console.log('[Auth] Retrieved token (first 10 chars):', token ? token.substring(0, 10) + '...' : 'null');
+
+      if (token) {
+        return {
+          'Authorization': `Bearer ${token}`
+        };
+      } else {
+        console.error('[Auth] isAuthenticated returned true but no token found');
+      }
+    } else {
+      console.log('[Auth] User not authenticated, no auth header');
     }
 
     return {};
@@ -351,11 +392,20 @@ class AuthService {
    * Storage helper methods
    */
   private async storeTokens(authResponse: AuthResponse): Promise<void> {
+    console.log('[Auth] Storing tokens...');
+    console.log('[Auth] Access token (first 10 chars):', authResponse.accessToken ? authResponse.accessToken.substring(0, 10) + '...' : 'null');
+    console.log('[Auth] Refresh token (first 10 chars):', authResponse.refreshToken ? authResponse.refreshToken.substring(0, 10) + '...' : 'null');
+    console.log('[Auth] Session ID:', authResponse.sessionId);
+    console.log('[Auth] Expires in:', authResponse.expiresIn, 'seconds');
+
     await this.storeToken(STORAGE_KEYS.ACCESS_TOKEN, authResponse.accessToken);
     await this.storeToken(STORAGE_KEYS.REFRESH_TOKEN, authResponse.refreshToken);
+    await this.storeToken(STORAGE_KEYS.SESSION_ID, authResponse.sessionId);
 
     const expiryTime = Date.now() + (authResponse.expiresIn * 1000);
     await this.storeToken(STORAGE_KEYS.TOKEN_EXPIRY, expiryTime.toString());
+
+    console.log('[Auth] Tokens and session stored successfully');
   }
 
   private async storeToken(key: string, value: string): Promise<void> {

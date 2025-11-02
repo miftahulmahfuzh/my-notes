@@ -238,7 +238,8 @@ export class PreferencesStorage {
 export class StorageService {
   // Notes storage
   static async getNotes(): Promise<any[]> {
-    return ExtensionStorage.get<any[]>('notes') || [];
+    const notes = await ExtensionStorage.get<any[]>('notes');
+    return notes ?? [];
   }
 
   static async saveNotes(notes: any[]): Promise<void> {

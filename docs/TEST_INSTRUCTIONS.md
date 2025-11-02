@@ -14,13 +14,19 @@
    ```
    *This creates the binary in `backend/bin/silence-notes-server`*
 
-3. **Start the backend server**:
+3. **Build the frontend extension**:
+   ```bash
+   npm run --prefix extension build
+   ```
+   *This creates the production build in `extension/dist/`*
+
+4. **Start the backend server**:
    ```bash
    backend/bin/silence-notes-server
    ```
    *You should see: `🚀 Server starting on localhost:8080`*
 
-4. **Verify backend is running** (optional):
+5. **Verify backend is running** (optional):
    ```bash
    curl http://localhost:8080/api/v1/health
    ```

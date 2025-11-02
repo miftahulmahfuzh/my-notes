@@ -1,13 +1,76 @@
 // Type definitions for Silence Notes
 
+/**
+ * Core Note interface - matches backend API response
+ */
 export interface Note {
   id: string;
-  title: string;
+  user_id: string;
+  title?: string;
   content: string;
   created_at: string;
   updated_at: string;
-  user_id?: string;
+  version: number;
+  tags?: string[];
+  sync_metadata?: Record<string, any>;
+}
+
+/**
+ * Note response format from API (includes extracted tags)
+ */
+export interface NoteResponse extends Note {
+  tags: string[];
+}
+
+/**
+ * Request payload for creating a note
+ */
+export interface CreateNoteRequest {
+  title?: string;
+  content: string;
+}
+
+/**
+ * Request payload for updating a note
+ */
+export interface UpdateNoteRequest {
+  title?: string;
+  content?: string;
   version?: number;
+}
+
+/**
+ * Paginated notes list response
+ */
+export interface NoteListResponse {
+  notes: Note[];
+  total: number;
+  page: number;
+  limit: number;
+  has_more: boolean;
+}
+
+/**
+ * Search request parameters
+ */
+export interface SearchRequest {
+  query?: string;
+  tags?: string[];
+  limit?: number;
+  offset?: number;
+  order_by?: 'created_at' | 'updated_at' | 'title';
+  order_dir?: 'asc' | 'desc';
+}
+
+/**
+ * Search result response
+ */
+export interface SearchResult {
+  notes: Note[];
+  total: number;
+  has_more: boolean;
+  limit: number;
+  offset: number;
 }
 
 export interface Tag {
@@ -38,10 +101,39 @@ export interface Settings {
   theme: 'light' | 'dark';
 }
 
-export interface ApiResponse<T> {
+/**
+ * Standard API response wrapper
+ */
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
+  message?: string;
+}
+
+/**
+ * Detailed API error response
+ */
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: string;
+}
+
+/**
+ * Error API response wrapper
+ */
+export interface ApiErrorResponse {
+  success: false;
+  error: ApiError;
+}
+
+/**
+ * Success API response wrapper
+ */
+export interface ApiSuccessResponse<T> {
+  success: true;
+  data: T;
   message?: string;
 }
 
