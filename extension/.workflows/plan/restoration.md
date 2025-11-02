@@ -371,6 +371,20 @@ git tag -a v1.1-storage -m "Storage layer restored"
 **Total Estimated Time**: 7 weeks
 **Risk Buffer**: +1 week for unexpected issues
 
+## Development Commands
+
+### Build Commands
+
+**Backend (Go)**:
+```bash
+go build -C /mnt/c/Users/GPD/Downloads/my_github/my-notes/backend ./cmd/server
+```
+
+**Frontend (Chrome Extension)**:
+```bash
+npm run --prefix /mnt/c/Users/GPD/Downloads/my_github/my-notes/extension build
+```
+
 ## Next Steps
 
 1. **Start with Phase 1.1**: Begin by expanding TypeScript configuration
