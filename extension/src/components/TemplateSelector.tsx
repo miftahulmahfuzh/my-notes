@@ -48,6 +48,12 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         const userData = await userResponse.json();
         console.log('User templates response:', userData);
         const templates = Array.isArray(userData?.data) ? userData.data : [];
+        console.log('DEBUG - Parsed user templates:', {
+          isArray: Array.isArray(userData?.data),
+          data: userData?.data,
+          parsedLength: templates.length,
+          templates: templates
+        });
         setTemplates(templates);
       } else if (userResponse.status === 401) {
         throw new Error('401 Unauthorized');
@@ -62,6 +68,12 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         const builtInData = await builtInResponse.json();
         console.log('Built-in templates response:', builtInData);
         const builtInTemplates = Array.isArray(builtInData?.data) ? builtInData.data : [];
+        console.log('DEBUG - Parsed built-in templates:', {
+          isArray: Array.isArray(builtInData?.data),
+          data: builtInData?.data,
+          parsedLength: builtInTemplates.length,
+          templates: builtInTemplates
+        });
         setBuiltInTemplates(builtInTemplates);
       } else if (builtInResponse.status === 401) {
         throw new Error('401 Unauthorized');
@@ -92,37 +104,67 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     const safeTemplates = Array.isArray(templates) ? templates : [];
     const safeBuiltInTemplates = Array.isArray(builtInTemplates) ? builtInTemplates : [];
 
+    console.log('DEBUG - Filtering templates:', {
+      safeTemplates: safeTemplates,
+      safeBuiltInTemplates: safeBuiltInTemplates,
+      selectedCategory,
+      searchQuery,
+      templatesLength: safeTemplates.length,
+      builtInTemplatesLength: safeBuiltInTemplates.length
+    });
+
     let allTemplates = [...safeTemplates];
 
     if (selectedCategory === 'all' || selectedCategory === 'built-in') {
       if (selectedCategory === 'built-in') {
         allTemplates = safeBuiltInTemplates;
+        console.log('DEBUG - Using built-in templates only:', allTemplates.length);
       } else {
         allTemplates = [...safeTemplates, ...safeBuiltInTemplates];
+        console.log('DEBUG - Using all templates:', allTemplates.length);
       }
     } else {
       allTemplates = [
         ...safeTemplates.filter(t => t.category === selectedCategory),
         ...safeBuiltInTemplates.filter(t => t.category === selectedCategory)
       ];
+      console.log('DEBUG - Using category filtered templates:', {
+        category: selectedCategory,
+        userCount: safeTemplates.filter(t => t.category === selectedCategory).length,
+        builtInCount: safeBuiltInTemplates.filter(t => t.category === selectedCategory).length,
+        total: allTemplates.length
+      });
     }
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
+      const beforeSearch = allTemplates.length;
       allTemplates = allTemplates.filter(template =>
         template.name.toLowerCase().includes(query) ||
         template.description.toLowerCase().includes(query) ||
         template.content.toLowerCase().includes(query) ||
         template.tags.some(tag => tag.toLowerCase().includes(query))
       );
+      console.log('DEBUG - After search filter:', {
+        query,
+        before: beforeSearch,
+        after: allTemplates.length
+      });
     }
 
-    return allTemplates.sort((a, b) => {
+    const sortedTemplates = allTemplates.sort((a, b) => {
       // Sort by usage count and built-in status
       if (a.is_built_in && !b.is_built_in) return -1;
       if (!a.is_built_in && b.is_built_in) return 1;
       return b.usage_count - a.usage_count;
     });
+
+    console.log('DEBUG - Final filtered templates:', {
+      count: sortedTemplates.length,
+      templates: sortedTemplates.map(t => ({ id: t.id, name: t.name, category: t.category, is_built_in: t.is_built_in }))
+    });
+
+    return sortedTemplates;
   }, [templates, builtInTemplates, selectedCategory, searchQuery]);
 
   const handleTemplateClick = (template: Template) => {
@@ -359,6 +401,24 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               {searchQuery && (
                 <p>Try a different search term</p>
               )}
+              {/* Debug information */}
+              <div style={{ fontSize: '10px', color: '#666', textAlign: 'left', marginTop: '20px', padding: '10px', background: '#f5f5f5', borderRadius: '4px' }}>
+                <strong>DEBUG INFO:</strong><br/>
+                Raw templates: {templates.length}<br/>
+                Built-in templates: {builtInTemplates.length}<br/>
+                Filtered templates: {filteredTemplates.length}<br/>
+                Selected category: {selectedCategory}<br/>
+                Search query: "{searchQuery}"<br/>
+                Templates is array: {Array.isArray(templates)}<br/>
+                Built-in is array: {Array.isArray(builtInTemplates)}<br/>
+                Filtered is array: {Array.isArray(filteredTemplates)}<br/>
+                <br/>
+                <strong>Raw templates data:</strong><br/>
+                {JSON.stringify(templates, null, 2).substring(0, 200)}...<br/>
+                <br/>
+                <strong>Built-in templates data:</strong><br/>
+                {JSON.stringify(builtInTemplates, null, 2).substring(0, 200)}...
+              </div>
             </div>
           ) : (
             <div className="templates-grid">
