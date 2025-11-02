@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -86,13 +88,13 @@ func (h *TemplateHandler) CreateTemplate(w http.ResponseWriter, r *http.Request)
 	// Get user ID from context (set by auth middleware)
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
 	var req TemplateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
@@ -115,17 +117,22 @@ func (h *TemplateHandler) CreateTemplate(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Initialize template service (in production, this would be dependency injected)
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB)
+	if !ok || db == nil {
+		respondWithError(w, http.StatusInternalServerError, "Database not available")
+		return
+	}
+	h.templateService = services.NewTemplateService(db)
 
 	// Validate template
 	if err := h.templateService.ValidateTemplate(template); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid template", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid template")
 		return
 	}
 
 	// Create template
 	if err := h.templateService.CreateTemplate(template); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to create template", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to create template")
 		return
 	}
 
@@ -143,7 +150,7 @@ func (h *TemplateHandler) GetTemplates(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
@@ -160,12 +167,12 @@ func (h *TemplateHandler) GetTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Get templates
 	templates, err := h.templateService.GetTemplates(userID, category, limit, offset)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve templates", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve templates")
 		return
 	}
 
@@ -181,12 +188,12 @@ func (h *TemplateHandler) GetTemplates(w http.ResponseWriter, r *http.Request) {
 // GetBuiltInTemplates retrieves all built-in templates
 func (h *TemplateHandler) GetBuiltInTemplates(w http.ResponseWriter, r *http.Request) {
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Get built-in templates
 	templates, err := h.templateService.GetBuiltInTemplates()
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve built-in templates", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve built-in templates")
 		return
 	}
 
@@ -204,7 +211,7 @@ func (h *TemplateHandler) GetPopularTemplates(w http.ResponseWriter, r *http.Req
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
@@ -215,12 +222,12 @@ func (h *TemplateHandler) GetPopularTemplates(w http.ResponseWriter, r *http.Req
 	}
 
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Get popular templates
 	templates, err := h.templateService.GetPopularTemplates(userID, limit)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve popular templates", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve popular templates")
 		return
 	}
 
@@ -238,14 +245,14 @@ func (h *TemplateHandler) SearchTemplates(w http.ResponseWriter, r *http.Request
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
 	// Parse query parameters
 	query := r.URL.Query().Get("q")
 	if query == "" {
-		respondWithError(w, http.StatusBadRequest, "Search query is required", nil)
+		respondWithError(w, http.StatusBadRequest, "Search query is required")
 		return
 	}
 
@@ -255,12 +262,12 @@ func (h *TemplateHandler) SearchTemplates(w http.ResponseWriter, r *http.Request
 	}
 
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Search templates
 	templates, err := h.templateService.SearchTemplates(userID, query, limit)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to search templates", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to search templates")
 		return
 	}
 
@@ -278,17 +285,17 @@ func (h *TemplateHandler) GetTemplateStats(w http.ResponseWriter, r *http.Reques
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Get usage stats
 	stats, err := h.templateService.GetTemplateUsageStats(userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve template stats", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to retrieve template stats")
 		return
 	}
 
@@ -305,7 +312,7 @@ func (h *TemplateHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
@@ -313,17 +320,17 @@ func (h *TemplateHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	templateID, err := uuid.Parse(vars["id"])
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid template ID", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid template ID")
 		return
 	}
 
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Get template
 	template, err := h.templateService.GetTemplate(templateID, userID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Template not found", err)
+		respondWithError(w, http.StatusNotFound, "Template not found")
 		return
 	}
 
@@ -340,7 +347,7 @@ func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request)
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
@@ -348,29 +355,29 @@ func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	templateID, err := uuid.Parse(vars["id"])
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid template ID", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid template ID")
 		return
 	}
 
 	var req TemplateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Get existing template
 	template, err := h.templateService.GetTemplate(templateID, userID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Template not found", err)
+		respondWithError(w, http.StatusNotFound, "Template not found")
 		return
 	}
 
 	// Check if user can update this template
 	if template.UserID != userID && template.IsBuiltIn {
-		respondWithError(w, http.StatusForbidden, "Cannot update built-in template", nil)
+		respondWithError(w, http.StatusForbidden, "Cannot update built-in template")
 		return
 	}
 
@@ -387,13 +394,13 @@ func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request)
 
 	// Validate template
 	if err := h.templateService.ValidateTemplate(template); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid template", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid template")
 		return
 	}
 
 	// Update template
 	if err := h.templateService.UpdateTemplate(template); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to update template", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to update template")
 		return
 	}
 
@@ -411,7 +418,7 @@ func (h *TemplateHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request)
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
@@ -419,29 +426,29 @@ func (h *TemplateHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	templateID, err := uuid.Parse(vars["id"])
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid template ID", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid template ID")
 		return
 	}
 
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Get existing template to check permissions
 	template, err := h.templateService.GetTemplate(templateID, userID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Template not found", err)
+		respondWithError(w, http.StatusNotFound, "Template not found")
 		return
 	}
 
 	// Check if user can delete this template
 	if template.UserID != userID && template.IsBuiltIn {
-		respondWithError(w, http.StatusForbidden, "Cannot delete built-in template", nil)
+		respondWithError(w, http.StatusForbidden, "Cannot delete built-in template")
 		return
 	}
 
 	// Delete template
 	if err := h.templateService.DeleteTemplate(templateID, userID); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to delete template", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to delete template")
 		return
 	}
 
@@ -458,7 +465,7 @@ func (h *TemplateHandler) ApplyTemplate(w http.ResponseWriter, r *http.Request) 
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
@@ -466,23 +473,23 @@ func (h *TemplateHandler) ApplyTemplate(w http.ResponseWriter, r *http.Request) 
 	vars := mux.Vars(r)
 	templateID, err := uuid.Parse(vars["id"])
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid template ID", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid template ID")
 		return
 	}
 
 	var req TemplateApplyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Process template
 	result, err := h.templateService.ProcessTemplate(templateID, userID, req.Variables)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to process template", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to process template")
 		return
 	}
 
@@ -500,7 +507,7 @@ func (h *TemplateHandler) ApplyTemplateByName(w http.ResponseWriter, r *http.Req
 	// Get user ID from context
 	userID, ok := r.Context().Value("user_id").(uuid.UUID)
 	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated", nil)
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
 
@@ -510,24 +517,24 @@ func (h *TemplateHandler) ApplyTemplateByName(w http.ResponseWriter, r *http.Req
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	// Initialize template service
-	h.templateService = services.NewTemplateService(getDatabase(r))
+	db, ok := getDatabase(r).(*sql.DB); if !ok || db == nil { respondWithError(w, http.StatusInternalServerError, "Database not available"); return }; h.templateService = services.NewTemplateService(db)
 
 	// Search for template by name
 	templates, err := h.templateService.SearchTemplates(userID, req.TemplateName, 1)
 	if err != nil || len(templates) == 0 {
-		respondWithError(w, http.StatusNotFound, "Template not found", err)
+		respondWithError(w, http.StatusNotFound, "Template not found")
 		return
 	}
 
 	// Process template
 	result, err := h.templateService.ProcessTemplate(templates[0].ID, userID, req.Variables)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to process template", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to process template")
 		return
 	}
 

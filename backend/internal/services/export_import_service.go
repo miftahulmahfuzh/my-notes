@@ -2,6 +2,7 @@ package services
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -151,7 +152,11 @@ func (s *ExportImportService) exportAsMarkdown(ctx context.Context, userID strin
 
 	// Add each note as a markdown file
 	for _, note := range notes {
-		filename := s.sanitizeFilename(note.Title) + ".md"
+		var titleStr string
+		if note.Title != nil {
+			titleStr = *note.Title
+		}
+		filename := s.sanitizeFilename(titleStr) + ".md"
 		if filename == ".md" {
 			filename = fmt.Sprintf("note_%s.md", note.ID)
 		}
@@ -304,7 +309,7 @@ This archive contains your notes in multiple formats:
 - markdown.zip: Individual markdown files for each note
 
 For more information about Silence Notes, visit the project documentation.
-`, time.Now().Format("2006-01-02 15:04:05"), len(s.getNoteCount(ctx, userID)))
+`, time.Now().Format("2006-01-02 15:04:05"), s.getNoteCount(ctx, userID))
 
 	fileWriter, _ := zipWriter.Create("README.txt")
 	fileWriter.Write([]byte(readmeContent))
@@ -394,15 +399,16 @@ func (s *ExportImportService) importFromJSON(ctx context.Context, userID string,
 
 // importFromZIP imports data from ZIP file
 func (s *ExportImportService) importFromZIP(ctx context.Context, userID string, file io.Reader) (*ImportResult, error) {
-	// Read ZIP file
-	zipReader, err := zip.NewReader(file.(io.ReadSeeker), int64(file.(io.Seeker).Size()))
+	// Read the entire file content first
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read ZIP file: %w", err)
 	}
 
-	result := &ImportResult{
-		Success: true,
-		Message: "ZIP import completed successfully",
+	// Create a reader from the bytes
+	zipReader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read ZIP file: %w", err)
 	}
 
 	// Look for JSON file first
@@ -615,7 +621,7 @@ func (s *ExportImportService) importTemplates(ctx context.Context, userID string
 
 	for _, template := range templates {
 		// Skip built-in templates
-		if template.IsBuiltIn() {
+		if template.IsBuiltIn {
 			skipped++
 			skippedItems = append(skippedItems, fmt.Sprintf("Built-in template '%s' skipped", template.Name))
 			continue

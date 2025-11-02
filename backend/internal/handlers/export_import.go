@@ -8,11 +8,9 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/gpd/my-notes/internal/services"
 )
 
@@ -238,8 +236,8 @@ func (h *ExportImportHandler) GetExportHistory(w http.ResponseWriter, r *http.Re
 
 // ValidateImportFile validates an import file without actually importing
 func (h *ExportImportHandler) ValidateImportFile(w http.ResponseWriter, r *http.Request) {
-	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(string)
+	// Just verify user is authenticated
+	_, ok := r.Context().Value("user_id").(string)
 	if !ok {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return

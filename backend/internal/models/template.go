@@ -467,7 +467,7 @@ var BuiltInTemplates = []Template{
 		UsageCount:  0,
 		IsPublic:    true,
 		Icon:        "book-open",
-		Tags:        []string={"#book", "#reading", "#notes"},
+		Tags:        []string{"#book", "#reading", "#notes"},
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	},

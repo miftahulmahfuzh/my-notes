@@ -6,7 +6,6 @@ import (
 
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
-	"github.com/google/uuid"
 )
 
 // MarkdownResult represents the result of markdown processing
@@ -27,15 +26,11 @@ type TOCItem struct {
 
 // MarkdownService handles markdown processing operations
 type MarkdownService struct {
-	parser    blackfriday.Parser
-	sanitizer bluemonday.Policy
+	sanitizer *bluemonday.Policy
 }
 
 // NewMarkdownService creates a new markdown service instance
 func NewMarkdownService() *MarkdownService {
-	// Create CommonMark compliant parser
-	parser := blackfriday.New(blackfriday.WithExtensions(blackfriday.CommonExtensions))
-
 	// Create strict HTML sanitizer for security
 	sanitizer := bluemonday.StrictPolicy()
 
@@ -58,20 +53,18 @@ func NewMarkdownService() *MarkdownService {
 	sanitizer.AllowAttrs("id").OnElements("h1", "h2", "h3", "h4", "h5", "h6")
 
 	return &MarkdownService{
-		parser:    parser,
 		sanitizer: sanitizer,
 	}
 }
 
 // ProcessMarkdown converts markdown content to safe HTML and extracts metadata
 func (s *MarkdownService) ProcessMarkdown(content string) (*MarkdownResult, error) {
-	// Parse markdown to AST
-	ast := s.parser.Parse([]byte(content))
+	// Convert markdown to HTML
+	html := blackfriday.Run([]byte(content), blackfriday.WithExtensions(blackfriday.CommonExtensions))
 
-	// Convert to HTML
-	html := blackfriday.Run([]byte(content), blackfriday.WithRenderer(blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{
-		Flags: blackfriday.HTMLFlagsNone,
-	})))
+	// Parse markdown to AST for TOC extraction
+	parser := blackfriday.New(blackfriday.WithExtensions(blackfriday.CommonExtensions))
+	ast := parser.Parse([]byte(content))
 
 	// Sanitize HTML
 	safeHTML := s.sanitizer.SanitizeBytes(html)

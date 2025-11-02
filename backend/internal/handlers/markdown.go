@@ -65,26 +65,26 @@ func (h *MarkdownHandler) PreviewMarkdown(w http.ResponseWriter, r *http.Request
 	// Decode request body
 	var req PreviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	// Validate content
 	if strings.TrimSpace(req.Content) == "" {
-		respondWithError(w, http.StatusBadRequest, "Content cannot be empty", nil)
+		respondWithError(w, http.StatusBadRequest, "Content cannot be empty")
 		return
 	}
 
 	// Validate markdown for security
 	if err := h.markdownService.ValidateMarkdown(req.Content); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid markdown content", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid markdown content")
 		return
 	}
 
 	// Process markdown
 	result, err := h.markdownService.ProcessMarkdown(req.Content)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to process markdown", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to process markdown")
 		return
 	}
 
@@ -116,7 +116,7 @@ func (h *MarkdownHandler) GetMarkdownHelp(w http.ResponseWriter, r *http.Request
 func (h *MarkdownHandler) ValidateMarkdown(w http.ResponseWriter, r *http.Request) {
 	var req PreviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
@@ -143,13 +143,13 @@ func (h *MarkdownHandler) ValidateMarkdown(w http.ResponseWriter, r *http.Reques
 func (h *MarkdownHandler) ExtractMetadata(w http.ResponseWriter, r *http.Request) {
 	var req PreviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	result, err := h.markdownService.ProcessMarkdown(req.Content)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to extract metadata", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to extract metadata")
 		return
 	}
 
@@ -164,13 +164,13 @@ func (h *MarkdownHandler) ExtractMetadata(w http.ResponseWriter, r *http.Request
 func (h *MarkdownHandler) ExtractTags(w http.ResponseWriter, r *http.Request) {
 	var req PreviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	result, err := h.markdownService.ProcessMarkdown(req.Content)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to extract tags", err)
+		respondWithError(w, http.StatusInternalServerError, "Failed to extract tags")
 		return
 	}
 
