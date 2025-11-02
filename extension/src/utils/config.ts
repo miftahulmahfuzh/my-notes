@@ -3,14 +3,12 @@
  */
 
 export const CONFIG = {
-  // API Configuration
-  API_BASE_URL: process.env.NODE_ENV === 'development'
-    ? 'http://localhost:8080/api/v1'
-    : 'https://api.silence-notes.com/v1',
+  // API Configuration - Chrome extensions always use development URLs
+  API_BASE_URL: 'http://localhost:8080/api/v1',
 
   // Google OAuth Configuration
   GOOGLE_OAUTH: {
-    CLIENT_ID: process.env.GOOGLE_CLIENT_ID || 'your-google-client-id.apps.googleusercontent.com',
+    CLIENT_ID: '1019738114244-ml2i0sqpfauqpaq2568qgbhqmd4t881j.apps.googleusercontent.com',
     SCOPES: [
       'openid',
       'email',

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Template } from '../types';
+import { CONFIG } from '../utils/config';
+import { authService } from '../auth';
 
 interface TemplateSelectorProps {
   onTemplateSelect: (templateId: string, variables?: Record<string, string>) => void;
@@ -30,31 +32,46 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     setError(null);
 
     try {
+      // Get auth headers from authService
+      const authHeaders = await authService.getAuthHeader();
+
+      if (!authHeaders.Authorization) {
+        throw new Error('401 Unauthorized');
+      }
+
       // Load user templates
-      const userResponse = await fetch('/api/v1/templates', {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`,
-        },
+      const userResponse = await fetch(`${CONFIG.API_BASE_URL}/templates`, {
+        headers: authHeaders,
       });
 
       if (userResponse.ok) {
         const userData = await userResponse.json();
         setTemplates(userData.data || []);
+      } else if (userResponse.status === 401) {
+        throw new Error('401 Unauthorized');
       }
 
       // Load built-in templates
-      const builtInResponse = await fetch('/api/v1/templates/built-in', {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`,
-        },
+      const builtInResponse = await fetch(`${CONFIG.API_BASE_URL}/templates/built-in`, {
+        headers: authHeaders,
       });
 
       if (builtInResponse.ok) {
         const builtInData = await builtInResponse.json();
         setBuiltInTemplates(builtInData.data || []);
+      } else if (builtInResponse.status === 401) {
+        throw new Error('401 Unauthorized');
       }
     } catch (err) {
-      setError('Failed to load templates');
+      if (err instanceof Error) {
+        if (err.message.includes('401') || err.message.includes('Authorization')) {
+          setError('Please log in to use templates');
+        } else {
+          setError('Failed to load templates');
+        }
+      } else {
+        setError('Failed to load templates');
+      }
       console.error('Error loading templates:', err);
     } finally {
       setIsLoading(false);
@@ -176,11 +193,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     }
   };
 
-  const getAuthToken = (): string => {
-    // Get auth token from storage
-    return localStorage.getItem('authToken') || '';
-  };
-
+  
   if (showVariableDialog && selectedTemplate) {
     return (
       <div className="template-variable-dialog-overlay">

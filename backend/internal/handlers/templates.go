@@ -69,12 +69,13 @@ func (h *TemplateHandler) CreateTemplate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Get user ID from context (set by auth middleware)
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	// Get user from context (set by auth middleware) - same as notes handler
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	var req TemplateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -130,11 +131,12 @@ func (h *TemplateHandler) GetTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	// Parse query parameters
 	category := r.URL.Query().Get("category")
@@ -197,11 +199,12 @@ func (h *TemplateHandler) GetPopularTemplates(w http.ResponseWriter, r *http.Req
 	}
 
 	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	// Parse query parameters
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -234,11 +237,12 @@ func (h *TemplateHandler) SearchTemplates(w http.ResponseWriter, r *http.Request
 	}
 
 	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	// Parse query parameters
 	query := r.URL.Query().Get("q")
@@ -277,11 +281,12 @@ func (h *TemplateHandler) GetTemplateStats(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	// Get usage stats
 	stats, err := h.templateService.GetTemplateUsageStats(userID)
@@ -307,11 +312,12 @@ func (h *TemplateHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	// Parse template ID from URL
 	vars := mux.Vars(r)
@@ -345,11 +351,12 @@ func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	// Parse template ID from URL
 	vars := mux.Vars(r)
@@ -419,11 +426,12 @@ func (h *TemplateHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	// Parse template ID from URL
 	vars := mux.Vars(r)
@@ -469,11 +477,12 @@ func (h *TemplateHandler) ApplyTemplate(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	// Parse template ID from URL
 	vars := mux.Vars(r)
@@ -514,11 +523,12 @@ func (h *TemplateHandler) ApplyTemplateByName(w http.ResponseWriter, r *http.Req
 	}
 
 	// Get user ID from context
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	userID := user.ID
 
 	var req struct {
 		TemplateName string            `json:"template_name" validate:"required"`

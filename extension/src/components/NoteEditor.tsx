@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Note } from '../types';
 import TemplateSelector from './TemplateSelector';
+import { CONFIG } from '../utils/config';
+import { authService } from '../auth';
 
 interface NoteEditorProps {
   note?: Note;
@@ -123,16 +125,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
   const handleTemplateSelect = async (templateId: string, variables?: Record<string, string>) => {
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
+      const authHeaders = await authService.getAuthHeader();
+      if (!authHeaders.Authorization) {
         alert('Please log in to use templates');
         return;
       }
 
-      const response = await fetch(`/api/v1/templates/${templateId}/apply`, {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/${templateId}/apply`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          ...authHeaders,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

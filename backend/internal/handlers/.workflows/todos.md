@@ -46,6 +46,48 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P1-HD-A002** Fix template authentication context key mismatch preventing template loading
+  - **Completed**: 2025-11-02 20:00:00
+  - **Difficulty**: NORMAL
+  - **Context**: Template endpoints were returning 401 Unauthorized despite successful authentication middleware
+  - **Root Cause**: Template handlers were using wrong context key "user_id" instead of "user" like notes handlers
+  - **Issue Details**:
+    - Users got "Please log in to use templates" error even when authenticated
+    - Backend logs showed "auth_success" for templates but 401 response
+    - Authentication middleware passed but template handler failed context lookup
+    - Inconsistent authentication pattern between notes and templates handlers
+  - **Method Implemented**:
+    - Identified context key mismatch between notes ("user") and templates ("user_id")
+    - Updated all 9 template handler methods to use consistent context key
+    - Changed from `r.Context().Value("user_id").(uuid.UUID)` to `r.Context().Value("user").(*models.User)`
+    - Fixed frontend authentication to use proper authService instead of localStorage
+  - **Files Modified**:
+    - backend/internal/handlers/templates.go (9 handler methods updated)
+    - extension/src/components/TemplateSelector.tsx (authService integration)
+    - extension/src/components/NoteEditor.tsx (template application auth fix)
+  - **Key Implementation**:
+    ```go
+    // BEFORE ❌
+    userID, ok := r.Context().Value("user_id").(uuid.UUID)
+
+    // AFTER ✅
+    user, ok := r.Context().Value("user").(*models.User)
+    if !ok {
+        respondWithError(w, http.StatusUnauthorized, "User not authenticated")
+        return
+    }
+    userID := user.ID
+    ```
+  - **Impact**: Templates now load and apply correctly for authenticated users
+  - **Validation**:
+    - ✅ Backend authentication logs show consistent success for notes and templates
+    - ✅ Frontend uses unified authService.getAuthHeader() for all API calls
+    - ✅ Template modal positioning fixed with proper z-index
+    - ✅ Built-in templates (Meeting Notes, Daily Journal) confirmed in database
+  - **Evidence**: Template system now works identically to notes system
+  - **Testing Results**: Users can load and apply templates without authentication errors
+  - **Production Impact**: Fixed critical template feature that was completely non-functional
+
 - [x] **P1-HD-A001** Implement robust Chrome extension session reuse to prevent session limit errors
   - **Completed**: 2025-11-02 15:50:00
   - **Difficulty**: NORMAL

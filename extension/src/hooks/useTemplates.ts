@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { CONFIG } from '../utils/config';
 
 interface Template {
   id: string;
@@ -58,7 +59,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
       }
 
       // Load user templates
-      const userResponse = await fetch('/api/v1/templates', {
+      const userResponse = await fetch(`${CONFIG.API_BASE_URL}/templates`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
@@ -74,7 +75,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
 
       // Load built-in templates if enabled
       if (includeBuiltIn) {
-        const builtInResponse = await fetch('/api/v1/templates/built-in', {
+        const builtInResponse = await fetch(`${CONFIG.API_BASE_URL}/templates/built-in`, {
           headers: {
             'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
       const authToken = getAuthToken();
       if (!authToken) return;
 
-      const response = await fetch('/api/v1/templates/stats', {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/stats`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
@@ -131,7 +132,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('/api/v1/templates', {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -171,7 +172,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`/api/v1/templates/${id}`, {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -219,7 +220,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`/api/v1/templates/${id}`, {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -259,7 +260,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`/api/v1/templates/${templateId}/apply`, {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/${templateId}/apply`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -307,7 +308,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`/api/v1/templates/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
@@ -337,7 +338,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
         return [];
       }
 
-      const response = await fetch(`/api/v1/templates/popular?limit=${limit}`, {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/popular?limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
@@ -365,7 +366,7 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`/api/v1/templates/${id}`, {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/${id}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
