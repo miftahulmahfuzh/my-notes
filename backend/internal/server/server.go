@@ -97,7 +97,7 @@ func (s *Server) initializeServices() {
 		InactiveTimeout:    securityConfig.Session.InactiveTimeout,
 		RefreshThreshold:   securityConfig.Session.RefreshThreshold,
 	}
-	s.sessionMW = middleware.NewSessionMiddleware(s.userService, sessionConfig)
+	s.sessionMW = middleware.NewSessionMiddleware(s.userService, s.db, sessionConfig)
 
 	// Initialize rate limiting middleware
 	rateLimitConfig := &middleware.RateLimitConfig{

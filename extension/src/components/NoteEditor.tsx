@@ -116,40 +116,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Keyboard shortcuts
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key) {
-        case 's':
-          e.preventDefault();
-          handleSave();
-          break;
-        case 'Enter':
-          // Ctrl+Enter should save (not Enter alone)
-          e.preventDefault();
-          handleSave();
-          break;
-        case 'Escape':
-          e.preventDefault();
-          if (content !== note?.content || title !== note?.title) {
-            if (confirm('You have unsaved changes. Are you sure you want to cancel?')) {
-              onCancel();
-            }
-          } else {
-            onCancel();
-          }
-          break;
-      }
-    }
-
-    // Shift+Enter should save (as per user request for Ctrl+Shift+Enter)
-    if (e.shiftKey && e.key === 'Enter') {
+    // Only keyboard shortcut: Ctrl+S to save
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
       handleSave();
       return;
     }
-
-    // For regular Enter key in textarea, let it work naturally (create new line)
-    // We don't handle it here, so the textarea default behavior applies
 
     // Tab to indent in textarea
     if (e.key === 'Tab' && !e.shiftKey && textareaRef.current === e.target) {
@@ -363,14 +335,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
             <div className="shortcut">
               <kbd>Ctrl</kbd> + <kbd>S</kbd>
               <span>Save note</span>
-            </div>
-            <div className="shortcut">
-              <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd>
-              <span>Save note</span>
-            </div>
-            <div className="shortcut">
-              <kbd>Ctrl</kbd> + <kbd>Esc</kbd>
-              <span>Cancel (with confirmation)</span>
             </div>
             <div className="shortcut">
               <kbd>Tab</kbd>

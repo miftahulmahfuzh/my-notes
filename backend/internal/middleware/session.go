@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 // SessionMiddleware handles session management and validation
 type SessionMiddleware struct {
 	userService       services.UserServiceInterface
+	db                *sql.DB
 	sessionTimeout    time.Duration
 	maxSessions       int
 	enableConcurrency bool
@@ -29,7 +31,7 @@ type SessionConfig struct {
 }
 
 // NewSessionMiddleware creates a new session middleware
-func NewSessionMiddleware(userService services.UserServiceInterface, config *SessionConfig) *SessionMiddleware {
+func NewSessionMiddleware(userService services.UserServiceInterface, db *sql.DB, config *SessionConfig) *SessionMiddleware {
 	if config == nil {
 		config = &SessionConfig{
 			SessionTimeout:    24 * time.Hour,
@@ -42,6 +44,7 @@ func NewSessionMiddleware(userService services.UserServiceInterface, config *Ses
 
 	return &SessionMiddleware{
 		userService:       userService,
+		db:                db,
 		sessionTimeout:    config.SessionTimeout,
 		maxSessions:       config.MaxSessions,
 		enableConcurrency: config.EnableConcurrency,
@@ -160,14 +163,22 @@ func (sm *SessionMiddleware) isSessionExpired(session *models.UserSession) bool 
 	return time.Since(session.LastSeen) > sm.sessionTimeout
 }
 
-// invalidateSession marks a session as inactive
+// invalidateSession marks a session as inactive in the database
 func (sm *SessionMiddleware) invalidateSession(sessionID string) error {
-	// This would typically update the database
-	// For now, we'll implement a placeholder
-	return nil // Placeholder implementation
+	ctx := context.Background()
+
+	// Direct database query to mark session as inactive
+	query := `UPDATE user_sessions SET is_active = false WHERE id = $1`
+	_, err := sm.db.ExecContext(ctx, query, sessionID)
+	if err != nil {
+		return fmt.Errorf("failed to invalidate session %s: %w", sessionID, err)
+	}
+
+	return nil
 }
 
 // checkConcurrencyLimits checks if user has exceeded concurrent session limits
+// If limit is exceeded, it automatically invalidates the oldest sessions
 func (sm *SessionMiddleware) checkConcurrencyLimits(userID string) error {
 	sessions, err := sm.userService.GetActiveSessions(userID)
 	if err != nil {
@@ -175,7 +186,49 @@ func (sm *SessionMiddleware) checkConcurrencyLimits(userID string) error {
 	}
 
 	if len(sessions) >= sm.maxSessions {
-		return fmt.Errorf("maximum concurrent sessions (%d) exceeded", sm.maxSessions)
+		// Automatically clean up the oldest sessions to make room
+		err := sm.cleanupOldestSessions(userID, len(sessions)-sm.maxSessions+1)
+		if err != nil {
+			return fmt.Errorf("maximum concurrent sessions (%d) exceeded and cleanup failed: %w", sm.maxSessions, err)
+		}
+		fmt.Printf("Cleaned up %d old sessions for user %s\n", len(sessions)-sm.maxSessions+1, userID)
+	}
+
+	return nil
+}
+
+// cleanupOldestSessions invalidates the oldest active sessions for a user
+func (sm *SessionMiddleware) cleanupOldestSessions(userID string, count int) error {
+	sessions, err := sm.userService.GetActiveSessions(userID)
+	if err != nil {
+		return fmt.Errorf("failed to get sessions for cleanup: %w", err)
+	}
+
+	if len(sessions) < count {
+		count = len(sessions)
+	}
+
+	// Sort sessions by LastSeen (oldest first)
+	sortedSessions := make([]models.UserSession, len(sessions))
+	copy(sortedSessions, sessions)
+
+	for i := 0; i < len(sortedSessions)-1; i++ {
+		for j := i + 1; j < len(sortedSessions); j++ {
+			if sortedSessions[i].LastSeen.After(sortedSessions[j].LastSeen) {
+				sortedSessions[i], sortedSessions[j] = sortedSessions[j], sortedSessions[i]
+			}
+		}
+	}
+
+	// Invalidate the oldest sessions
+	for i := 0; i < count; i++ {
+		sessionID := sortedSessions[i].ID
+		err := sm.invalidateSession(sessionID)
+		if err != nil {
+			fmt.Printf("Failed to invalidate session %s: %v\n", sessionID, err)
+		} else {
+			fmt.Printf("Invalidated old session %s for user %s\n", sessionID, userID)
+		}
 	}
 
 	return nil
