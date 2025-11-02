@@ -92,6 +92,16 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
+  // Enhanced preview state management
+  const [previewMode, setPreviewMode] = useState<'simple' | 'detailed' | 'diff'>('simple');
+  const [showValidation, setShowValidation] = useState(true);
+  const [highlightMissing, setHighlightMissing] = useState(true);
+  const [autoRefreshPreview, setAutoRefreshPreview] = useState(true);
+  const [previewStatistics, setPreviewStatistics] = useState<ReturnType<typeof getPreviewStatistics> | null>(null);
+  const [previewValidation, setPreviewValidation] = useState<ReturnType<typeof validateTemplateVariables> | null>(null);
+  const [previewDiff, setPreviewDiff] = useState<ReturnType<typeof generatePreviewDiff> | null>(null);
+  const [previewContent, setPreviewContent] = useState<string>('');
+
   // Refs for search functionality
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -175,12 +185,7 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
     }
   }, []);
 
-  // Load templates on component mount
-  useEffect(() => {
-    loadTemplates();
-    loadSearchHistory();
-  }, [loadTemplates, loadSearchHistory]);
-
+  
   // Handle search on Enter key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -283,13 +288,7 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
     setShowDetailsModal(true);
   };
 
-  // Handle showing template details modal
-  const handleShowDetails = (template: Template) => {
-    console.log('🔍 DEBUG: TemplatePage - Showing template details:', template.name);
-    setSelectedTemplate(template);
-    setShowDetailsModal(true);
-  };
-
+  
   // Handle applying template from details modal
   const handleApplyFromDetails = () => {
     if (selectedTemplate) {
@@ -302,6 +301,10 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
           initialVariables[variable] = getBuiltInVariableValue(variable);
         });
         setTemplateVariables(initialVariables);
+
+        // Initialize preview data
+        updatePreviewData(selectedTemplate, initialVariables);
+
         setShowDetailsModal(false);
         setShowVariableDialog(true);
       } else {
@@ -318,6 +321,97 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
       ...prev,
       [variable]: value
     }));
+
+    // Auto-refresh preview if enabled
+    if (autoRefreshPreview && selectedTemplate) {
+      updatePreviewData(selectedTemplate, {
+        ...templateVariables,
+        [variable]: value
+      });
+    }
+  };
+
+  // Update all preview data when variables or template changes
+  const updatePreviewData = useCallback((
+    template: Template,
+    variables: Record<string, string>
+  ) => {
+    console.log('🔄 DEBUG: TemplatePage - Updating preview data for:', template.name);
+
+    // Generate preview content
+    const previewResult = generatePreviewContent(template, variables, {
+      highlightMissing,
+      includeValidation: showValidation,
+      maxLines: previewMode === 'simple' ? 15 : Infinity
+    });
+    setPreviewContent(previewResult.content);
+
+    // Generate validation results
+    if (showValidation) {
+      const validation = validateTemplateVariables(template, variables);
+      setPreviewValidation(validation);
+    }
+
+    // Generate statistics
+    const stats = getPreviewStatistics(template, previewResult.content, variables);
+    setPreviewStatistics(stats);
+
+    // Generate diff if in diff mode
+    if (previewMode === 'diff') {
+      const diff = generatePreviewDiff(template.content, previewResult.content, variables);
+      setPreviewDiff(diff);
+    }
+  }, [highlightMissing, showValidation, previewMode, autoRefreshPreview]);
+
+  // Handle preview mode change
+  const handlePreviewModeChange = (mode: 'simple' | 'detailed' | 'diff') => {
+    setPreviewMode(mode);
+    if (selectedTemplate) {
+      updatePreviewData(selectedTemplate, templateVariables);
+    }
+  };
+
+  // Handle validation toggle
+  const handleValidationToggle = () => {
+    setShowValidation(prev => !prev);
+    if (selectedTemplate) {
+      updatePreviewData(selectedTemplate, templateVariables);
+    }
+  };
+
+  // Handle highlight missing toggle
+  const handleHighlightMissingToggle = () => {
+    setHighlightMissing(prev => !prev);
+    if (selectedTemplate) {
+      updatePreviewData(selectedTemplate, templateVariables);
+    }
+  };
+
+  // Handle auto-refresh toggle
+  const handleAutoRefreshToggle = () => {
+    setAutoRefreshPreview(prev => !prev);
+    if (!autoRefreshPreview && selectedTemplate) {
+      // Manual refresh when disabling auto-refresh
+      updatePreviewData(selectedTemplate, templateVariables);
+    }
+  };
+
+  // Manual refresh function
+  const refreshPreview = () => {
+    if (selectedTemplate) {
+      updatePreviewData(selectedTemplate, templateVariables);
+    }
+  };
+
+  // Helper function to determine variable type
+  const getVariableType = (variable: string): string => {
+    if (variable.includes('date') || variable.includes('time')) return 'Date/Time';
+    if (variable.includes('email')) return 'Email';
+    if (variable.includes('url')) return 'URL';
+    if (variable.includes('phone')) return 'Phone';
+    if (variable.includes('title') || variable.includes('description')) return 'Text';
+    if (variable.includes('priority') || variable.includes('status')) return 'Status';
+    return 'String';
   };
 
   // Handle template application
@@ -421,6 +515,269 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
     }
   };
 
+  // ===== ADVANCED TEMPLATE PREVIEW SYSTEM =====
+
+  // Preview content with variable substitution
+  const generatePreviewContent = (
+    template: Template,
+    variables: Record<string, string>,
+    options: {
+      highlightMissing?: boolean;
+      includeValidation?: boolean;
+      maxLines?: number;
+    } = {}
+  ): {
+    content: string;
+    hasMissingVariables: boolean;
+    missingVariables: string[];
+    lineCount: number;
+    validation: {
+      isValid: boolean;
+      errors: string[];
+      warnings: string[];
+    };
+  } => {
+    const {
+      highlightMissing = true,
+      includeValidation = true,
+      maxLines = Infinity
+    } = options;
+
+    let processedContent = template.content;
+    const missingVariables: string[] = [];
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Process each variable in the template
+    template.variables.forEach(variable => {
+      const variablePattern = new RegExp(`{{${variable}}}`, 'g');
+      const variableValue = variables[variable] || getBuiltInVariableValue(variable);
+
+      if (variableValue) {
+        // Replace variable with value
+        processedContent = processedContent.replace(variablePattern, variableValue);
+      } else {
+        // Variable is missing
+        missingVariables.push(variable);
+        if (highlightMissing) {
+          processedContent = processedContent.replace(variablePattern, `⚠️{{${variable}}}⚠️`);
+        }
+        errors.push(`Missing value for variable: {{${variable}}}`);
+      }
+    });
+
+    // Check for any remaining unmatched variables
+    const unmatchedVariablePattern = /{{([^}]+)}}/g;
+    let match;
+    while ((match = unmatchedVariablePattern.exec(processedContent)) !== null) {
+      const unmatchedVar = match[1];
+      if (!template.variables.includes(unmatchedVar)) {
+        warnings.push(`Unknown variable found: {{${unmatchedVar}}}`);
+        if (highlightMissing) {
+          processedContent = processedContent.replace(
+            new RegExp(`{{${unmatchedVar}}}`, 'g'),
+            `❓{{${unmatchedVar}}}❓`
+          );
+        }
+      }
+    }
+
+    // Limit lines if specified
+    const lines = processedContent.split('\n');
+    const truncatedContent = lines.slice(0, maxLines).join('\n');
+    const wasTruncated = lines.length > maxLines;
+
+    if (wasTruncated) {
+      warnings.push(`Preview truncated to ${maxLines} lines (original: ${lines.length} lines)`);
+    }
+
+    return {
+      content: wasTruncated ? truncatedContent + '\n\n... (content truncated)' : truncatedContent,
+      hasMissingVariables: missingVariables.length > 0,
+      missingVariables,
+      lineCount: lines.length,
+      validation: {
+        isValid: errors.length === 0,
+        errors,
+        warnings
+      }
+    };
+  };
+
+  // Generate diff view between original and processed content
+  const generatePreviewDiff = (
+    originalContent: string,
+    processedContent: string,
+    variables: Record<string, string>
+  ): {
+    additions: string[];
+    modifications: Array<{ original: string; modified: string }>;
+    unchanged: string[];
+    summary: {
+      totalLines: number;
+      changedLines: number;
+      addedLines: number;
+      modifiedLines: number;
+    };
+  } => {
+    const originalLines = originalContent.split('\n');
+    const processedLines = processedContent.split('\n');
+
+    const additions: string[] = [];
+    const modifications: Array<{ original: string; modified: string }> = [];
+    const unchanged: string[] = [];
+
+    const maxLines = Math.max(originalLines.length, processedLines.length);
+
+    for (let i = 0; i < maxLines; i++) {
+      const originalLine = originalLines[i] || '';
+      const processedLine = processedLines[i] || '';
+
+      if (originalLine === processedLine) {
+        if (originalLine.trim() !== '') {
+          unchanged.push(originalLine);
+        }
+      } else if (!originalLine && processedLine) {
+        additions.push(processedLine);
+      } else if (originalLine && !processedLine) {
+        // Line was removed
+        modifications.push({ original: originalLine, modified: '[REMOVED]' });
+      } else {
+        // Line was modified
+        modifications.push({ original: originalLine, modified: processedLine });
+      }
+    }
+
+    return {
+      additions,
+      modifications,
+      unchanged,
+      summary: {
+        totalLines: maxLines,
+        changedLines: additions.length + modifications.length,
+        addedLines: additions.length,
+        modifiedLines: modifications.length
+      }
+    };
+  };
+
+  // Validate template variables
+  const validateTemplateVariables = (
+    template: Template,
+    variables: Record<string, string>
+  ): {
+    isValid: boolean;
+    errors: Array<{
+      variable: string;
+      type: 'missing' | 'invalid_format' | 'empty';
+      message: string;
+    }>;
+    warnings: Array<{
+      variable: string;
+      type: 'suggestion' | 'format_tip';
+      message: string;
+    }>;
+  } => {
+    const errors: Array<{
+      variable: string;
+      type: 'missing' | 'invalid_format' | 'empty';
+      message: string;
+    }> = [];
+    const warnings: Array<{
+      variable: string;
+      type: 'suggestion' | 'format_tip';
+      message: string;
+    }> = [];
+
+    template.variables.forEach(variable => {
+      const value = variables[variable] || getBuiltInVariableValue(variable);
+
+      // Check for missing required variables
+      if (!value || value.trim() === '') {
+        errors.push({
+          variable,
+          type: 'missing',
+          message: `Variable {{${variable}}} is required but no value was provided`
+        });
+        return;
+      }
+
+      // Variable-specific validations
+      if (variable.includes('email') && !value.includes('@')) {
+        errors.push({
+          variable,
+          type: 'invalid_format',
+          message: `Email format appears invalid for {{${variable}}}`
+        });
+      }
+
+      if (variable.includes('date') || variable.includes('time')) {
+        const dateValue = new Date(value);
+        if (isNaN(dateValue.getTime())) {
+          warnings.push({
+            variable,
+            type: 'format_tip',
+            message: `Date format might be invalid for {{${variable}}}`
+          });
+        }
+      }
+
+      if (variable.includes('url') && !value.startsWith('http')) {
+        warnings.push({
+          variable,
+          type: 'suggestion',
+          message: `URL should typically start with http:// or https:// for {{${variable}}}`
+        });
+      }
+
+      if (variable.includes('phone') && !/^[\d\s\-\+\(\)]+$/.test(value)) {
+        warnings.push({
+          variable,
+          type: 'format_tip',
+          message: `Phone number format might be invalid for {{${variable}}}`
+        });
+      }
+    });
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  };
+
+  // Get preview statistics
+  const getPreviewStatistics = (
+    template: Template,
+    processedContent: string,
+    variables: Record<string, string>
+  ): {
+    characterCount: number;
+    wordCount: number;
+    lineCount: number;
+    variableCount: number;
+    substitutedVariableCount: number;
+    estimatedReadTime: number; // in minutes
+  } => {
+    const characterCount = processedContent.length;
+    const wordCount = processedContent.trim().split(/\s+/).filter(word => word.length > 0).length;
+    const lineCount = processedContent.split('\n').length;
+    const variableCount = template.variables.length;
+    const substitutedVariableCount = template.variables.filter(v =>
+      variables[v] || getBuiltInVariableValue(v)
+    ).length;
+    const estimatedReadTime = Math.ceil(wordCount / 200); // Average reading speed: 200 words/minute
+
+    return {
+      characterCount,
+      wordCount,
+      lineCount,
+      variableCount,
+      substitutedVariableCount,
+      estimatedReadTime
+    };
+  };
+
   // Enhanced search functionality
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -509,6 +866,12 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
       console.warn('Failed to load search history:', error);
     }
   }, []);
+
+  // Load templates on component mount
+  useEffect(() => {
+    loadTemplates();
+    loadSearchHistory();
+  }, [loadTemplates, loadSearchHistory]);
 
   // Handle search input focus
   const handleSearchFocus = () => {
@@ -974,67 +1337,298 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
         </div>
       )}
 
-      {/* Variable Dialog */}
+      {/* Enhanced Variable Dialog with Advanced Preview */}
       {showVariableDialog && selectedTemplate && (
-        <div className="template-variable-dialog-overlay">
-          <div className="template-variable-dialog">
-            <div className="dialog-header">
-              <h3>Apply Template: {selectedTemplate.name}</h3>
+        <div className="enhanced-variable-dialog-overlay">
+          <div className="enhanced-variable-dialog">
+            {/* Dialog Header */}
+            <div className="enhanced-dialog-header">
+              <div className="header-content">
+                <div className="template-icon-large">
+                  {formatTemplateIcon(selectedTemplate.icon)}
+                </div>
+                <div className="header-text">
+                  <h3 className="dialog-title">Apply Template: {selectedTemplate.name}</h3>
+                  <p className="dialog-subtitle">{selectedTemplate.description}</p>
+                </div>
+              </div>
               <button
                 onClick={() => setShowVariableDialog(false)}
-                className="close-btn"
+                className="enhanced-close-btn"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
             </div>
 
-            <div className="dialog-content">
-              <p className="template-description">{selectedTemplate.description}</p>
-
+            <div className="enhanced-dialog-content">
+              {/* Variables Section */}
               <div className="variables-section">
-                <h4>Template Variables</h4>
-                {selectedTemplate.variables.map(variable => (
-                  <div key={variable} className="variable-field">
-                    <label htmlFor={`var-${variable}`}>
-                      {variable.charAt(0).toUpperCase() + variable.slice(1).replace(/_/g, ' ')}
-                    </label>
-                    <input
-                      id={`var-${variable}`}
-                      type="text"
-                      value={templateVariables[variable] || getBuiltInVariableValue(variable)}
-                      onChange={(e) => handleVariableChange(variable, e.target.value)}
-                      placeholder={`Enter ${variable.replace(/_/g, ' ')}`}
-                      className="variable-input"
-                    />
+                <div className="section-header">
+                  <h4 className="section-title">Template Variables</h4>
+                  <div className="variable-count-badge">
+                    {selectedTemplate.variables.length} variables
                   </div>
-                ))}
+                </div>
+
+                <div className="variables-grid">
+                  {selectedTemplate.variables.map(variable => (
+                    <div key={variable} className="enhanced-variable-field">
+                      <div className="variable-header">
+                        <label htmlFor={`var-${variable}`} className="variable-label">
+                          <span className="variable-name">
+                            {`{${variable}}`}
+                          </span>
+                          <span className="variable-display-name">
+                            {variable.charAt(0).toUpperCase() + variable.slice(1).replace(/_/g, ' ')}
+                          </span>
+                        </label>
+                        <div className="variable-type">
+                          {getVariableType(variable)}
+                        </div>
+                      </div>
+                      <input
+                        id={`var-${variable}`}
+                        type="text"
+                        value={templateVariables[variable] || getBuiltInVariableValue(variable)}
+                        onChange={(e) => handleVariableChange(variable, e.target.value)}
+                        placeholder={`Enter ${variable.replace(/_/g, ' ')}`}
+                        className="enhanced-variable-input"
+                      />
+                      <div className="variable-hint">
+                        {getVariableDescription(variable)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="template-preview">
-                <h4>Preview</h4>
-                <div className="preview-content">
-                  {selectedTemplate.variables.reduce((content, variable) => {
-                    const value = templateVariables[variable] || getBuiltInVariableValue(variable) || `{{${variable}}}`;
-                    return content.replace(new RegExp(`{{${variable}}}`, 'g'), value);
-                  }, selectedTemplate.content).split('\n').slice(0, 10).join('\n')}
-                  {selectedTemplate.content.split('\n').length > 10 && '\n...'}
+              {/* Enhanced Preview Section */}
+              <div className="enhanced-preview-section">
+                <div className="preview-header">
+                  <h4 className="preview-title">Live Preview</h4>
+                  <div className="preview-controls">
+                    <div className="preview-mode-tabs">
+                      <button
+                        className={`mode-tab ${previewMode === 'simple' ? 'active' : ''}`}
+                        onClick={() => handlePreviewModeChange('simple')}
+                      >
+                        Simple
+                      </button>
+                      <button
+                        className={`mode-tab ${previewMode === 'detailed' ? 'active' : ''}`}
+                        onClick={() => handlePreviewModeChange('detailed')}
+                      >
+                        Detailed
+                      </button>
+                      <button
+                        className={`mode-tab ${previewMode === 'diff' ? 'active' : ''}`}
+                        onClick={() => handlePreviewModeChange('diff')}
+                      >
+                        Diff
+                      </button>
+                    </div>
+                    <div className="preview-options">
+                      <button
+                        className={`option-toggle ${showValidation ? 'active' : ''}`}
+                        onClick={handleValidationToggle}
+                        title="Toggle validation"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M9 11l3 3L22 4"></path>
+                          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                        </svg>
+                      </button>
+                      <button
+                        className={`option-toggle ${highlightMissing ? 'active' : ''}`}
+                        onClick={handleHighlightMissingToggle}
+                        title="Toggle highlight missing variables"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                      </button>
+                      <button
+                        className={`option-toggle ${autoRefreshPreview ? 'active' : ''}`}
+                        onClick={handleAutoRefreshToggle}
+                        title="Toggle auto-refresh"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 4v6h6"></path>
+                          <path d="M23 20v-6h-6"></path>
+                          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={refreshPreview}
+                        className="refresh-btn"
+                        title="Refresh preview"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M23 4v6h-6"></path>
+                          <path d="M1 20v-6h6"></path>
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Preview Content Based on Mode */}
+                <div className="preview-content-wrapper">
+                  {previewMode === 'simple' && (
+                    <div className="simple-preview">
+                      <div className="preview-textarea">
+                        {previewContent.split('\n').map((line, index) => (
+                          <div key={index} className="preview-line">
+                            <span className="line-number">{index + 1}</span>
+                            <span className="line-content">{line || '\u00A0'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {previewMode === 'detailed' && (
+                    <div className="detailed-preview">
+                      <div className="preview-content">
+                        {previewContent.split('\n').map((line, index) => (
+                          <div key={index} className="preview-line">
+                            <span className="line-number">{index + 1}</span>
+                            <span className="line-content">{line || '\u00A0'}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Statistics Panel */}
+                      {previewStatistics && (
+                        <div className="preview-stats-panel">
+                          <h5>Statistics</h5>
+                          <div className="stats-grid">
+                            <div className="stat-item">
+                              <span className="stat-label">Characters</span>
+                              <span className="stat-value">{previewStatistics.characterCount}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span className="stat-label">Words</span>
+                              <span className="stat-value">{previewStatistics.wordCount}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span className="stat-label">Lines</span>
+                              <span className="stat-value">{previewStatistics.lineCount}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span className="stat-label">Variables</span>
+                              <span className="stat-value">{previewStatistics.substitutedVariableCount}/{previewStatistics.variableCount}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span className="stat-label">Read Time</span>
+                              <span className="stat-value">{previewStatistics.estimatedReadTime} min</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {previewMode === 'diff' && previewDiff && (
+                    <div className="diff-preview">
+                      <div className="diff-summary">
+                        <div className="diff-stats">
+                          <span className="diff-stat">
+                            Total: {previewDiff.summary.totalLines} lines
+                          </span>
+                          <span className="diff-stat added">
+                            +{previewDiff.summary.addedLines} added
+                          </span>
+                          <span className="diff-stat modified">
+                            ~{previewDiff.summary.modifiedLines} modified
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="diff-content">
+                        {previewDiff.modifications.map((mod, index) => (
+                          <div key={index} className="diff-modification">
+                            <div className="diff-original">- {mod.original}</div>
+                            <div className="diff-modified">+ {mod.modified}</div>
+                          </div>
+                        ))}
+                        {previewDiff.additions.map((addition, index) => (
+                          <div key={index} className="diff-addition">
+                            <div className="diff-added">+ {addition}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Validation Panel */}
+                {showValidation && previewValidation && (
+                  <div className="validation-panel">
+                    <div className={`validation-status ${previewValidation.isValid ? 'valid' : 'invalid'}`}>
+                      <div className="status-icon">
+                        {previewValidation.isValid ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 6L9 17l-5-5"></path>
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                          </svg>
+                        )}
+                      </div>
+                      <span className="status-text">
+                        {previewValidation.isValid ? 'All variables configured correctly' : `${previewValidation.errors.length} issues found`}
+                      </span>
+                    </div>
+
+                    {previewValidation.errors.length > 0 && (
+                      <div className="validation-errors">
+                        <h5>Errors</h5>
+                        {previewValidation.errors.map((error, index) => (
+                          <div key={index} className="validation-error">
+                            <span className="error-variable">{`{${error.variable}}`}</span>
+                            <span className="error-message">{error.message}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {previewValidation.warnings.length > 0 && (
+                      <div className="validation-warnings">
+                        <h5>Suggestions</h5>
+                        {previewValidation.warnings.map((warning, index) => (
+                          <div key={index} className="validation-warning">
+                            <span className="warning-variable">{`{${warning.variable}}`}</span>
+                            <span className="warning-message">{warning.message}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="dialog-actions">
+            {/* Enhanced Dialog Actions */}
+            <div className="enhanced-dialog-actions">
               <button
                 onClick={() => setShowVariableDialog(false)}
-                className="cancel-btn"
+                className="enhanced-cancel-btn"
               >
                 Cancel
               </button>
               <button
                 onClick={handleApplyTemplate}
-                className="apply-btn"
+                className={`enhanced-apply-btn ${!previewValidation?.isValid ? 'disabled' : ''}`}
+                disabled={!previewValidation?.isValid}
               >
                 Apply Template
               </button>
