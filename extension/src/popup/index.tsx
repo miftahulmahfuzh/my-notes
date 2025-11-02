@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { authService, AuthState } from '../auth';
 import { apiService, Note, NoteResponse, CreateNoteRequest, UpdateNoteRequest } from '../api';
+import { CONFIG } from '../utils/config';
 import { LoginForm } from '../components/LoginForm';
 import { SimpleUserProfile } from '../components/SimpleUserProfile';
 import NoteView from '../components/NoteView';
 import NoteEditor from '../components/NoteEditor';
+import TemplatePage from '../components/TemplatePage';
 
 // Styles
 import './popup.css';
@@ -30,6 +32,10 @@ interface AppState {
   showNoteDetail: boolean;            // Show full note detail view
   showNoteEditor: boolean;            // Show note editor for editing
   editingNote: NoteResponse | null;   // Note currently being edited (for editor component)
+
+  // Template page navigation state
+  showTemplatePage: boolean;
+  currentNoteId?: string; // For context in template page
 
   // Form state for creating notes
   newNoteTitle: string;
@@ -62,6 +68,10 @@ const PopupApp: React.FC = () => {
     showNoteDetail: false,
     showNoteEditor: false,
     editingNote: null,
+
+    // Template page navigation state
+    showTemplatePage: false,
+    currentNoteId: undefined,
 
     // Form state for creating notes
     newNoteTitle: '',
@@ -391,6 +401,104 @@ const PopupApp: React.FC = () => {
       showNotesList: true
     }));
   };
+
+  // ===== TEMPLATE PAGE NAVIGATION FUNCTIONS =====
+
+  /**
+   * Navigate to template page for a specific note
+   * @param noteId - Optional ID of the note being edited
+   */
+  const handleShowTemplatePage = (noteId?: string): void => {
+    console.log('handleShowTemplatePage called with noteId:', noteId);
+    setState(prev => ({
+      ...prev,
+      showTemplatePage: true,
+      currentNoteId: noteId,
+      showNoteEditor: false // Hide editor when showing template page
+    }));
+  };
+
+  /**
+   * Navigate back from template page to note editor
+   */
+  const handleBackFromTemplates = (): void => {
+    console.log('handleBackFromTemplates called');
+    setState(prev => ({
+      ...prev,
+      showTemplatePage: false,
+      currentNoteId: undefined,
+      showNoteEditor: true // Return to editor
+    }));
+  };
+
+  /**
+   * Handle template selection and application
+   * @param templateId - ID of the selected template
+   * @param variables - Template variables and their values
+   */
+  const handleTemplateSelect = async (templateId: string, variables: Record<string, string>): Promise<void> => {
+    console.log('handleTemplateSelect called with templateId:', templateId, 'variables:', variables);
+
+    if (!state.editingNote) {
+      console.error('No note is currently being edited');
+      setState(prev => ({
+        ...prev,
+        error: 'No note is currently being edited'
+      }));
+      return;
+    }
+
+    try {
+      // Call the template application API endpoint
+      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/${templateId}/apply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await authService.getAuthHeader())
+        },
+        body: JSON.stringify({ variables })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to apply template: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Template application result:', result);
+
+      if (result.success && result.data && result.data.content) {
+        // Update the note with the template content
+        const updatedNote = {
+          ...state.editingNote,
+          content: result.data.content,
+          title: result.data.title || state.editingNote.title
+        };
+
+        // Update state to show the template content in the editor
+        setState(prev => ({
+          ...prev,
+          editingNote: updatedNote,
+          showTemplatePage: false,
+          currentNoteId: undefined,
+          showNoteEditor: true,
+          error: null
+        }));
+
+        console.log('Template applied successfully');
+      } else {
+        throw new Error(result.error || 'Failed to apply template');
+      }
+    } catch (error) {
+      console.error('Error applying template:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setState(prev => ({
+        ...prev,
+        error: `Failed to apply template: ${errorMessage}`
+      }));
+    }
+  };
+
+  // =============================================
 
   /**
    * Update an existing note with new content
@@ -754,9 +862,23 @@ const PopupApp: React.FC = () => {
             note={state.editingNote}
             onSave={updateNote}
             onCancel={handleBackToNotes}
+            onShowTemplates={handleShowTemplatePage}
             loading={state.isLoading}
             autoFocus={true}
             placeholder="Start editing your note..."
+          />
+        </div>
+      );
+    }
+
+    // Show template page view
+    if (state.showTemplatePage) {
+      return (
+        <div className="template-page-view">
+          <TemplatePage
+            onTemplateSelect={handleTemplateSelect}
+            onBack={handleBackFromTemplates}
+            noteId={state.currentNoteId}
           />
         </div>
       );

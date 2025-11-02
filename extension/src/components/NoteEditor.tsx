@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Note } from '../types';
-import TemplateSelector from './TemplateSelector';
 import { CONFIG } from '../utils/config';
 import { authService } from '../auth';
 
@@ -8,6 +7,7 @@ interface NoteEditorProps {
   note?: Note;
   onSave: (note: { title?: string; content: string }) => Promise<void>;
   onCancel: () => void;
+  onShowTemplates?: (noteId?: string) => void; // New prop for template navigation
   loading?: boolean;
   placeholder?: string;
   autoFocus?: boolean;
@@ -17,6 +17,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   note,
   onSave,
   onCancel,
+  onShowTemplates,
   loading = false,
   placeholder = "Start typing your note...",
   autoFocus = true
@@ -26,7 +27,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [charCount, setCharCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -123,122 +123,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   };
 
-  const handleTemplateSelect = async (templateId: string, variables?: Record<string, string>) => {
-    try {
-      console.log('🔧 DEBUG: handleTemplateSelect called with:', {
-        templateId,
-        variables,
-        variablesCount: Object.keys(variables || {}).length
-      });
-
-      const authHeaders = await authService.getAuthHeader();
-      if (!authHeaders.Authorization) {
-        console.error('❌ DEBUG: No auth headers found');
-        alert('Please log in to use templates');
-        return;
-      }
-
-      console.log('🔐 DEBUG: Auth headers found, making API request...');
-
-      const requestBody = {
-        template_id: templateId,
-        variables: variables || {},
-      };
-
-      console.log('📤 DEBUG: Request body:', requestBody);
-
-      const response = await fetch(`${CONFIG.API_BASE_URL}/templates/${templateId}/apply`, {
-        method: 'POST',
-        headers: {
-          ...authHeaders,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log('📡 DEBUG: API response status:', response.status, response.statusText);
-
-      if (!response.ok) {
-        console.error('❌ DEBUG: API response not OK:', response.status, response.statusText);
-        throw new Error(`Failed to apply template: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('📥 DEBUG: Raw API response:', result);
-      console.log('📥 DEBUG: Response structure analysis:', {
-        hasResult: !!result,
-        hasResults: !!result.results,
-        hasData: !!result.data,
-        resultKeys: Object.keys(result || {}),
-        resultsKeys: result.results ? Object.keys(result.results) : [],
-        dataKeys: result.data ? Object.keys(result.data) : [],
-        success: result.success,
-        message: result.message
-      });
-
-      // Try multiple possible data access patterns
-      let processedContent = null;
-      let accessPattern = '';
-
-      if (result?.results?.content) {
-        processedContent = result.results.content;
-        accessPattern = 'result.results.content (TemplateResponse format)';
-      } else if (result?.data?.results?.content) {
-        processedContent = result.data.results.content;
-        accessPattern = 'result.data.results.content (wrapped TemplateResponse format)';
-      } else if (result?.data?.content) {
-        processedContent = result.data.content;
-        accessPattern = 'result.data.content (direct data format)';
-      } else if (result?.content) {
-        processedContent = result.content;
-        accessPattern = 'result.content (flat format)';
-      } else {
-        console.error('❌ DEBUG: Could not find processed content in any expected location');
-        console.error('❌ DEBUG: Full result object:', JSON.stringify(result, null, 2));
-        throw new Error('Invalid response format: could not find template content');
-      }
-
-      console.log('✅ DEBUG: Successfully extracted content using pattern:', accessPattern);
-      console.log('✅ DEBUG: Processed content length:', processedContent?.length);
-      console.log('✅ DEBUG: Processed content preview:', processedContent?.substring(0, 200) + '...');
-
-      // Validate processed content
-      if (!processedContent || typeof processedContent !== 'string') {
-        console.error('❌ DEBUG: Invalid processed content:', {
-          isNull: processedContent === null,
-          isUndefined: processedContent === undefined,
-          type: typeof processedContent,
-          length: processedContent?.length
-        });
-        throw new Error('Invalid template content received from server');
-      }
-
-      // Apply the template content
-      console.log('📝 DEBUG: Applying template content to editor...');
-      setContent(processedContent);
-
-      // Auto-generate title from template content if no title exists
-      if (!title) {
-        console.log('🏷️ DEBUG: Auto-generating title from template content...');
-        const generatedTitle = generateTitleFromContent(processedContent);
-        setTitle(generatedTitle);
-        console.log('🏷️ DEBUG: Generated title:', generatedTitle);
-      } else {
-        console.log('🏷️ DEBUG: Keeping existing title:', title);
-      }
-
-      console.log('🎉 DEBUG: Template application completed successfully');
-      setShowTemplateSelector(false);
-
-    } catch (error) {
-      console.error('💥 DEBUG: Template application failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('💥 DEBUG: Error details:', {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      alert(`Failed to apply template: ${errorMessage}. Please try again.`);
+  // Handle template navigation - call the parent navigation function
+  const handleShowTemplates = () => {
+    if (onShowTemplates) {
+      onShowTemplates(note?.id);
     }
   };
 
@@ -260,7 +148,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         </h3>
         <div className="editor-actions">
           <button
-            onClick={() => setShowTemplateSelector(true)}
+            onClick={handleShowTemplates}
             className="template-btn"
             title="Choose a template"
           >
@@ -328,39 +216,31 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
               </span>
             </div>
 
-                      </div>
-        </div>
+            {hashtags.length > 0 && (
+              <div className="hashtags-section">
+                <h4 className="hashtags-title">Hashtags</h4>
+                <div className="hashtags-list">
+                  {hashtags.map((tag, index) => (
+                    <span key={index} className="hashtag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {hashtags.length > 0 && (
-          <div className="hashtags-section">
-            <h4 className="hashtags-title">Hashtags</h4>
-            <div className="hashtags-list">
-              {hashtags.map((tag, index) => (
-                <span key={index} className="hashtag">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="keyboard-shortcuts">
-          <h4 className="shortcuts-title">Keyboard Shortcuts</h4>
-          <div className="shortcuts-list">
-            <div className="shortcut">
-              <kbd>Ctrl</kbd>+<kbd>s</kbd>
-              <span>Save note</span>
+            <div className="keyboard-shortcuts">
+              <h4 className="shortcuts-title">Keyboard Shortcuts</h4>
+              <div className="shortcuts-list">
+                <div className="shortcut">
+                  <kbd>Ctrl</kbd>+<kbd>s</kbd>
+                  <span>Save note</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      {showTemplateSelector && (
-        <TemplateSelector
-          onTemplateSelect={handleTemplateSelect}
-          onClose={() => setShowTemplateSelector(false)}
-        />
-      )}
     </div>
   );
 };
