@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/gpd/my-notes/internal/models"
 )
 
@@ -48,7 +49,7 @@ func (s *TemplateService) CreateTemplate(template *models.Template) error {
 		template.Description,
 		template.Content,
 		template.Category,
-		template.Variables,
+		pq.Array(template.Variables),
 		template.IsBuiltIn,
 		template.UsageCount,
 		template.IsPublic,
@@ -79,7 +80,7 @@ func (s *TemplateService) GetTemplate(templateID uuid.UUID, userID uuid.UUID) (*
 		&template.Description,
 		&template.Content,
 		&template.Category,
-		&template.Variables,
+		pq.Array(&template.Variables),
 		&template.IsBuiltIn,
 		&template.UsageCount,
 		&template.IsPublic,
@@ -136,7 +137,7 @@ func (s *TemplateService) GetTemplates(userID uuid.UUID, category string, limit,
 			&template.Description,
 			&template.Content,
 			&template.Category,
-			&template.Variables,
+			pq.Array(&template.Variables),
 			&template.IsBuiltIn,
 			&template.UsageCount,
 			&template.IsPublic,
@@ -184,7 +185,7 @@ func (s *TemplateService) GetBuiltInTemplates() ([]*models.Template, error) {
 			&template.Description,
 			&template.Content,
 			&template.Category,
-			&template.Variables,
+			pq.Array(&template.Variables),
 			&template.IsBuiltIn,
 			&template.UsageCount,
 			&template.IsPublic,
@@ -475,7 +476,7 @@ func (s *TemplateService) GetPopularTemplates(userID uuid.UUID, limit int) ([]*m
 			&template.Description,
 			&template.Content,
 			&template.Category,
-			&template.Variables,
+			pq.Array(&template.Variables),
 			&template.IsBuiltIn,
 			&template.UsageCount,
 			&template.IsPublic,
@@ -526,7 +527,7 @@ func (s *TemplateService) SearchTemplates(userID uuid.UUID, query string, limit 
 			&template.Description,
 			&template.Content,
 			&template.Category,
-			&template.Variables,
+			pq.Array(&template.Variables),
 			&template.IsBuiltIn,
 			&template.UsageCount,
 			&template.IsPublic,
