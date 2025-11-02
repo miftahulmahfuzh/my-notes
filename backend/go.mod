@@ -10,6 +10,8 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
+	github.com/microcosm-cc/bluemonday v1.0.25
+	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.15.0
 )

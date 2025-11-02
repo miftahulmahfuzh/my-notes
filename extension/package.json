@@ -15,13 +15,21 @@
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-markdown": "^9.0.0",
+    "remark-gfm": "^4.0.0",
+    "react-syntax-highlighter": "^15.5.0",
+    "react-hotkeys-hook": "^4.4.0",
+    "@dnd-kit/core": "^6.0.8",
+    "@dnd-kit/sortable": "^7.0.2",
+    "@dnd-kit/utilities": "^3.2.1"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.258",
     "@types/jest": "^29.5.8",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
+    "@types/react-syntax-highlighter": "^15.5.0",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "copy-webpack-plugin": "^11.0.0",

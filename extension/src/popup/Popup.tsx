@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Settings from '../components/Settings';
 
 interface Note {
   id: string;
@@ -12,6 +13,7 @@ export const Popup: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [newNote, setNewNote] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     // Load notes from Chrome storage
@@ -62,6 +64,16 @@ export const Popup: React.FC = () => {
     <div className="container">
       <header className="header">
         <h1>Silence Notes</h1>
+        <button
+          onClick={() => setShowSettings(true)}
+          className="settings-btn"
+          title="Settings"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m11-7l4.24 4.24M12 17l-4.24 4.24M20.24 4.76L16 9M8 15l-4.24 4.24"></path>
+          </svg>
+        </button>
       </header>
 
       <main className="main">
@@ -98,6 +110,10 @@ export const Popup: React.FC = () => {
           ))}
         </div>
       </main>
+
+      {showSettings && (
+        <Settings onClose={() => setShowSettings(false)} />
+      )}
     </div>
   );
 };

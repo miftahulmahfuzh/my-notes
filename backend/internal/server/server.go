@@ -163,6 +163,20 @@ func (s *Server) initializeServices() {
 	// Initialize notes handler
 	s.handlers.SetNotesHandler(notesHandler)
 
+	// Initialize markdown handler
+	markdownHandler := handlers.NewMarkdownHandler()
+	s.handlers.SetMarkdownHandler(markdownHandler)
+
+	// Initialize template service and handler
+	templateService := services.NewTemplateService(s.db)
+	templateHandler := handlers.NewTemplateHandler(templateService)
+	s.handlers.SetTemplateHandler(templateHandler)
+
+	// Initialize export/import service and handler
+	exportImportService := services.NewExportImportService(s.db)
+	exportImportHandler := handlers.NewExportImportHandler(exportImportService)
+	s.handlers.SetExportImportHandler(exportImportHandler)
+
 	log.Printf("✅ Security services initialized")
 	log.Printf("🔒 Security mode: %s", s.config.App.Environment)
 	log.Printf("🚦 Rate limiting: %.0f req/sec global, %d req/min per user",
@@ -268,6 +282,39 @@ func (s *Server) setupRoutes() {
 	// protected.HandleFunc("/tags", s.handlers.Tags.GetTags).Methods("GET")
 	// protected.HandleFunc("/tags", s.handlers.Tags.CreateTag).Methods("POST")
 	// protected.HandleFunc("/tags/suggestions", s.handlers.Tags.GetSuggestions).Methods("GET")
+
+	// Markdown routes
+	if s.handlers.Markdown != nil {
+		protected.HandleFunc("/markdown/preview", s.handlers.Markdown.PreviewMarkdown).Methods("POST")
+		protected.HandleFunc("/markdown/help", s.handlers.Markdown.GetMarkdownHelp).Methods("GET")
+		protected.HandleFunc("/markdown/validate", s.handlers.Markdown.ValidateMarkdown).Methods("POST")
+		protected.HandleFunc("/markdown/metadata", s.handlers.Markdown.ExtractMetadata).Methods("POST")
+		protected.HandleFunc("/markdown/tags", s.handlers.Markdown.ExtractTags).Methods("POST")
+	}
+
+	// Template routes
+	if s.handlers.Templates != nil {
+		protected.HandleFunc("/templates", s.handlers.Templates.GetTemplates).Methods("GET")
+		protected.HandleFunc("/templates", s.handlers.Templates.CreateTemplate).Methods("POST")
+		protected.HandleFunc("/templates/built-in", s.handlers.Templates.GetBuiltInTemplates).Methods("GET")
+		protected.HandleFunc("/templates/{id}", s.handlers.Templates.GetTemplate).Methods("GET")
+		protected.HandleFunc("/templates/{id}", s.handlers.Templates.UpdateTemplate).Methods("PUT")
+		protected.HandleFunc("/templates/{id}", s.handlers.Templates.DeleteTemplate).Methods("DELETE")
+		protected.HandleFunc("/templates/{id}/apply", s.handlers.Templates.ApplyTemplate).Methods("POST")
+		protected.HandleFunc("/templates/search", s.handlers.Templates.SearchTemplates).Methods("GET")
+		protected.HandleFunc("/templates/popular", s.handlers.Templates.GetPopularTemplates).Methods("GET")
+		protected.HandleFunc("/templates/stats", s.handlers.Templates.GetTemplateStats).Methods("GET")
+	}
+
+	// Export/Import routes
+	if s.handlers.ExportImport != nil {
+		protected.HandleFunc("/export", s.handlers.ExportImport.ExportData).Methods("GET")
+		protected.HandleFunc("/import", s.handlers.ExportImport.ImportData).Methods("POST")
+		protected.HandleFunc("/export/formats", s.handlers.ExportImport.GetExportFormats).Methods("GET")
+		protected.HandleFunc("/import/info", s.handlers.ExportImport.GetImportInfo).Methods("GET")
+		protected.HandleFunc("/export/history", s.handlers.ExportImport.GetExportHistory).Methods("GET")
+		protected.HandleFunc("/import/validate", s.handlers.ExportImport.ValidateImportFile).Methods("POST")
+	}
 
 	// Search routes are now handled by the notes handler
 
