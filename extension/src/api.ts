@@ -162,10 +162,20 @@ class ApiService {
         };
       }
 
+      // Handle wrapped APIResponse format from backend
+      // Backend returns: {success: true, data: {...}}
+      // Frontend expects: {success: true, data: actualData}
+      let responseData = data as T;
+
+      // If the data has the backend's APIResponse structure, extract the inner data
+      if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+        responseData = (data as any).data;
+      }
+
       return {
         success: true,
-        data: data as T,
-        message: data.message || 'Success'
+        data: responseData,
+        message: (data as any)?.message || 'Success'
       };
 
     } catch (error) {

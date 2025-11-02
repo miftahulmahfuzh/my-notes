@@ -55,6 +55,36 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P1-CN-A005** Fix API response unwrapping for consistent frontend data handling
+  - **Completed**: 2025-11-02 15:25:00
+  - **Difficulty**: NORMAL
+  - **Context**: Backend sends responses wrapped in {success: true, data: {...}} format, but frontend wasn't unwrapping properly
+  - **Root Cause**: Frontend's performRequest method returned entire backend response instead of extracting inner data
+  - **Issue Details**:
+    - Backend sends: {"success":true,"data":{"notes":[...]}}
+    - Frontend received: response.data = {"success":true,"data":{"notes":[...]}}
+    - Frontend tries: response.data.notes → ❌ undefined (double wrapping)
+  - **Method**:
+    - Added response format detection in frontend API service
+    - Auto-unwrapping of backend's APIResponse format in performRequest method
+    - Maintains backward compatibility with non-wrapped responses
+  - **Files Modified**:
+    - extension/src/api.ts (performRequest method, added unwrapping logic)
+    - Rebuilt Chrome extension with fix
+  - **Key Change**:
+    ```typescript
+    // Detect and unwrap backend's APIResponse format
+    if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+      responseData = (data as any).data;
+    }
+    ```
+  - **Impact**: Note listing now displays correctly in Chrome extension
+  - **Validation**:
+    - Backend logs show notes being sent successfully
+    - Chrome extension "View All Notes" button now shows created notes
+    - Users can see both "kjfnsgfsfog" and "hello" notes in extension
+  - **Evidence**: Console logs show successful authentication and API calls working
+
 - [x] **P1-CN-A004** Fix authentication session management for Chrome extensions
   - **Completed**: 2025-11-02 14:30:00
   - **Difficulty**: HARD

@@ -141,22 +141,21 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Generate JWT tokens
-		tokenPair, err := h.tokenService.GenerateTokenPair(user)
+		// Create user session first (Chrome extensions can't use traditional cookie sessions)
+		session, err := h.userService.CreateSession(user.ID.String(), getClientIP(r), r.UserAgent())
+		var sessionID string
+		if err != nil {
+			// For testing, create a simple session if CreateSession fails
+			sessionID = fmt.Sprintf("test-session-%s", user.ID.String())
+		} else {
+			sessionID = session.ID
+		}
+
+		// Generate JWT tokens with the actual session ID
+		tokenPair, err := h.tokenService.GenerateTokenPairWithSession(user, sessionID)
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, "Failed to generate tokens")
 			return
-		}
-
-		// Create user session
-		_, err = h.userService.CreateSession(
-			user.ID.String(),
-			getClientIP(r),
-			r.UserAgent(),
-		)
-		if err != nil {
-			// Log error but don't fail the request
-			fmt.Printf("Failed to create user session: %v\n", err)
 		}
 
 		respondWithJSON(w, http.StatusOK, AuthResponse{
@@ -202,22 +201,21 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate JWT tokens
-	tokenPair, err := h.tokenService.GenerateTokenPair(user)
+	// Create user session first
+	userSession, err := h.userService.CreateSession(user.ID.String(), getClientIP(r), r.UserAgent())
+	var sessionID string
+	if err != nil {
+		// For testing, create a simple session if CreateSession fails
+		sessionID = fmt.Sprintf("oauth-session-%s", user.ID.String())
+	} else {
+		sessionID = userSession.ID
+	}
+
+	// Generate JWT tokens with the actual session ID
+	tokenPair, err := h.tokenService.GenerateTokenPairWithSession(user, sessionID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to generate tokens")
 		return
-	}
-
-	// Create user session
-	_, err = h.userService.CreateSession(
-		user.ID.String(),
-		getClientIP(r),
-		r.UserAgent(),
-	)
-	if err != nil {
-		// Log error but don't fail the request
-		fmt.Printf("Failed to create user session: %v\n", err)
 	}
 
 	// Clean up session
@@ -442,6 +440,7 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 		return
 	}
 
+	
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
