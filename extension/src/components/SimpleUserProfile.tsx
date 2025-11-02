@@ -51,53 +51,52 @@ export const SimpleUserProfile: React.FC<SimpleUserProfileProps> = ({ onLogout }
 
   return (
     <div className="user-profile">
+      <div className="user-avatar">
+        {user.avatar_url ? (
+          <img
+            src={user.avatar_url}
+            alt={user.name}
+            className="avatar-img"
+          />
+        ) : (
+          <div className="avatar-fallback">
+            {getUserInitials(user)}
+          </div>
+        )}
+      </div>
+
       <div className="user-info">
-        <div className="user-avatar">
-          {user.avatar_url ? (
-            <img
-              src={user.avatar_url}
-              alt={user.name}
-              className="avatar-img"
-            />
-          ) : (
-            <div className="avatar-fallback">
-              {getUserInitials(user)}
-            </div>
-          )}
-        </div>
-
-        <div className="user-details">
-          <div className="user-name">{user.name}</div>
-          <div className="user-email">{user.email}</div>
-        </div>
+        <div className="user-name">{user.name}</div>
+        <div className="user-email">{user.email}</div>
       </div>
 
-      <div className="user-actions">
-        <button
-          onClick={handleLogoutClick}
-          className="logout-btn"
-          title="Sign out"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16,17 21,12 16,7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
-      </div>
+      <button
+        onClick={handleLogoutClick}
+        className="btn-tertiary"
+        title="Sign out"
+      >
+        <svg className="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16,17 21,12 16,7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Logout
+      </button>
 
       {showLogoutConfirm && (
         <div className="logout-confirm">
-          <div className="logout-confirm-content">
-            <h4>Sign Out?</h4>
-            <p>You'll need to sign in again to access your notes.</p>
-            <div className="logout-confirm-actions">
-              <button onClick={cancelLogout} className="cancel-btn">
-                Cancel
-              </button>
-              <button onClick={handleLogout} className="confirm-logout-btn">
-                Sign Out
-              </button>
+          <div className="card">
+            <div className="card-content">
+              <h3 className="text-h3 font-display mb-4">Sign Out?</h3>
+              <p className="text-base mb-6">You'll need to sign in again to access your notes.</p>
+              <div className="flex gap-3">
+                <button onClick={cancelLogout} className="btn-secondary flex-1">
+                  Cancel
+                </button>
+                <button onClick={handleLogout} className="btn-primary flex-1">
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
         </div>

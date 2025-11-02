@@ -167,6 +167,13 @@ const PopupApp: React.FC = () => {
     await loadNotes();
   };
 
+  const handleSearchNotesClick = () => {
+    // For now, this will just show all notes with a search focus
+    // In the future, this could open a dedicated search interface
+    setState(prev => ({ ...prev, showCreateForm: false }));
+    loadNotes(); // Load notes and we can add search functionality later
+  };
+
   const handleCancelCreate = () => {
     setState(prev => ({
       ...prev,
@@ -185,13 +192,23 @@ const PopupApp: React.FC = () => {
     return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString();
   };
 
+  const getUserInitials = (name: string, email: string) => {
+    if (name && name.length > 0) {
+      return name.slice(0, 2).toUpperCase();
+    }
+    if (email && email.length > 0) {
+      return email.slice(0, 2).toUpperCase();
+    }
+    return 'ME';
+  };
+
   const renderContent = () => {
     // Show loading state during initialization
     if (state.authState.isLoading) {
       return (
         <div className="loading-state">
           <div className="spinner"></div>
-          <p>Initializing...</p>
+          <p className="loading-text">Initializing...</p>
         </div>
       );
     }
@@ -204,11 +221,13 @@ const PopupApp: React.FC = () => {
     // Show error message
     if (state.error) {
       return (
-        <div className="error-message">
-          <p>{state.error}</p>
-          <button className="retry-btn" onClick={() => setState(prev => ({ ...prev, error: null }))}>
-            Try Again
-          </button>
+        <div className="main-content">
+          <div className="error-message">
+            <p className="error-text">{state.error}</p>
+            <button className="btn-primary" onClick={() => setState(prev => ({ ...prev, error: null }))}>
+              Try Again
+            </button>
+          </div>
         </div>
       );
     }
@@ -218,7 +237,7 @@ const PopupApp: React.FC = () => {
       return (
         <div className="loading-state">
           <div className="spinner"></div>
-          <p>Loading...</p>
+          <p className="loading-text">Loading...</p>
         </div>
       );
     }
@@ -226,49 +245,74 @@ const PopupApp: React.FC = () => {
     // Show create note form
     if (state.showCreateForm) {
       return (
-        <div className="note-creator">
-          <div className="note-header">
-            <SimpleUserProfile onLogout={handleLogout} />
-            <h3>Create New Note</h3>
+        <div className="main-content">
+          <div className="section">
+            <div className="user-profile">
+              <div className="user-avatar">
+                {getUserInitials(state.authState.user?.name || '', state.authState.user?.email || '')}
+              </div>
+              <div className="user-info">
+                <div className="user-name">{state.authState.user?.name}</div>
+                <div className="user-email">{state.authState.user?.email}</div>
+              </div>
+              <button className="btn-tertiary" onClick={handleLogout}>
+                Logout
+              </button>
+            </div>
           </div>
 
-          <div className="form-group">
-            <input
-              type="text"
-              placeholder="Note title (optional)"
-              value={state.newNoteTitle}
-              onChange={(e) => setState(prev => ({ ...prev, newNoteTitle: e.target.value }))}
-              className="note-input"
-              style={{ marginBottom: '12px' }}
-            />
+          <div className="section">
+            <h2 className="text-h2 font-display">Create New Note</h2>
           </div>
 
-          <div className="form-group">
-            <textarea
-              placeholder="Write your note here..."
-              value={state.newNoteContent}
-              onChange={(e) => setState(prev => ({ ...prev, newNoteContent: e.target.value }))}
-              className="note-input"
-              rows={8}
-              autoFocus
-            />
+          <div className="section">
+            <div className="input-group">
+              <label className="input-label" htmlFor="note-title">
+                Note title (optional)
+              </label>
+              <input
+                id="note-title"
+                type="text"
+                placeholder="Enter a title..."
+                value={state.newNoteTitle}
+                onChange={(e) => setState(prev => ({ ...prev, newNoteTitle: e.target.value }))}
+                className="input-field"
+              />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label" htmlFor="note-content">
+                Content *
+              </label>
+              <textarea
+                id="note-content"
+                placeholder="Write your note here..."
+                value={state.newNoteContent}
+                onChange={(e) => setState(prev => ({ ...prev, newNoteContent: e.target.value }))}
+                className="input-field textarea-field"
+                rows={8}
+                autoFocus
+              />
+            </div>
           </div>
 
-          <div className="form-actions">
-            <button
-              onClick={handleCancelCreate}
-              className="cancel-btn"
-              disabled={state.isLoading}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveNote}
-              className="create-btn"
-              disabled={state.isLoading || !state.newNoteContent.trim()}
-            >
-              {state.isLoading ? 'Saving...' : 'Save Note'}
-            </button>
+          <div className="section">
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelCreate}
+                className="btn-secondary flex-1"
+                disabled={state.isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveNote}
+                className="btn-primary flex-1"
+                disabled={state.isLoading || !state.newNoteContent.trim()}
+              >
+                {state.isLoading ? 'Saving...' : 'Save Note'}
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -279,13 +323,24 @@ const PopupApp: React.FC = () => {
       return (
         <div className="notes-list">
           <div className="notes-header">
-            <div className="header-left">
-              <SimpleUserProfile onLogout={handleLogout} />
-              <h3>Your Notes ({state.notes.length})</h3>
+            <div className="flex items-center gap-3">
+              <div className="user-profile">
+                <div className="user-avatar">
+                  {getUserInitials(state.authState.user?.name || '', state.authState.user?.email || '')}
+                </div>
+                <div className="user-info">
+                  <div className="user-name">{state.authState.user?.name}</div>
+                  <div className="user-email">{state.authState.user?.email}</div>
+                </div>
+              </div>
+              <div>
+                <h3 className="notes-title">Your Notes</h3>
+                <div className="notes-count">{state.notes.length}</div>
+              </div>
             </div>
             <button
               onClick={handleCreateNoteClick}
-              className="create-btn"
+              className="btn-primary"
             >
               + New Note
             </button>
@@ -293,19 +348,19 @@ const PopupApp: React.FC = () => {
 
           {state.notes.length === 0 ? (
             <div className="empty-state">
-              <p>No notes yet. Create your first note!</p>
-              <button onClick={handleCreateNoteClick} className="create-btn">
+              <div className="empty-icon">📝</div>
+              <h3 className="empty-title">No notes yet</h3>
+              <p className="empty-text">Create your first note to get started!</p>
+              <button onClick={handleCreateNoteClick} className="btn-primary">
                 Create Note
               </button>
             </div>
           ) : (
-            <div className="notes-container">
+            <div className="grid-cols-1">
               {state.notes.map(note => (
                 <div key={note.id} className="note-item">
-                  <div className="note-header">
-                    <h4 className="note-title">
-                      {note.title || 'Untitled Note'}
-                    </h4>
+                  <div className="note-title">
+                    {note.title || 'Untitled Note'}
                   </div>
                   <div className="note-content">
                     <p>{note.content.length > 200
@@ -314,26 +369,28 @@ const PopupApp: React.FC = () => {
                     </p>
                   </div>
                   <div className="note-meta">
-                    <span className="note-date">{formatDate(note.created_at)}</span>
+                    <span className="text-sm">{formatDate(note.created_at)}</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="quick-actions">
-            <button
-              onClick={handleCreateNoteClick}
-              className="action-btn"
-            >
-              Create Note
-            </button>
-            <button
-              onClick={() => setState(prev => ({ ...prev, showNotesList: false }))}
-              className="action-btn"
-            >
-              Back
-            </button>
+          <div className="section">
+            <div className="flex gap-3">
+              <button
+                onClick={handleCreateNoteClick}
+                className="btn-secondary flex-1"
+              >
+                Create Note
+              </button>
+              <button
+                onClick={() => setState(prev => ({ ...prev, showNotesList: false }))}
+                className="btn-secondary flex-1"
+              >
+                Back
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -342,31 +399,42 @@ const PopupApp: React.FC = () => {
     // Default view (authenticated)
     return (
       <div className="main">
-        <div className="popup-header">
-          <SimpleUserProfile onLogout={handleLogout} />
+        <div className="header">
+          <div className="header-content">
+            <div className="user-profile">
+              <div className="user-avatar">
+                {getUserInitials(state.authState.user?.name || '', state.authState.user?.email || '')}
+              </div>
+              <div className="user-info">
+                <div className="user-name">{state.authState.user?.name}</div>
+                <div className="user-email">{state.authState.user?.email}</div>
+              </div>
+            </div>
+            <button className="btn-tertiary" onClick={handleLogout}>
+              Logout
+            </button>
+          </div>
         </div>
 
         <div className="welcome-section">
-          <h1>Silence Notes</h1>
-          <p>Welcome, {state.authState.user?.name}!</p>
-          <p className="subtitle">Your brutalist note-taking companion</p>
+          <h1 className="welcome-title font-display">Silence Notes</h1>
+          <p className="welcome-subtitle">Welcome, {state.authState.user?.name?.split(' ')[0] || 'User'}!</p>
+          <p className="text-sm">Your brutalist note-taking companion</p>
         </div>
 
-        <div className="quick-actions">
-          <button
-            onClick={handleCreateNoteClick}
-            className="action-btn"
-          >
-            <span>📝</span>
-            Create Note
-          </button>
-          <button
-            onClick={handleViewAllNotesClick}
-            className="action-btn"
-          >
-            <span>📚</span>
-            View All Notes
-          </button>
+        <div className="action-grid">
+          <div className="action-card" onClick={handleCreateNoteClick}>
+            <div className="action-icon">📝</div>
+            <div className="action-title">Create Note</div>
+          </div>
+          <div className="action-card" onClick={handleViewAllNotesClick}>
+            <div className="action-icon">📚</div>
+            <div className="action-title">View All Notes</div>
+          </div>
+          <div className="action-card" onClick={handleSearchNotesClick}>
+            <div className="action-icon">🔍</div>
+            <div className="action-title">Search Notes</div>
+          </div>
         </div>
       </div>
     );
