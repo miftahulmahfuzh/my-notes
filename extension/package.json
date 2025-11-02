@@ -5,13 +5,16 @@
   "main": "background.js",
   "scripts": {
     "dev": "webpack --watch --mode development",
-    "build": "webpack --mode production",
+    "build": "webpack --mode production && node fix-manifest.js",
+    "build:prod": "npm run build && npm run zip",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "ESLINT_USE_FLAT_CONFIG=false npx eslint 'src/**/*.ts'",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false npx eslint 'src/**/*.ts' --fix",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "zip": "cd dist && zip -r ../silence-notes-extension.zip ."
   },
   "dependencies": {
     "react": "^18.2.0",

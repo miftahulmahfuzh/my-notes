@@ -8,12 +8,13 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
+    "module": "ES2020",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "noEmit": false,
     "jsx": "react-jsx",
-    "declaration": true,
+    "declaration": false,
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": "./src",
@@ -24,15 +25,27 @@
       "@/services/*": ["services/*"],
       "@/utils/*": ["utils/*"]
     },
-    "types": ["jest", "@types/jest", "@testing-library/jest-dom"]
+    "types": ["chrome", "jest", "@types/jest", "@testing-library/jest-dom"]
   },
   "include": [
-    "src/**/*",
-    "tests/**/*"
+    "src/popup/index.tsx",
+    "src/popup/popup.html",
+    "src/background/index.ts",
+    "src/content/index.ts",
+    "src/options/index.tsx",
+    "src/options/options.html"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "tests/**/*",
+    "src/components/**/*",
+    "src/hooks/**/*",
+    "src/services/**/*",
+    "src/utils/**/*",
+    "src/background/*.ts",
+    "src/popup/*.tsx",
+    "src/options/*.tsx",
     "**/*.js"
   ]
 }

@@ -1,28 +1,39 @@
-// Content script for Silence Notes
-console.log('Silence Notes content script loaded');
+/**
+ * Content script for Silence Notes Chrome Extension
+ */
 
-// TODO: Implement content script functionality
-// This could include:
-// - Selecting text on the page and creating notes from it
-// - Highlighting content that has been noted
-// - Quick note creation shortcuts
+console.log('Silence Notes: Content script loaded on', window.location.href);
 
-// Example: Add context menu item for selected text
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'CREATE_NOTE_FROM_SELECTION') {
-    const selection = window.getSelection();
-    if (selection && selection.toString().trim()) {
-      const selectedText = selection.toString();
-
-      // Send selected text to popup for note creation
-      chrome.runtime.sendMessage({
-        type: 'CREATE_NOTE',
-        content: selectedText,
-        source: {
-          url: window.location.href,
-          title: document.title
-        }
-      });
-    }
-  }
+// Basic content script functionality
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Silence Notes: Content script DOM loaded');
 });
+
+// Handle messages from background script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Content script received message:', message);
+
+  switch (message.type) {
+    case 'HIGHLIGHT_TEXT':
+      // TODO: Implement text highlighting
+      console.log('Would highlight text:', message.text);
+      sendResponse({ success: true });
+      break;
+
+    case 'GET_PAGE_INFO':
+      sendResponse({
+        title: document.title,
+        url: window.location.href,
+        selection: window.getSelection()?.toString() || ''
+      });
+      break;
+
+    default:
+      console.log('Unknown message type:', message.type);
+      sendResponse({ error: 'Unknown message type' });
+  }
+
+  return true;
+});
+
+console.log('Silence Notes: Content script initialized');
