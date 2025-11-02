@@ -1,7 +1,69 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Template } from '../types';
 import { CONFIG } from '../utils/config';
 import { authService } from '../auth';
+
+// Custom hook for debounced search
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// Advanced search utility
+const advancedSearch = (templates: Template[], query: string): Template[] => {
+  if (!query.trim()) return templates;
+
+  const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+
+  return templates.filter(template => {
+    const searchableFields = [
+      template.name.toLowerCase(),
+      template.description.toLowerCase(),
+      template.content.toLowerCase(),
+      template.category.toLowerCase(),
+      ...template.tags.map(tag => tag.toLowerCase()),
+      ...template.variables.map(variable => variable.toLowerCase())
+    ].join(' ');
+
+    // Calculate relevance score
+    let score = 0;
+    const fullText = searchableFields;
+
+    // Exact phrase match
+    if (fullText.includes(query.toLowerCase())) {
+      score += 10;
+    }
+
+    // Individual term matches
+    searchTerms.forEach(term => {
+      if (template.name.toLowerCase().includes(term)) score += 5;
+      if (template.description.toLowerCase().includes(term)) score += 3;
+      if (template.category.toLowerCase().includes(term)) score += 2;
+      if (template.tags.some(tag => tag.toLowerCase().includes(term))) score += 2;
+      if (template.content.toLowerCase().includes(term)) score += 1;
+      if (template.variables.some(variable => variable.toLowerCase().includes(term))) score += 1;
+    });
+
+    // Must have at least one match
+    return score > 0;
+  }).sort((a, b) => {
+    // Sort by relevance (built-in templates first, then by name)
+    if (a.is_built_in && !b.is_built_in) return -1;
+    if (!a.is_built_in && b.is_built_in) return 1;
+    return a.name.localeCompare(b.name);
+  });
+};
 
 interface TemplatePageProps {
   onTemplateSelect: (templateId: string, variables: Record<string, string>) => void;
@@ -22,8 +84,18 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showVariableDialog, setShowVariableDialog] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+
+  // Refs for search functionality
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Debounced search query
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Load templates on mount
   const loadTemplates = useCallback(async () => {
@@ -176,6 +248,19 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
     return sortedTemplates;
   }, [templates, builtInTemplates, selectedCategory, searchQuery]);
 
+  // Calculate category counts for display
+  const getCategoryCounts = useCallback(() => {
+    const allTemplates = [...(Array.isArray(templates) ? templates : []), ...(Array.isArray(builtInTemplates) ? builtInTemplates : [])];
+
+    return {
+      all: allTemplates.length,
+      'built-in': allTemplates.filter(t => t.is_built_in).length,
+      meeting: allTemplates.filter(t => t.category === 'meeting').length,
+      personal: allTemplates.filter(t => t.category === 'personal').length,
+      work: allTemplates.filter(t => t.category === 'work').length,
+    };
+  }, [templates, builtInTemplates]);
+
   // Handle template click
   const handleTemplateClick = (template: Template) => {
     console.log('🖱️ DEBUG: TemplatePage - Template clicked:', template.name);
@@ -270,9 +355,55 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
   if (isLoading) {
     return (
       <div className="template-page">
-        <div className="template-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading templates...</p>
+        {/* Header */}
+        <div className="template-page-header">
+          <div className="template-header-content">
+            <button onClick={onBack} className="back-button">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12,19 5,12 12,5"></polyline>
+              </svg>
+              Back to Edit Note
+            </button>
+            <h1 className="template-page-title">Choose Template</h1>
+            {noteId && <span className="template-context">For note: {noteId.substring(0, 8)}...</span>}
+          </div>
+        </div>
+
+        {/* Search Bar Skeleton */}
+        <div className="template-search">
+          <div className="search-input-container">
+            <div className="skeleton skeleton-search" style={{ height: '40px', width: '100%', borderRadius: '8px' }}></div>
+          </div>
+        </div>
+
+        {/* Category Navigation Skeleton */}
+        <div className="template-category-nav">
+          <div className="category-tabs">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="skeleton skeleton-category-tab" style={{ height: '44px', width: '100px', borderRadius: '12px' }}></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Skeleton Cards */}
+        <div className="template-skeleton-grid">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="template-skeleton-card">
+              <div className="skeleton skeleton-icon"></div>
+              <div className="skeleton skeleton-title"></div>
+              <div className="skeleton skeleton-description"></div>
+              <div className="skeleton skeleton-description"></div>
+              <div className="skeleton-variables">
+                <div className="skeleton skeleton-variable"></div>
+                <div className="skeleton skeleton-variable"></div>
+              </div>
+              <div className="skeleton-meta">
+                <div className="skeleton skeleton-category"></div>
+                <div className="skeleton skeleton-usage"></div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -337,30 +468,35 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
           <button
             className={`category-tab ${selectedCategory === 'all' ? 'active' : ''}`}
             onClick={() => setSelectedCategory('all')}
+            data-count={getCategoryCounts().all}
           >
             All Templates
           </button>
           <button
             className={`category-tab ${selectedCategory === 'built-in' ? 'active' : ''}`}
             onClick={() => setSelectedCategory('built-in')}
+            data-count={getCategoryCounts()['built-in']}
           >
             Built-in
           </button>
           <button
             className={`category-tab ${selectedCategory === 'meeting' ? 'active' : ''}`}
             onClick={() => setSelectedCategory('meeting')}
+            data-count={getCategoryCounts().meeting}
           >
             Meeting
           </button>
           <button
             className={`category-tab ${selectedCategory === 'personal' ? 'active' : ''}`}
             onClick={() => setSelectedCategory('personal')}
+            data-count={getCategoryCounts().personal}
           >
             Personal
           </button>
           <button
             className={`category-tab ${selectedCategory === 'work' ? 'active' : ''}`}
             onClick={() => setSelectedCategory('work')}
+            data-count={getCategoryCounts().work}
           >
             Work
           </button>
