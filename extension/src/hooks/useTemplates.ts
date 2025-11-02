@@ -72,7 +72,9 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
 
       const userData = await userResponse.json();
       console.log('User templates response (hook):', userData);
-      const templates = Array.isArray(userData?.data) ? userData.data : [];
+      // Backend returns {success: true, data: Array(2), total: 2}
+      // So we need userData.data.data to get the actual array
+      const templates = Array.isArray(userData?.data?.data) ? userData.data.data : [];
       setTemplates(templates);
 
       // Load built-in templates if enabled
@@ -87,7 +89,9 @@ export const useTemplates = (options: UseTemplatesOptions = {}) => {
         if (builtInResponse.ok) {
           const builtInData = await builtInResponse.json();
           console.log('Built-in templates response (hook):', builtInData);
-          const builtInTemplates = Array.isArray(builtInData?.data) ? builtInData.data : [];
+          // Backend returns {success: true, data: Array(2), total: 2}
+          // So we need builtInData.data.data to get the actual array
+          const builtInTemplates = Array.isArray(builtInData?.data?.data) ? builtInData.data.data : [];
           setBuiltInTemplates(builtInTemplates);
         }
       }

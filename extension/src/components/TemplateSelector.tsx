@@ -47,10 +47,12 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       if (userResponse.ok) {
         const userData = await userResponse.json();
         console.log('User templates response:', userData);
-        const templates = Array.isArray(userData?.data) ? userData.data : [];
+        // Backend returns {success: true, data: Array(2), total: 2}
+        // So we need userData.data.data to get the actual array
+        const templates = Array.isArray(userData?.data?.data) ? userData.data.data : [];
         console.log('DEBUG - Parsed user templates:', {
-          isArray: Array.isArray(userData?.data),
-          data: userData?.data,
+          isArray: Array.isArray(userData?.data?.data),
+          data: userData?.data?.data,
           parsedLength: templates.length,
           templates: templates
         });
@@ -67,10 +69,12 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       if (builtInResponse.ok) {
         const builtInData = await builtInResponse.json();
         console.log('Built-in templates response:', builtInData);
-        const builtInTemplates = Array.isArray(builtInData?.data) ? builtInData.data : [];
+        // Backend returns {success: true, data: Array(2), total: 2}
+        // So we need builtInData.data.data to get the actual array
+        const builtInTemplates = Array.isArray(builtInData?.data?.data) ? builtInData.data.data : [];
         console.log('DEBUG - Parsed built-in templates:', {
-          isArray: Array.isArray(builtInData?.data),
-          data: builtInData?.data,
+          isArray: Array.isArray(builtInData?.data?.data),
+          data: builtInData?.data?.data,
           parsedLength: builtInTemplates.length,
           templates: builtInTemplates
         });
