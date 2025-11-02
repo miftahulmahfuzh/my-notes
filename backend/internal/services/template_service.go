@@ -104,7 +104,7 @@ func (s *TemplateService) GetTemplates(userID uuid.UUID, category string, limit,
 	query := `
 		SELECT id, user_id, name, description, content, category, variables, is_built_in, usage_count, is_public, icon, tags, created_at, updated_at
 		FROM templates
-		WHERE (user_id = $1 OR is_public = true OR is_built_in = true)
+		WHERE user_id = $1 AND is_built_in = false
 	`
 
 	args := []interface{}{userID}

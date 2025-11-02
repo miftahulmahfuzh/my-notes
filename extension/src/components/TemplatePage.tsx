@@ -121,7 +121,7 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
         throw new Error('401 Unauthorized');
       }
 
-      console.log('🔧 DEBUG: TemplatePage - Loading templates...');
+      console.log('TemplatePage: Loading templates...');
 
       // Load user templates
       const userResponse = await fetch(`${CONFIG.API_BASE_URL}/templates`, {
@@ -130,15 +130,13 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
 
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        console.log('📥 DEBUG: TemplatePage - User templates response:', userData);
-        // Backend returns {success: true, data: Array(2), total: 2}
+                // Backend returns {success: true, data: Array(2), total: 2}
         // So we need userData.data.data to get the actual array
         const templates = Array.isArray(userData?.data?.data) ? userData.data.data : [];
-        console.log('✅ DEBUG: TemplatePage - Parsed user templates:', {
-          isArray: Array.isArray(userData?.data?.data),
-          data: userData?.data?.data,
-          parsedLength: templates.length,
-          templates: templates
+
+        console.log('✅ TemplatePage - Loaded user templates:', {
+          count: templates.length,
+          templateIds: templates.map((t: Template) => ({ id: t.id, name: t.name }))
         });
         setTemplates(templates);
       } else if (userResponse.status === 401) {
@@ -161,6 +159,10 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
           data: builtInData?.data?.data,
           parsedLength: builtInTemplates.length,
           templates: builtInTemplates
+        });
+        console.log('🏗️ DEBUG: TemplatePage - Setting built-in templates:', {
+          count: builtInTemplates.length,
+          templateIds: builtInTemplates.map((t: Template) => ({ id: t.id, name: t.name }))
         });
         setBuiltInTemplates(builtInTemplates);
       } else if (builtInResponse.status === 401) {
@@ -271,6 +273,14 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
   // Calculate category counts for display
   const getCategoryCounts = useCallback(() => {
     const allTemplates = [...(Array.isArray(templates) ? templates : []), ...(Array.isArray(builtInTemplates) ? builtInTemplates : [])];
+
+    console.log('🔗 DEBUG: TemplatePage - Combining templates for category counts:', {
+      userTemplatesCount: templates.length,
+      builtInTemplatesCount: builtInTemplates.length,
+      totalCombined: allTemplates.length,
+      allTemplateIds: allTemplates.map((t: Template) => ({ id: t.id, name: t.name, source: t.is_built_in ? 'built-in' : 'user' })),
+      duplicatesByName: allTemplates.filter((t, index, arr) => arr.findIndex(x => x.name === t.name) !== index)
+    });
 
     return {
       all: allTemplates.length,
@@ -797,6 +807,15 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
     const allTemplates = [...(Array.isArray(templates) ? templates : []), ...(Array.isArray(builtInTemplates) ? builtInTemplates : [])];
     const queryLower = query.toLowerCase();
 
+    console.log('🔍 DEBUG: TemplatePage - Generating search suggestions:', {
+      query,
+      userTemplatesCount: templates.length,
+      builtInTemplatesCount: builtInTemplates.length,
+      totalCombined: allTemplates.length,
+      allTemplateIds: allTemplates.map((t: Template) => ({ id: t.id, name: t.name, source: t.is_built_in ? 'built-in' : 'user' })),
+      duplicatesByName: allTemplates.filter((t, index, arr) => arr.findIndex(x => x.name === t.name) !== index)
+    });
+
     const suggestions = new Set<string>();
 
     // Add matching template names
@@ -872,6 +891,18 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
     loadTemplates();
     loadSearchHistory();
   }, [loadTemplates, loadSearchHistory]);
+
+  // Debug: Monitor template state changes
+  useEffect(() => {
+    console.log('🔄 DEBUG: TemplatePage - Template state changed:', {
+      userTemplatesCount: templates.length,
+      builtInTemplatesCount: builtInTemplates.length,
+      userTemplateIds: templates.map((t: Template) => ({ id: t.id, name: t.name })),
+      builtInTemplateIds: builtInTemplates.map((t: Template) => ({ id: t.id, name: t.name })),
+      totalCombined: templates.length + builtInTemplates.length,
+      potentialDuplicates: [...templates, ...builtInTemplates].filter((t, index, arr) => arr.findIndex(x => x.name === t.name) !== index)
+    });
+  }, [templates, builtInTemplates]);
 
   // Handle search input focus
   const handleSearchFocus = () => {
@@ -1154,6 +1185,17 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
           </div>
         ) : (
           <div className="template-grid">
+            {(() => {
+              console.log('🎨 DEBUG: TemplatePage - Rendering filtered templates:', {
+                filteredCount: filteredTemplates.length,
+                searchQuery,
+                selectedCategory,
+                filteredTemplateIds: filteredTemplates.map((t: Template) => ({ id: t.id, name: t.name, source: t.is_built_in ? 'built-in' : 'user' })),
+                duplicatesByName: filteredTemplates.filter((t, index, arr) => arr.findIndex(x => x.name === t.name) !== index),
+                renderKeys: filteredTemplates.map(t => t.id)
+              });
+              return null;
+            })()}
             {filteredTemplates.map(template => (
               <button
                 key={template.id}
