@@ -298,12 +298,29 @@ const PopupApp: React.FC = () => {
    */
   const handleEditNote = (note: NoteResponse): void => {
     console.log('handleEditNote called with note:', note.id);
-    setState(prev => ({
-      ...prev,
-      editingNote: note,
-      showNoteDetail: false,
-      showNoteEditor: true
-    }));
+    console.log('Note data:', JSON.stringify(note, null, 2));
+    console.log('Current state before:', {
+      showNoteDetail: state.showNoteDetail,
+      showNoteEditor: state.showNoteEditor,
+      editingNote: state.editingNote?.id
+    });
+
+    setState(prev => {
+      console.log('Setting new state:', {
+        editingNote: note.id,
+        showNoteDetail: false,
+        showNoteEditor: true
+      });
+
+      return {
+        ...prev,
+        editingNote: note,
+        showNoteDetail: false,
+        showNoteEditor: true
+      };
+    });
+
+    console.log('State updated successfully');
   };
 
   /**

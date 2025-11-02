@@ -124,10 +124,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           handleSave();
           break;
         case 'Enter':
-          if (e.shiftKey) {
-            e.preventDefault();
-            handleSave();
-          }
+          // Ctrl+Enter should save (not Enter alone)
+          e.preventDefault();
+          handleSave();
           break;
         case 'Escape':
           e.preventDefault();
@@ -141,6 +140,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           break;
       }
     }
+
+    // Shift+Enter should save (as per user request for Ctrl+Shift+Enter)
+    if (e.shiftKey && e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+      return;
+    }
+
+    // For regular Enter key in textarea, let it work naturally (create new line)
+    // We don't handle it here, so the textarea default behavior applies
 
     // Tab to indent in textarea
     if (e.key === 'Tab' && !e.shiftKey && textareaRef.current === e.target) {
