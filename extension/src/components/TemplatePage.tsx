@@ -89,6 +89,7 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showVariableDialog, setShowVariableDialog] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
   // Refs for search functionality
@@ -177,7 +178,26 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
   // Load templates on component mount
   useEffect(() => {
     loadTemplates();
-  }, [loadTemplates]);
+    loadSearchHistory();
+  }, [loadTemplates, loadSearchHistory]);
+
+  // Handle search on Enter key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && searchQuery.trim() && searchInputRef.current === document.activeElement) {
+        addToSearchHistory(searchQuery);
+        setShowSuggestions(false);
+      }
+      if (e.key === 'Escape' && searchInputRef.current === document.activeElement) {
+        clearSearch();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [searchQuery]);
 
   // Filter templates based on category and search
   const filteredTemplates = React.useMemo(() => {
@@ -217,17 +237,12 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
       });
     }
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    // Apply advanced search
+    if (debouncedSearchQuery) {
       const beforeSearch = allTemplates.length;
-      allTemplates = allTemplates.filter(template =>
-        template.name.toLowerCase().includes(query) ||
-        template.description.toLowerCase().includes(query) ||
-        template.content.toLowerCase().includes(query) ||
-        template.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-      console.log('🔍 DEBUG: TemplatePage - After search filter:', {
-        query,
+      allTemplates = advancedSearch(allTemplates, debouncedSearchQuery);
+      console.log('🔍 DEBUG: TemplatePage - After advanced search filter:', {
+        query: debouncedSearchQuery,
         before: beforeSearch,
         after: allTemplates.length
       });
@@ -246,7 +261,7 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
     });
 
     return sortedTemplates;
-  }, [templates, builtInTemplates, selectedCategory, searchQuery]);
+  }, [templates, builtInTemplates, selectedCategory, debouncedSearchQuery]);
 
   // Calculate category counts for display
   const getCategoryCounts = useCallback(() => {
@@ -265,18 +280,35 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
   const handleTemplateClick = (template: Template) => {
     console.log('🖱️ DEBUG: TemplatePage - Template clicked:', template.name);
     setSelectedTemplate(template);
+    setShowDetailsModal(true);
+  };
 
-    if (template.variables.length > 0) {
-      // Initialize variables with built-in values
-      const initialVariables: Record<string, string> = {};
-      template.variables.forEach(variable => {
-        initialVariables[variable] = getBuiltInVariableValue(variable);
-      });
-      setTemplateVariables(initialVariables);
-      setShowVariableDialog(true);
-    } else {
-      // Apply template directly if no variables
-      onTemplateSelect(template.id, {});
+  // Handle showing template details modal
+  const handleShowDetails = (template: Template) => {
+    console.log('🔍 DEBUG: TemplatePage - Showing template details:', template.name);
+    setSelectedTemplate(template);
+    setShowDetailsModal(true);
+  };
+
+  // Handle applying template from details modal
+  const handleApplyFromDetails = () => {
+    if (selectedTemplate) {
+      console.log('🚀 DEBUG: TemplatePage - Applying template from details:', selectedTemplate.name);
+
+      if (selectedTemplate.variables.length > 0) {
+        // Initialize variables with built-in values
+        const initialVariables: Record<string, string> = {};
+        selectedTemplate.variables.forEach(variable => {
+          initialVariables[variable] = getBuiltInVariableValue(variable);
+        });
+        setTemplateVariables(initialVariables);
+        setShowDetailsModal(false);
+        setShowVariableDialog(true);
+      } else {
+        // Apply template directly if no variables
+        onTemplateSelect(selectedTemplate.id, {});
+        setShowDetailsModal(false);
+      }
     }
   };
 
@@ -324,6 +356,182 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
         return crypto.randomUUID();
       default:
         return '';
+    }
+  };
+
+  // Get description for template variables
+  const getVariableDescription = (variable: string): string => {
+    switch (variable) {
+      case 'date':
+        return 'Current date in local format';
+      case 'time':
+        return 'Current time in local format';
+      case 'datetime':
+        return 'Current date and time in local format';
+      case 'today':
+        return 'Today\'s date';
+      case 'tomorrow':
+        return 'Tomorrow\'s date';
+      case 'yesterday':
+        return 'Yesterday\'s date';
+      case 'year':
+        return 'Current year (4-digit)';
+      case 'month':
+        return 'Current month name';
+      case 'uuid':
+        return 'Random unique identifier';
+      case 'title':
+        return 'Note title or subject';
+      case 'author':
+        return 'Author name or creator';
+      case 'description':
+        return 'Brief description or summary';
+      case 'tags':
+        return 'Comma-separated tags';
+      case 'priority':
+        return 'Priority level (high, medium, low)';
+      case 'status':
+        return 'Current status or progress';
+      case 'deadline':
+        return 'Due date or deadline';
+      case 'category':
+        return 'Category or type classification';
+      case 'project':
+        return 'Project name or identifier';
+      case 'client':
+        return 'Client name or organization';
+      case 'location':
+        return 'Location or venue';
+      case 'attendees':
+        return 'List of attendees or participants';
+      case 'agenda':
+        return 'Meeting agenda or topics';
+      case 'notes':
+        return 'Additional notes or comments';
+      case 'url':
+        return 'Website or resource link';
+      case 'email':
+        return 'Email address';
+      case 'phone':
+        return 'Phone number';
+      case 'company':
+        return 'Company or organization name';
+      default:
+        return `Custom variable: ${variable.replace(/_/g, ' ')}`;
+    }
+  };
+
+  // Enhanced search functionality
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setIsSearching(value.trim().length > 0);
+
+    // Generate search suggestions
+    if (value.trim().length > 0) {
+      generateSearchSuggestions(value);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  // Generate search suggestions from templates
+  const generateSearchSuggestions = (query: string) => {
+    const allTemplates = [...(Array.isArray(templates) ? templates : []), ...(Array.isArray(builtInTemplates) ? builtInTemplates : [])];
+    const queryLower = query.toLowerCase();
+
+    const suggestions = new Set<string>();
+
+    // Add matching template names
+    allTemplates.forEach(template => {
+      if (template.name.toLowerCase().includes(queryLower)) {
+        suggestions.add(template.name);
+      }
+    });
+
+    // Add matching categories
+    const categories = [...new Set(allTemplates.map(t => t.category))];
+    categories.forEach(category => {
+      if (category.toLowerCase().includes(queryLower)) {
+        suggestions.add(category);
+      }
+    });
+
+    // Add matching tags
+    const tags = [...new Set(allTemplates.flatMap(t => t.tags))];
+    tags.forEach(tag => {
+      if (tag.toLowerCase().includes(queryLower)) {
+        suggestions.add(tag);
+      }
+    });
+
+    setSearchSuggestions(Array.from(suggestions).slice(0, 8));
+  };
+
+  // Handle search suggestion click
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    setShowSuggestions(false);
+    addToSearchHistory(suggestion);
+
+    // Focus search input
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  };
+
+  // Add to search history
+  const addToSearchHistory = (query: string) => {
+    if (!query.trim()) return;
+
+    const newHistory = [query, ...searchHistory.filter(h => h !== query)].slice(0, 10);
+    setSearchHistory(newHistory);
+
+    // Save to localStorage
+    try {
+      localStorage.setItem('template-search-history', JSON.stringify(newHistory));
+    } catch (error) {
+      console.warn('Failed to save search history:', error);
+    }
+  };
+
+  // Load search history from localStorage
+  const loadSearchHistory = useCallback(() => {
+    try {
+      const saved = localStorage.getItem('template-search-history');
+      if (saved) {
+        const history = JSON.parse(saved);
+        if (Array.isArray(history)) {
+          setSearchHistory(history);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load search history:', error);
+    }
+  }, []);
+
+  // Handle search input focus
+  const handleSearchFocus = () => {
+    if (searchQuery.trim().length === 0 && searchHistory.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  // Handle search input blur
+  const handleSearchBlur = () => {
+    // Delay hiding suggestions to allow click on suggestions
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 150);
+  };
+
+  // Clear search
+  const clearSearch = () => {
+    setSearchQuery('');
+    setIsSearching(false);
+    setShowSuggestions(false);
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
     }
   };
 
@@ -445,7 +653,7 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Enhanced Search Bar */}
       <div className="template-search">
         <div className="search-input-container">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -453,13 +661,75 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
             <path d="m21 21-4.35-4.35"></path>
           </svg>
           <input
+            ref={searchInputRef}
             type="text"
-            placeholder="Search templates..."
+            placeholder="Search templates by name, category, or tags..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
+            className={`search-input ${isSearching ? 'searching' : ''}`}
           />
+          {searchQuery && (
+            <button
+              onClick={clearSearch}
+              className="search-clear-btn"
+              title="Clear search"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          )}
         </div>
+
+        {/* Search Suggestions Dropdown */}
+        {showSuggestions && (
+          <div className="search-suggestions">
+            <div className="suggestions-header">
+              <span>Search Suggestions</span>
+            </div>
+            {searchSuggestions.length > 0 ? (
+              <div className="suggestions-list">
+                {searchSuggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className="suggestion-item"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span>{suggestion}</span>
+                  </button>
+                ))}
+              </div>
+            ) : searchHistory.length > 0 ? (
+              <div className="suggestions-list">
+                <div className="suggestions-section-title">Recent Searches</div>
+                {searchHistory.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSuggestionClick(item)}
+                    className="suggestion-item history-item"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2v20M17 7H7"></path>
+                      <path d="M17 17H7"></path>
+                    </svg>
+                    <span>{item}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="suggestions-empty">
+                <span>No suggestions available</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Category Navigation */}
@@ -562,6 +832,147 @@ const TemplatePage: React.FC<TemplatePageProps> = ({
           </div>
         )}
       </div>
+
+      {/* Template Details Modal */}
+      {showDetailsModal && selectedTemplate && (
+        <div className="template-details-overlay">
+          <div className="template-details-modal">
+            {/* Modal Header */}
+            <div className="details-header">
+              <div className="details-header-content">
+                <div className="details-icon">
+                  {formatTemplateIcon(selectedTemplate.icon)}
+                </div>
+                <div className="details-title-section">
+                  <h2 className="details-title">
+                    {selectedTemplate.name}
+                    {selectedTemplate.is_built_in && (
+                      <span className="built-in-badge">Built-in</span>
+                    )}
+                  </h2>
+                  <div className="details-meta">
+                    <span className="details-category">{selectedTemplate.category}</span>
+                    <span className="details-usage">{selectedTemplate.usage_count} uses</span>
+                    <span className="details-date">
+                      Created: {new Date(selectedTemplate.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="details-close-btn"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="details-content">
+              {/* Description Section */}
+              <div className="details-section">
+                <h3 className="details-section-title">Description</h3>
+                <p className="details-description">{selectedTemplate.description}</p>
+              </div>
+
+              {/* Tags Section */}
+              {selectedTemplate.tags.length > 0 && (
+                <div className="details-section">
+                  <h3 className="details-section-title">Tags</h3>
+                  <div className="details-tags">
+                    {selectedTemplate.tags.map(tag => (
+                      <span key={tag} className="details-tag">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Variables Section */}
+              {selectedTemplate.variables.length > 0 && (
+                <div className="details-section">
+                  <h3 className="details-section-title">Template Variables</h3>
+                  <div className="details-variables">
+                    {selectedTemplate.variables.map(variable => (
+                      <div key={variable} className="details-variable">
+                        <div className="variable-info">
+                          <span className="variable-name">
+                            {`{{${variable}}}`}
+                          </span>
+                          <span className="variable-description">
+                            {getVariableDescription(variable)}
+                          </span>
+                        </div>
+                        <div className="variable-example">
+                          Example: {getBuiltInVariableValue(variable) || `[${variable.replace(/_/g, ' ')}]`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Template Content Preview */}
+              <div className="details-section">
+                <h3 className="details-section-title">Template Content</h3>
+                <div className="details-content-preview">
+                  <div className="content-preview">
+                    {selectedTemplate.content.split('\n').map((line, index) => (
+                      <div key={index} className="preview-line">
+                        <span className="line-number">{index + 1}</span>
+                        <span className="line-content">{line || '\u00A0'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Usage Statistics */}
+              <div className="details-section">
+                <h3 className="details-section-title">Statistics</h3>
+                <div className="details-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">Content Length</span>
+                    <span className="stat-value">{selectedTemplate.content.length} characters</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Line Count</span>
+                    <span className="stat-value">{selectedTemplate.content.split('\n').length} lines</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Variables</span>
+                    <span className="stat-value">{selectedTemplate.variables.length} variables</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Tags</span>
+                    <span className="stat-value">{selectedTemplate.tags.length} tags</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="details-actions">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="details-cancel-btn"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleApplyFromDetails}
+                className="details-apply-btn"
+              >
+                {selectedTemplate.variables.length > 0 ? 'Configure & Apply' : 'Apply Template'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Variable Dialog */}
       {showVariableDialog && selectedTemplate && (
