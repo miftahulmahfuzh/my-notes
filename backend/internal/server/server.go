@@ -233,15 +233,12 @@ func (s *Server) setupRoutes() {
 	// Public authentication routes (no session middleware needed)
 	auth := api.PathPrefix("/auth").Subrouter()
 	if s.handlers.Auth != nil {
-		auth.HandleFunc("/google", s.handlers.Auth.GoogleAuth).Methods("POST")
-		auth.HandleFunc("/exchange", s.handlers.Auth.GoogleCallback).Methods("POST") // for test compatibility
 		auth.HandleFunc("/refresh", s.handlers.Auth.RefreshToken).Methods("POST") // token refresh doesn't need auth
 		auth.HandleFunc("/validate", s.handlers.Auth.ValidateToken).Methods("GET")
 	}
 
-	// Chrome extension specific authentication route
-	// DEPRECATED: Chrome Identity API endpoint - use Google OAuth (/api/v1/auth/google) instead
-	// This endpoint is for backward compatibility and will be removed in version 2.0
+	// Chrome extension authentication route
+	// Chrome Identity API endpoint - primary auth method for Silence Notes Chrome Extension
 	if s.handlers.ChromeAuth != nil {
 		auth.HandleFunc("/chrome", s.handlers.ChromeAuth.ExchangeChromeToken).Methods("POST")
 	}

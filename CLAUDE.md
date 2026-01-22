@@ -51,6 +51,26 @@ my-notes/
 - Brutalist UI (high contrast, bold typography)
 - Full-text search
 
+## Authentication
+
+The Silence Notes Chrome Extension uses Chrome Identity API for authentication:
+- **Frontend**: `extension/src/auth.ts` - Chrome Identity API implementation
+- **Backend**: `POST /api/v1/auth/chrome` - Token exchange endpoint
+- **Method**: `chrome.identity.getAuthToken()` for direct token access
+
+### Storage Format
+The working auth system uses individual keys in Chrome storage:
+- `access_token` - JWT access token
+- `refresh_token` - JWT refresh token
+- `token_expiry` - Token expiration timestamp
+- `session_id` - User session identifier
+- `user_info` - User profile data
+
+### Unused OAuth Routes
+The following backend routes exist but are NOT used by the Chrome extension:
+- `POST /api/v1/auth/google` - Standard OAuth flow (for future web/mobile apps)
+- `POST /api/v1/auth/exchange` - OAuth callback handler
+
 ## Database Schema
 
 ```sql
@@ -63,13 +83,22 @@ NoteTags:   note_id, tag_id
 ## API Endpoints
 
 ```
-POST   /api/auth/google        # OAuth login
-GET    /api/notes              # List notes
-POST   /api/notes              # Create note
-PUT    /api/notes/:id          # Update note
-DELETE /api/notes/:id          # Delete note
-GET    /api/tags               # List tags
-GET    /api/search/notes       # Search notes
+# Authentication
+POST   /api/v1/auth/chrome     # Chrome Identity API token exchange (primary auth)
+POST   /api/v1/auth/refresh    # Refresh access token
+DELETE /api/v1/auth/logout     # Logout user
+
+# Notes
+GET    /api/v1/notes           # List notes
+POST   /api/v1/notes           # Create note
+PUT    /api/v1/notes/:id       # Update note
+DELETE /api/v1/notes/:id       # Delete note
+
+# Tags
+GET    /api/v1/tags            # List tags
+
+# Search
+GET    /api/v1/search/notes    # Search notes
 ```
 
 ## Development Commands
