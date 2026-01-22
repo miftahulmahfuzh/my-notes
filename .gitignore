@@ -62,3 +62,5 @@ tmp/
 .dockerignore
 
 /backend/server
+*_code_analyzer.md
+consolidate_auth.md

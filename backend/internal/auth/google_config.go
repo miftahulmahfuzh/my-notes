@@ -42,10 +42,3 @@ func (g *GoogleConfig) Validate() error {
 func DefaultScopes() []string {
 	return []string{"openid", "email", "profile"}
 }
-
-// NewGoogleConfig creates a new GoogleConfig with default values
-func NewGoogleConfig() *GoogleConfig {
-	return &GoogleConfig{
-		Scopes: DefaultScopes(),
-	}
-}

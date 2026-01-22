@@ -22,6 +22,13 @@ import {
 export class AuthService {
   private static instance: AuthService;
   private authStateChangeListeners: ((authState: AuthState) => void)[] = [];
+  private currentState: AuthState = {
+    isAuthenticated: false,
+    user: null,
+    tokens: null,
+    isLoading: false,
+    error: null
+  };
 
   private constructor() {}
 
@@ -36,10 +43,89 @@ export class AuthService {
   }
 
   /**
+   * Check if old auth tokens exist in storage
+   * Old system uses individual keys: access_token, refresh_token, etc.
+   */
+  private async hasOldTokens(): Promise<boolean> {
+    const keys = ['access_token', 'refresh_token', 'token_expiry', 'session_id', 'user_info'];
+    const results = await chrome.storage.local.get(keys);
+    return !!results.access_token;
+  }
+
+  /**
+   * Get old token data from storage
+   */
+  private async getOldTokenData(): Promise<any> {
+    const keys = ['access_token', 'refresh_token', 'token_expiry', 'session_id', 'user_info', 'token_type', 'expires_in'];
+    return await chrome.storage.local.get(keys);
+  }
+
+  /**
+   * Clear old tokens from storage
+   */
+  private async clearOldTokens(): Promise<void> {
+    const keys = ['access_token', 'refresh_token', 'token_expiry', 'session_id', 'user_info'];
+    await chrome.storage.local.remove(keys);
+    console.log('[AuthService] Old tokens cleared from storage');
+  }
+
+  /**
+   * Detect and migrate old auth tokens to new format
+   * @returns true if migration occurred, false otherwise
+   */
+  async migrateOldTokensIfNeeded(): Promise<boolean> {
+    const oldTokens = await this.hasOldTokens();
+    if (!oldTokens) {
+      console.log('[AuthService] No old tokens found, skipping migration');
+      return false;
+    }
+
+    console.log('[AuthService] Old tokens detected, starting migration...');
+    const oldData = await this.getOldTokenData();
+
+    // Check if we already have new tokens (don't overwrite)
+    const existingTokens = await AuthStorage.getTokens();
+    if (existingTokens) {
+      console.log('[AuthService] New tokens already exist, clearing old tokens without migration');
+      await this.clearOldTokens();
+      return false;
+    }
+
+    // Map old format to new AuthTokens format
+    const newTokens: AuthTokens = {
+      accessToken: oldData.access_token,
+      refreshToken: oldData.refresh_token,
+      tokenType: oldData.token_type || 'Bearer',
+      expiresIn: oldData.expires_in || 3600,
+      expiresAt: oldData.token_expiry || (Date.now() + 3600000)
+    };
+
+    // Verify tokens are valid before migration
+    if (!newTokens.accessToken || !newTokens.refreshToken) {
+      console.warn('[AuthService] Old tokens are invalid, skipping migration');
+      await this.clearOldTokens();
+      return false;
+    }
+
+    // Save to new format
+    await AuthStorage.saveTokens(newTokens);
+    await AuthStorage.saveUser(oldData.user_info);
+    await AuthStorage.saveAuthState(true);
+    await this.clearOldTokens();
+
+    console.log('[AuthService] Successfully migrated old tokens to new format');
+    console.log('[AuthService] Migrated user:', oldData.user_info?.email || 'unknown');
+    return true;
+  }
+
+  /**
    * Initialize authentication service and check existing auth state
    */
   async initialize(): Promise<AuthState> {
     try {
+      // First, migrate old tokens if present (backward compatibility)
+      await this.migrateOldTokensIfNeeded();
+
       const isAuthenticated = await AuthStorage.getAuthState();
       const user = await AuthStorage.getUser();
       const tokens = await AuthStorage.getTokens();
@@ -112,8 +198,10 @@ export class AuthService {
           (responseUrl) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
-            } else {
+            } else if (responseUrl) {
               resolve(responseUrl);
+            } else {
+              reject(new Error('No response URL received'));
             }
           }
         );
@@ -356,11 +444,39 @@ export class AuthService {
 
       return await response.json();
     } catch (error) {
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('Request timeout');
       }
       throw error;
     }
+  }
+
+  /**
+   * Get authorization header for API requests
+   * (Compatibility method for api.ts - same as old auth.ts)
+   */
+  async getAuthHeader(): Promise<Record<string, string>> {
+    const token = await this.getAccessToken();
+    if (token) {
+      return { 'Authorization': `Bearer ${token}` };
+    }
+    return {};
+  }
+
+  /**
+   * Get current authentication state synchronously
+   * (Compatibility method for auth.ts consumers)
+   */
+  getAuthState(): AuthState {
+    return { ...this.currentState };
+  }
+
+  /**
+   * Subscribe to auth state changes
+   * (Compatibility method - wraps onAuthStateChange)
+   */
+  subscribe(callback: (state: AuthState) => void): () => void {
+    return this.onAuthStateChange(callback);
   }
 
   /**
@@ -412,6 +528,9 @@ export class AuthService {
    * Notify all auth state change listeners
    */
   private notifyAuthStateChange(authState: AuthState): void {
+    // Update current state for getAuthState() compatibility
+    this.currentState = authState;
+
     this.authStateChangeListeners.forEach(callback => {
       try {
         callback(authState);
@@ -436,13 +555,13 @@ export class AuthService {
   /**
    * Handle and format errors
    */
-  private handleError(error: any): AuthError {
+  private handleError(error: unknown): AuthError {
     if (error instanceof AuthError) {
       return error;
     }
 
-    const message = error.message || ERROR_MESSAGES.UNKNOWN_ERROR;
-    const code = error.code || 'UNKNOWN_ERROR';
+    const message = error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR;
+    const code = error instanceof Error && 'code' in error ? String(error.code) : 'UNKNOWN_ERROR';
 
     return new AuthError(message, code, error);
   }
@@ -495,7 +614,7 @@ export function setupAuthMessageHandler(): void {
         sendResponse({
           type: 'AUTH_ERROR',
           payload: {
-            error: error.message || ERROR_MESSAGES.UNKNOWN_ERROR
+            error: error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR
           }
         });
       }

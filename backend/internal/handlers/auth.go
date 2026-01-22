@@ -81,6 +81,14 @@ func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 			req.Redirect = ""
 		}
 	}
+
+	// Validate redirect URL if provided
+	if req.Redirect != "" {
+		if err := h.oauthService.VerifyRedirectURL(req.Redirect); err != nil {
+			respondWithError(w, http.StatusBadRequest, "Invalid redirect URL")
+			return
+		}
+	}
 	session.Values["oauth_redirect"] = req.Redirect
 
 	if err := session.Save(r, w); err != nil {
@@ -168,7 +176,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify state parameter
+	// Verify state parameter using OAuthService for additional security
 	session, err := h.sessionStore.Get(r, "auth-session")
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to get session")
@@ -177,6 +185,12 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	storedState, ok := session.Values["oauth_state"].(string)
 	if !ok || storedState != req.State {
 		respondWithError(w, http.StatusBadRequest, "Invalid state parameter")
+		return
+	}
+
+	// Additional validation using OAuthService
+	if err := h.oauthService.ValidateState(req.State); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid or expired state parameter")
 		return
 	}
 

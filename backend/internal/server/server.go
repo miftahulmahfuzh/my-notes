@@ -240,6 +240,8 @@ func (s *Server) setupRoutes() {
 	}
 
 	// Chrome extension specific authentication route
+	// DEPRECATED: Chrome Identity API endpoint - use Google OAuth (/api/v1/auth/google) instead
+	// This endpoint is for backward compatibility and will be removed in version 2.0
 	if s.handlers.ChromeAuth != nil {
 		auth.HandleFunc("/chrome", s.handlers.ChromeAuth.ExchangeChromeToken).Methods("POST")
 	}

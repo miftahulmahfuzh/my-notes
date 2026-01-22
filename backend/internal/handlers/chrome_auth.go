@@ -45,7 +45,15 @@ func NewChromeAuthHandler(
 }
 
 // ExchangeChromeToken exchanges Chrome Identity token for app tokens
+//
+// DEPRECATED: Use /api/v1/auth/google instead.
+// This endpoint is for backward compatibility with the old Chrome extension auth system
+// and will be removed in version 2.0. Migration to the new OAuth flow is recommended.
+//
+// Old system: Chrome Identity API direct token exchange
+// New system: Standard Google OAuth 2.0 flow with redirect
 func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.Request) {
+	log.Println("[DEPRECATED] /api/v1/auth/chrome is deprecated, use /api/v1/auth/google")
 	var req ChromeAuthRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request body")

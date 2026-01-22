@@ -212,26 +212,6 @@ func (s *TokenService) ValidateRefreshToken(tokenString string) (*Claims, error)
 	return claims, nil
 }
 
-// IsTokenExpired checks if a token is expired
-func (s *TokenService) IsTokenExpired(tokenString string) bool {
-	claims, err := s.ValidateToken(tokenString)
-	if err != nil {
-		return true
-	}
-
-	return claims.ExpiresAt.Time.Before(time.Now())
-}
-
-// GetTokenExpiration returns the expiration time of a token
-func (s *TokenService) GetTokenExpiration(tokenString string) (*time.Time, error) {
-	claims, err := s.ValidateToken(tokenString)
-	if err != nil {
-		return nil, err
-	}
-
-	return &claims.ExpiresAt.Time, nil
-}
-
 // GenerateTokenID generates a unique token ID
 func generateTokenID() string {
 	return uuid.New().String()

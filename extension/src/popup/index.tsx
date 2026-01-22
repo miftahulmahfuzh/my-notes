@@ -185,7 +185,11 @@ const PopupApp: React.FC = () => {
     loadNotes();
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Actually call the auth service logout
+    await authService.logout();
+
+    // Then clear UI state
     setState(prev => ({
       ...prev,
       showCreateForm: false,
