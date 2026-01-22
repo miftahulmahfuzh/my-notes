@@ -12,7 +12,7 @@
    ```bash
    ./build.sh
    ```
-   *This creates the binary in `backend/bin/silence-notes-server`*
+   *This creates the binary in `backend/server`*
 
 3. **Build the frontend extension**:
    ```bash
@@ -22,7 +22,7 @@
 
 4. **Start the backend server**:
    ```bash
-   backend/bin/silence-notes-server
+   ./backend/server
    ```
    *You should see: `🚀 Server starting on localhost:8080`*
 
@@ -72,7 +72,7 @@ Extension stores tokens → Authenticated API calls
 ### ✅ Files Ready
 - `extension/dist/manifest.json` - Has your OAuth credentials
 - `backend/.env` - Has your Google Client ID and Secret
-- `backend/bin/silence-notes-server` - Running and ready
+- `./backend/server` - Running and ready
 
 ## 🎯 Multi-Device Test (Your Goal)
 1. **Install on Laptop 1**: Load extension and sign in with your Google account

@@ -59,7 +59,7 @@ build: build-backend build-extension
 
 build-backend:
 	@echo "🏗️ Building backend..."
-	@cd backend && go build -o bin/silence-notes-server ./cmd/server
+	@cd backend && go build -o server ./cmd/server
 
 build-extension:
 	@echo "🏗️ Building extension..."

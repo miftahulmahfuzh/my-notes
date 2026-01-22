@@ -92,7 +92,7 @@ Edit your `extension/dist/manifest.json` to include your Client ID:
    ./build.sh
 
    # Start the server
-   backend/bin/silence-notes-server
+   ./backend/server
    ```
    You should see: `🚀 Server starting on localhost:8080`
 
