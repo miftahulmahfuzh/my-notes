@@ -946,7 +946,7 @@ body {
 
 /* Mini action buttons styling */
 .mini-action-btn {
-  background: none;
+  background: rgba(255, 255, 255, 0.01);
   border: 2px solid var(--neutral-500);
   color: var(--neutral-500);
   padding: var(--space-1);
@@ -959,6 +959,9 @@ body {
   width: 28px;
   height: 28px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  will-change: transform;
 }
 
 .mini-action-btn:hover {

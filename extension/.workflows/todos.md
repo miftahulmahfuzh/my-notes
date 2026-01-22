@@ -4,13 +4,13 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2025-11-02T22:25:00Z
+**Last Updated**: 2026-01-22T10:48:31Z
 
-**Total Active Tasks**: 1
+**Total Active Tasks**: 2
 
 ## Quick Stats
 - P0 Critical: 0
-- P1 High: 0
+- P1 High: 1
 - P2 Medium: 1
 - P3 Low: 0
 - P4 Backlog: 0
@@ -22,6 +22,15 @@
 ---
 
 ## Active Tasks
+
+### [P1] High
+- [ ] **P1-CN-A015** Fix non-clickable edit button in notes list
+  - **Difficulty**: NORMAL
+  - **Type**: Bug
+  - **Context**: Edit button in notes list is visible but not clickable - no console logs appear when clicked. Delete button (adjacent) works correctly with identical structure. Root cause identified as SVG hit-testing failure due to complex path shapes.
+  - **Status**: in_progress
+  - **Plan**: `.workflows/plan/P1-CN-A015.md`
+  - **Impact**: Users cannot edit notes from the list view, requiring workarounds to access note editor
 
 ### [P2] Medium
 - [ ] **P2-CN-A001** Test and verify note listing functionality end-to-end
