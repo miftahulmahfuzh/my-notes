@@ -167,10 +167,6 @@ func (s *Server) initializeServices() {
 	// Initialize notes handler
 	s.handlers.SetNotesHandler(notesHandler)
 
-	// Initialize markdown handler
-	markdownHandler := handlers.NewMarkdownHandler()
-	s.handlers.SetMarkdownHandler(markdownHandler)
-
 	// Initialize template service and handler
 	templateService := services.NewTemplateService(s.db)
 	templateHandler := handlers.NewTemplateHandler(templateService)
@@ -290,15 +286,6 @@ func (s *Server) setupRoutes() {
 	// protected.HandleFunc("/tags", s.handlers.Tags.GetTags).Methods("GET")
 	// protected.HandleFunc("/tags", s.handlers.Tags.CreateTag).Methods("POST")
 	// protected.HandleFunc("/tags/suggestions", s.handlers.Tags.GetSuggestions).Methods("GET")
-
-	// Markdown routes
-	if s.handlers.Markdown != nil {
-		protected.HandleFunc("/markdown/preview", s.handlers.Markdown.PreviewMarkdown).Methods("POST")
-		protected.HandleFunc("/markdown/help", s.handlers.Markdown.GetMarkdownHelp).Methods("GET")
-		protected.HandleFunc("/markdown/validate", s.handlers.Markdown.ValidateMarkdown).Methods("POST")
-		protected.HandleFunc("/markdown/metadata", s.handlers.Markdown.ExtractMetadata).Methods("POST")
-		protected.HandleFunc("/markdown/tags", s.handlers.Markdown.ExtractTags).Methods("POST")
-	}
 
 	// Template routes
 	if s.handlers.Templates != nil {

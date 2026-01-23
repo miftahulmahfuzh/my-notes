@@ -13,9 +13,8 @@ type Handlers struct {
 	User         *UserHandler
 	Notes        *NotesHandler
 	Tags         *TagsHandler
-	Markdown     *MarkdownHandler
 	Templates    *TemplateHandler
-	ExportImport  *ExportImportHandler
+	ExportImport *ExportImportHandler
 	// Additional handlers will be added in subsequent phases:
 	// Search *SearchHandler
 }
@@ -23,14 +22,13 @@ type Handlers struct {
 // NewHandlers creates a new handlers instance
 func NewHandlers() *Handlers {
 	return &Handlers{
-		Health:    NewHealthHandler(),
-		Security:  nil, // Will be initialized after middleware is created
-		Auth:      nil, // Will be initialized after services are created
-		User:      nil, // Will be initialized after services are created
-		Notes:     nil, // Will be initialized after services are created
-		Tags:      nil, // Will be initialized after services are created
-		Markdown:    nil, // Will be initialized after services are created
-		Templates:   nil, // Will be initialized after services are created
+		Health:       NewHealthHandler(),
+		Security:     nil, // Will be initialized after middleware is created
+		Auth:         nil, // Will be initialized after services are created
+		User:         nil, // Will be initialized after services are created
+		Notes:        nil, // Will be initialized after services are created
+		Tags:         nil, // Will be initialized after services are created
+		Templates:    nil, // Will be initialized after services are created
 		ExportImport: nil, // Will be initialized after services are created
 		// Additional handlers will be initialized in subsequent phases:
 		// Search: NewSearchHandler(...),
@@ -57,11 +55,6 @@ func (h *Handlers) SetNotesHandler(notesHandler *NotesHandler) {
 // SetTagsHandler initializes the tags handler with service dependencies
 func (h *Handlers) SetTagsHandler(tagsHandler *TagsHandler) {
 	h.Tags = tagsHandler
-}
-
-// SetMarkdownHandler initializes the markdown handler
-func (h *Handlers) SetMarkdownHandler(markdownHandler *MarkdownHandler) {
-	h.Markdown = markdownHandler
 }
 
 // SetTemplateHandler initializes the template handler with service dependencies

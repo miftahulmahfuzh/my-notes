@@ -4,6 +4,9 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+// Import markdown CSS styles
+import './markdown.css';
+
 interface TOCItem {
   level: number;
   title: string;
@@ -131,7 +134,8 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
             remarkPlugins={[remarkGfm]}
             components={{
               // Custom code component with syntax highlighting
-              code: ({ node, inline, className, children, ...props }) => {
+              code: ({ node, className, children, ...props }: any) => {
+                const inline = (props as any)?.inline;
                 const match = /language-(\w+)/.exec(className || '');
                 const language = match ? match[1] : '';
 
@@ -151,7 +155,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
                       </button>
                     </div>
                     <SyntaxHighlighter
-                      style={tomorrow}
+                      style={tomorrow as any}
                       language={language}
                       PreTag="div"
                       className="code-block"

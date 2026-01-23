@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Note } from '../types';
+import MarkdownPreview from './MarkdownPreview';
+import { extractTOC, extractMetadata } from '../utils/markdown';
 
 interface NoteViewProps {
   note: Note;
@@ -15,6 +17,16 @@ const NoteView: React.FC<NoteViewProps> = ({
   onClose
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [toc, setToc] = useState<any[]>([]);
+  const [metadata, setMetadata] = useState<Record<string, string>>({} as Record<string, string>);
+
+  // Extract TOC and metadata from markdown content
+  useEffect(() => {
+    const extractedToc = extractTOC(note.content);
+    const extractedMetadata = extractMetadata(note.content);
+    setToc(extractedToc);
+    setMetadata(extractedMetadata as Record<string, string>);
+  }, [note.content]);
 
   // Extract hashtags from content
   const extractHashtags = (content: string): string[] => {
@@ -148,9 +160,21 @@ const NoteView: React.FC<NoteViewProps> = ({
       </div>
 
       <div className="note-view-content">
-        <div className="note-text">
-          <pre>{formatContent(displayContent)}</pre>
-        </div>
+        {isExpanded ? (
+          <MarkdownPreview
+            html={note.content}
+            toc={toc}
+            metadata={metadata}
+          />
+        ) : (
+          <div className="note-text">
+            <MarkdownPreview
+              html={displayContent}
+              toc={[]}
+              metadata={{}}
+            />
+          </div>
+        )}
 
         {shouldShowExpandButton && (
           <button
