@@ -233,7 +233,7 @@ func TestAuthHandler_GetUser_ValidToken_ReturnsUser(t *testing.T) {
 
     mockUserService.On("GetByID", expectedUser.ID.String()).Return(expectedUser, nil)
 
-    handler := NewAuthHandler(mockUserService, tokenService)
+    handler := NewAuthHandler(tokenService, mockUserService)
 
     // Act & Assert
     // ... test implementation

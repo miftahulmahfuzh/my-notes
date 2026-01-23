@@ -10,7 +10,6 @@ import (
 
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/handlers"
-	"github.com/gorilla/sessions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -268,25 +267,10 @@ func TestTokenRefreshWithExpiredToken(t *testing.T) {
 		"notes-users",
 	)
 
-	// Create OAuth config
-	oauthConfig := &auth.GoogleConfig{
-		ClientID:     "test-client-id",
-		ClientSecret: "test-client-secret",
-		RedirectURL:  "http://localhost:8080/auth/callback",
-		Scopes:       []string{"openid", "email", "profile"},
-	}
-
-	oauthService := auth.NewOAuthService(oauthConfig)
-
-	// Create a session store for testing
-	store := sessions.NewCookieStore([]byte("test-secret"))
-
 	// Create handler with the short-lived token service
 	shortLivedHandler := handlers.NewAuthHandler(
-		oauthService,
 		shortTokenService,
 		mockUserService,
-		store,
 	)
 
 	user := createTestUser()

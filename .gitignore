@@ -68,3 +68,4 @@ tmp/
 consolidate_auth.md
 
 .workflows/plan/
+backend/internal/handlers/.workflows/plan

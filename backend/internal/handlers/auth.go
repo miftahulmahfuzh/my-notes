@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"net"
 	"net/http"
 	"strings"
 
@@ -10,39 +9,23 @@ import (
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/gpd/my-notes/internal/services"
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 )
 
 // AuthHandler handles authentication-related HTTP requests
 type AuthHandler struct {
-	oauthService *auth.OAuthService
 	tokenService *auth.TokenService
 	userService  services.UserServiceInterface
-	sessionStore sessions.Store
 }
 
 // NewAuthHandler creates a new AuthHandler instance
 func NewAuthHandler(
-	oauthService *auth.OAuthService,
 	tokenService *auth.TokenService,
 	userService services.UserServiceInterface,
-	sessionStore sessions.Store,
 ) *AuthHandler {
 	return &AuthHandler{
-		oauthService: oauthService,
 		tokenService: tokenService,
 		userService:  userService,
-		sessionStore: sessionStore,
 	}
-}
-
-// AuthResponse represents the authentication response
-type AuthResponse struct {
-	User         models.UserResponse `json:"user"`
-	AccessToken  string              `json:"access_token"`
-	RefreshToken string              `json:"refresh_token"`
-	TokenType    string              `json:"token_type"`
-	ExpiresIn    int                 `json:"expires_in"`
 }
 
 // RefreshToken handles POST /api/v1/auth/refresh
@@ -156,36 +139,6 @@ func (h *AuthHandler) ValidateToken(w http.ResponseWriter, r *http.Request) {
 		"user":    user.ToResponse(),
 		"expires": claims.ExpiresAt.Time,
 	})
-}
-
-// Helper functions
-
-// getClientIP extracts the client IP address from the request
-func getClientIP(r *http.Request) string {
-	// Check X-Forwarded-For header first (for reverse proxies)
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		// X-Forwarded-For can contain multiple IPs, take the first one
-		if commaIdx := strings.Index(xff, ","); commaIdx > 0 {
-			return xff[:commaIdx]
-		}
-		return xff
-	}
-
-	// Check X-Real-IP header
-	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		return xri
-	}
-
-	// Fall back to RemoteAddr and parse out the IP
-	return parseIPFromRemoteAddr(r.RemoteAddr)
-}
-
-// parseIPFromRemoteAddr extracts IP from RemoteAddr (IP:port format)
-func parseIPFromRemoteAddr(remoteAddr string) string {
-	if host, _, err := net.SplitHostPort(remoteAddr); err == nil {
-		return host
-	}
-	return remoteAddr
 }
 
 // respondWithError sends an error response

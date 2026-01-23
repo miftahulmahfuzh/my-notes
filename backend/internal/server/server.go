@@ -142,10 +142,8 @@ func (s *Server) initializeServices() {
 
 	// Initialize auth handlers
 	authHandler := handlers.NewAuthHandler(
-		s.oauthService,
 		s.tokenService,
 		s.userService,
-		s.sessionStore,
 	)
 
 	// Initialize Chrome extension auth handler
