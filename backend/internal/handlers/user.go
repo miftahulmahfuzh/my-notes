@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/gpd/my-notes/internal/services"
@@ -20,18 +19,6 @@ func NewUserHandler(userService services.UserServiceInterface) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 	}
-}
-
-// GetUserProfile handles GET /api/v1/users/profile
-func (h *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
-	// Get user from context (set by auth middleware)
-	user, ok := r.Context().Value("user").(*models.User)
-	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
-		return
-	}
-
-	respondWithJSON(w, http.StatusOK, user.ToResponse())
 }
 
 // GetProfile handles GET /api/v1/user/profile (for test compatibility)
@@ -181,121 +168,6 @@ func (h *UserHandler) DeleteUserSession(w http.ResponseWriter, r *http.Request) 
 
 	respondWithJSON(w, http.StatusOK, map[string]string{
 		"message": "Session deleted successfully",
-	})
-}
-
-// DeleteAllUserSessions handles DELETE /api/v1/users/sessions
-func (h *UserHandler) DeleteAllUserSessions(w http.ResponseWriter, r *http.Request) {
-	// Get user from context
-	user, ok := r.Context().Value("user").(*models.User)
-	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
-		return
-	}
-
-	// Delete all sessions for the user
-	err := h.userService.DeleteAllSessions(user.ID.String())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to delete all sessions")
-		return
-	}
-
-	respondWithJSON(w, http.StatusOK, map[string]string{
-		"message": "All sessions deleted successfully",
-	})
-}
-
-// GetUserStats handles GET /api/v1/users/stats
-func (h *UserHandler) GetUserStats(w http.ResponseWriter, r *http.Request) {
-	// Get user from context
-	user, ok := r.Context().Value("user").(*models.User)
-	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
-		return
-	}
-
-	// Get user statistics
-	stats, err := h.userService.GetUserStats(user.ID.String())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to get user statistics")
-		return
-	}
-
-	respondWithJSON(w, http.StatusOK, stats)
-}
-
-// DeleteUserAccount handles DELETE /api/v1/users/account
-func (h *UserHandler) DeleteUserAccount(w http.ResponseWriter, r *http.Request) {
-	// Get user from context
-	user, ok := r.Context().Value("user").(*models.User)
-	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
-		return
-	}
-
-	// Get password confirmation from request body
-	var req struct {
-		Password string `json:"password"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body")
-		return
-	}
-
-	// For Google OAuth users, we might implement additional verification
-	// For now, we'll proceed with account deletion
-
-	// Delete user account
-	err := h.userService.Delete(user.ID.String())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to delete user account")
-		return
-	}
-
-	respondWithJSON(w, http.StatusOK, map[string]string{
-		"message": "User account deleted successfully",
-	})
-}
-
-// SearchUsers handles GET /api/v1/users/search
-func (h *UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) {
-	// Get query parameters
-	query := r.URL.Query().Get("q")
-	if query == "" {
-		respondWithError(w, http.StatusBadRequest, "Search query is required")
-		return
-	}
-
-	// Parse pagination parameters
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if page < 1 {
-		page = 1
-	}
-
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-
-	// Search users
-	users, total, err := h.userService.SearchUsers(query, page, limit)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to search users")
-		return
-	}
-
-	// Convert users to response format
-	userResponses := make([]models.UserResponse, len(users))
-	for i, user := range users {
-		userResponses[i] = user.ToResponse()
-	}
-
-	respondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"users": userResponses,
-		"total": total,
-		"page":  page,
-		"limit": limit,
 	})
 }
 

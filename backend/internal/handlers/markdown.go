@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/gpd/my-notes/internal/services"
-	"github.com/gorilla/mux"
 )
 
 // MarkdownHandler handles markdown-related requests
@@ -34,30 +33,6 @@ type PreviewResponse struct {
 	Tags     []string               `json:"tags"`
 	Success  bool                   `json:"success"`
 	Message  string                 `json:"message,omitempty"`
-}
-
-// RegisterMarkdownRoutes registers markdown-related routes
-func RegisterMarkdownRoutes(router *mux.Router, authMiddleware mux.MiddlewareFunc) {
-	handler := NewMarkdownHandler()
-
-	// Apply authentication middleware to all markdown routes
-	markdownRouter := router.PathPrefix("/api/markdown").Subrouter()
-	markdownRouter.Use(authMiddleware)
-
-	// Markdown preview endpoint
-	markdownRouter.HandleFunc("/preview", handler.PreviewMarkdown).Methods("POST")
-
-	// Markdown help endpoint
-	markdownRouter.HandleFunc("/help", handler.GetMarkdownHelp).Methods("GET")
-
-	// Markdown validation endpoint
-	markdownRouter.HandleFunc("/validate", handler.ValidateMarkdown).Methods("POST")
-
-	// Markdown metadata extraction endpoint
-	markdownRouter.HandleFunc("/metadata", handler.ExtractMetadata).Methods("POST")
-
-	// Markdown tag extraction endpoint
-	markdownRouter.HandleFunc("/tags", handler.ExtractTags).Methods("POST")
 }
 
 // PreviewMarkdown handles markdown preview requests

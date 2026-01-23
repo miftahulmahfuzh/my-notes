@@ -112,17 +112,3 @@ func (h *SecurityHandler) GetSecurityMetrics(w http.ResponseWriter, r *http.Requ
 		"timestamp": "2024-01-01T00:00:00Z", // Placeholder
 	})
 }
-
-// User and Session types (these would typically be imported from models package)
-type User struct {
-	ID string `json:"id"`
-}
-
-type Session struct {
-	ID        string `json:"id"`
-	IPAddress string `json:"ip_address"`
-	UserAgent string `json:"user_agent"`
-	CreatedAt string `json:"created_at"`
-	LastSeen  string `json:"last_seen"`
-	IsActive  bool   `json:"is_active"`
-}

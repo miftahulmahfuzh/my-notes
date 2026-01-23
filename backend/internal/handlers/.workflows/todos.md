@@ -4,7 +4,7 @@
 
 **Package Code**: HD
 
-**Last Updated**: 2025-01-23T14:40:00Z
+**Last Updated**: 2026-01-23T15:05:00Z
 
 **Total Active Tasks**: 0
 
@@ -15,9 +15,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 2
+- Completed Today: 3
 - Completed This Week: 1
-- Completed This Month: 2
+- Completed This Month: 3
 
 ---
 
@@ -30,7 +30,39 @@
 - *No high tasks identified*
 
 ### [P2] Medium
-- *No medium tasks identified*
+- [x] **P2-HD-A005** Remove stale handler code and unused route files
+  - **Completed**: 2026-01-23 15:05:00
+  - **Difficulty**: NORMAL
+  - **Type**: Refactor
+  - **Context**: Remove stale code identified in handlers analysis: unused route files (tags.go, user.go in routes/), duplicate type definitions in security.go, unused health check methods (ReadinessCheck, LivenessCheck), duplicate GetUserProfile method, four unused UserHandler methods (DeleteAllUserSessions, GetUserStats, DeleteUserAccount, SearchUsers), unused RegisterMarkdownRoutes function, and unused ApplyTemplateByName method
+  - **Method Implemented**:
+    - Deleted `backend/internal/routes/tags.go` (38 lines) - never called, references non-existent AuthMiddleware
+    - Deleted `backend/internal/routes/user.go` (37 lines) - never called, references non-existent AuthMiddleware
+    - Removed duplicate type definitions (User, Session) from security.go:116-128
+    - Removed unused Kubernetes health check methods (ReadinessCheck, LivenessCheck) from health.go:64-105
+    - Removed duplicate GetUserProfile method from user.go:25-35 (route uses GetProfile)
+    - Removed 4 unused UserHandler methods from user.go:187-300 (DeleteAllUserSessions, GetUserStats, DeleteUserAccount, SearchUsers)
+    - Removed unused RegisterMarkdownRoutes function from markdown.go:40-61
+    - Removed unused ApplyTemplateByName method from templates.go:517-564
+    - Updated user_test.go to use GetProfile instead of removed GetUserProfile
+    - Removed TestGetUserStats test from user_test.go (method no longer exists)
+    - Removed unused imports (strconv from user.go, mux from markdown.go)
+  - **Files Modified**:
+    - backend/internal/routes/tags.go (DELETED)
+    - backend/internal/routes/user.go (DELETED)
+    - backend/internal/handlers/security.go (removed duplicate types)
+    - backend/internal/handlers/health.go (removed K8s methods)
+    - backend/internal/handlers/user.go (removed 5 methods, ~115 lines)
+    - backend/internal/handlers/markdown.go (removed RegisterMarkdownRoutes)
+    - backend/internal/handlers/templates.go (removed ApplyTemplateByName)
+    - backend/tests/handlers/user_test.go (updated test method call, removed TestGetUserStats)
+  - **Impact**: ~250 lines of stale code removed, cleaner codebase with no functional changes
+  - **Validation**:
+    - Backend builds successfully with `./backend_build.sh`
+    - No compilation errors after changes
+    - All active routes still registered in server.go
+  - **Evidence**: Combined reduction of ~250 lines across 8 files
+  - **Production Impact**: No functional changes - purely code cleanup. All active routes and methods remain functional.
 
 ### [P3] Low
 - *No low tasks identified*

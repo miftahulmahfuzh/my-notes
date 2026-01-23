@@ -514,55 +514,6 @@ func (h *TemplateHandler) ApplyTemplate(w http.ResponseWriter, r *http.Request) 
 	respondWithJSON(w, http.StatusOK, response)
 }
 
-// ApplyTemplateByName applies a template by name
-func (h *TemplateHandler) ApplyTemplateByName(w http.ResponseWriter, r *http.Request) {
-	// Ensure template service is initialized
-	if h.templateService == nil {
-		respondWithError(w, http.StatusInternalServerError, "Template service not initialized")
-		return
-	}
-
-	// Get user ID from context
-	user, ok := r.Context().Value("user").(*models.User)
-	if !ok {
-		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
-		return
-	}
-	userID := user.ID
-
-	var req struct {
-		TemplateName string            `json:"template_name" validate:"required"`
-		Variables    map[string]string  `json:"variables"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request body")
-		return
-	}
-
-	// Search for template by name
-	templates, err := h.templateService.SearchTemplates(userID, req.TemplateName, 1)
-	if err != nil || len(templates) == 0 {
-		respondWithError(w, http.StatusNotFound, "Template not found")
-		return
-	}
-
-	// Process template
-	result, err := h.templateService.ProcessTemplate(templates[0].ID, userID, req.Variables)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to process template: "+err.Error())
-		return
-	}
-
-	response := TemplateResponse{
-		Success: true,
-		Message: "Template applied successfully",
-		Results: result,
-	}
-
-	respondWithJSON(w, http.StatusOK, response)
-}
-
 // Helper functions
 func getCurrentTime() time.Time {
 	return time.Now().UTC()

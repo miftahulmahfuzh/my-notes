@@ -36,7 +36,7 @@ func setupUserContext(req *http.Request, user *models.User) *http.Request {
 	return req.WithContext(ctx)
 }
 
-func TestGetUserProfile(t *testing.T) {
+func TestGetProfile(t *testing.T) {
 	mockUserService := &MockUserService{}
 	userHandler := handlers.NewUserHandler(mockUserService)
 
@@ -79,7 +79,7 @@ func TestGetUserProfile(t *testing.T) {
 			tt.setupMocks(mockUserService)
 
 			w := httptest.NewRecorder()
-			userHandler.GetUserProfile(w, req)
+			userHandler.GetProfile(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
@@ -601,88 +601,6 @@ func TestDeleteUserSession(t *testing.T) {
 				assert.NoError(t, err)
 				assert.True(t, response.Success)
 				assert.Equal(t, "Session deleted successfully", response.Data.Message)
-			}
-
-			mockUserService.AssertExpectations(t)
-		})
-	}
-}
-
-func TestGetUserStats(t *testing.T) {
-	mockUserService := &MockUserService{}
-	userHandler := handlers.NewUserHandler(mockUserService)
-
-	tests := []struct {
-		name           string
-		setupContext   func(*http.Request) *http.Request
-		setupMocks     func(*MockUserService)
-		expectedStatus int
-		expectedError  string
-	}{
-		{
-			name: "successful stats retrieval",
-			setupContext: func(req *http.Request) *http.Request {
-				user := createTestUser()
-				return setupUserContext(req, user)
-			},
-			setupMocks: func(m *MockUserService) {
-				stats := &models.UserStats{
-					TotalNotes:     42,
-					TotalTags:      15,
-					ActiveSessions: 3,
-					AccountAgeDays: 30,
-					LastLoginAt:    time.Now().Format(time.RFC3339),
-				}
-				m.On("GetUserStats", mock.AnythingOfType("string")).Return(stats, nil)
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:         "unauthenticated user",
-			setupContext: func(req *http.Request) *http.Request {
-				return req // No user context
-			},
-			setupMocks: func(m *MockUserService) {
-				// No mocks needed
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedError:  "User not authenticated",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/users/stats", nil)
-			req = tt.setupContext(req)
-
-			tt.setupMocks(mockUserService)
-
-			w := httptest.NewRecorder()
-			userHandler.GetUserStats(w, req)
-
-			assert.Equal(t, tt.expectedStatus, w.Code)
-
-			if tt.expectedError != "" {
-				var response struct {
-					Success bool `json:"success"`
-					Error   struct {
-						Code    string `json:"code"`
-						Message string `json:"message"`
-					} `json:"error"`
-				}
-				err := json.Unmarshal(w.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.False(t, response.Success)
-				assert.Equal(t, tt.expectedError, response.Error.Message)
-			} else {
-				var response struct {
-					Success bool           `json:"success"`
-					Data    models.UserStats `json:"data"`
-				}
-				err := json.Unmarshal(w.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.True(t, response.Success)
-				assert.Equal(t, 42, response.Data.TotalNotes)
 			}
 
 			mockUserService.AssertExpectations(t)
