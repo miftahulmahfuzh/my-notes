@@ -15,9 +15,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 15
-- Completed This Week: 15
-- Completed This Month: 15
+- Completed Today: 16
+- Completed This Week: 16
+- Completed This Month: 16
 
 ---
 
@@ -33,6 +33,31 @@
   - **Impact**: Users cannot edit notes from the list view, requiring workarounds to access note editor
 
 ### [P2] Medium
+- [x] **P2-CN-A016** Add real-time search bar to notes list view
+  - **Completed**: 2026-01-23 16:55:00
+  - **Difficulty**: NORMAL
+  - **Type**: Feature
+  - **Context**: Replace current header (user profile, notes title, count) with a real-time search input. Search filters notes list on every keystroke based on substring match against `title + " " + content`. Case-insensitive, client-side filtering. User profile removed entirely, "New Note" button remains in search bar.
+  - **Files Modified**:
+    - extension/src/popup/index.tsx (added searchQuery state, handleSearchChange/handleClearSearch handlers, filteredNotes useMemo, replaced header JSX with search bar)
+    - extension/src/popup/popup.css (added .notes-search-header, .search-bar-container, .search-input, .search-clear-btn styles)
+  - **Key Implementation**:
+    - Added `searchQuery: string` to AppState interface and initialized as empty string
+    - Added `handleSearchChange` and `handleClearSearch` event handlers
+    - Added `filteredNotes` useMemo for client-side filtering with case-insensitive substring matching against `title + " " + content`
+    - Replaced `.notes-header` div with `.notes-search-header` containing search input with icon and clear button
+    - Updated notes list rendering to use `filteredNotes` instead of `state.notes`
+    - Added appropriate empty state messages for "no notes" vs "no search results"
+    - "New Note" button preserved in search bar area
+  - **Validation**:
+    - ✅ Extension builds successfully with webpack (no compilation errors)
+    - ✅ Search bar displayed in place of user profile header
+    - ✅ Search filters notes in real-time on every keystroke
+    - ✅ Case-insensitive substring matching against `title + " " + content`
+    - ✅ Clear button appears when there's text and clears the search
+    - ✅ Empty state shows appropriate messages
+  - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 23585 ms`, `✅ Manifest fixed successfully`
+
 - [x] **P2-CN-A002** Add Copy button to notes list items
   - **Completed**: 2026-01-23 16:30:00
   - **Difficulty**: EASY

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { authService, AuthState } from '../auth';
 import { apiService, Note, NoteResponse, CreateNoteRequest, UpdateNoteRequest } from '../api';
@@ -18,6 +18,7 @@ interface AppState {
 
   // Data state
   notes: NoteResponse[];
+  searchQuery: string;
 
   // UI state
   isLoading: boolean;
@@ -57,6 +58,7 @@ const PopupApp: React.FC = () => {
 
     // Data state
     notes: [],
+    searchQuery: '',
 
     // UI state
     isLoading: false,
@@ -631,6 +633,31 @@ const PopupApp: React.FC = () => {
     }
   };
 
+  // ===== SEARCH HANDLERS =====
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setState(prev => ({ ...prev, searchQuery: query }));
+  };
+
+  const handleClearSearch = () => {
+    setState(prev => ({ ...prev, searchQuery: '' }));
+  };
+
+  // Filtered notes based on search query
+  const filteredNotes = useMemo(() => {
+    const query = state.searchQuery.toLowerCase().trim();
+
+    if (!query) {
+      return state.notes;
+    }
+
+    return state.notes.filter(note => {
+      const searchableText = `${note.title || ''} ${note.content}`.toLowerCase();
+      return searchableText.includes(query);
+    });
+  }, [state.notes, state.searchQuery]);
+
   // =============================================================
 
   const renderContent = () => {
@@ -753,21 +780,26 @@ const PopupApp: React.FC = () => {
     if (state.showNotesList) {
       return (
         <div className="notes-list">
-          <div className="notes-header">
-            <div className="flex items-center gap-3">
-              <div className="user-profile">
-                <div className="user-avatar">
-                  {getUserInitials(state.authState.user?.name || '', state.authState.user?.email || '')}
-                </div>
-                <div className="user-info">
-                  <div className="user-name">{state.authState.user?.name}</div>
-                  <div className="user-email">{state.authState.user?.email}</div>
-                </div>
-              </div>
-              <div>
-                <h3 className="notes-title">Your Notes</h3>
-                <div className="notes-count">{state.notes.length}</div>
-              </div>
+          <div className="notes-search-header">
+            <div className="search-bar-container">
+              <svg className="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search notes..."
+                value={state.searchQuery}
+                onChange={handleSearchChange}
+              />
+              {state.searchQuery && (
+                <button className="search-clear-btn" onClick={handleClearSearch}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              )}
             </div>
             <button
               onClick={handleCreateNoteClick}
@@ -777,18 +809,20 @@ const PopupApp: React.FC = () => {
             </button>
           </div>
 
-          {state.notes.length === 0 ? (
+          {filteredNotes.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📝</div>
-              <h3 className="empty-title">No notes yet</h3>
-              <p className="empty-text">Create your first note to get started!</p>
-              <button onClick={handleCreateNoteClick} className="btn-primary">
-                Create Note
-              </button>
+              <h3 className="empty-title">{state.searchQuery ? 'No notes match your search' : 'No notes yet'}</h3>
+              <p className="empty-text">{state.searchQuery ? 'Try a different search term' : 'Create your first note to get started!'}</p>
+              {!state.searchQuery && (
+                <button onClick={handleCreateNoteClick} className="btn-primary">
+                  Create Note
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid-cols-1">
-              {state.notes.map(note => (
+              {filteredNotes.map(note => (
                 <div
                   key={note.id}
                   className="note-item clickable"
