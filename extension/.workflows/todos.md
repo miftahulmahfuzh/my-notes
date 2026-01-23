@@ -4,7 +4,7 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2026-01-22T10:48:31Z
+**Last Updated**: 2026-01-23T15:40:00Z
 
 **Total Active Tasks**: 2
 
@@ -15,9 +15,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 13
-- Completed This Week: 13
-- Completed This Month: 13
+- Completed Today: 14
+- Completed This Week: 14
+- Completed This Month: 14
 
 ---
 
@@ -64,6 +64,27 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P3-CN-A000** Purge dead code from frontend extension
+  - **Completed**: 2026-01-23 15:40:00
+  - **Difficulty**: EASY
+  - **Type**: Refactor
+  - **Context**: Remove ~10,600+ lines of dead code including files with broken imports to `../utils/api`, entire `src_backup/` directory, and unused services/components/hooks that are not imported by any webpack entry point.
+  - **Files Deleted**:
+    - **Primary (broken imports)**: useNotes.ts (426 lines), sync.ts (605 lines), NoteList.tsx (242 lines), background/sync.ts (602 lines)
+    - **Secondary**: useSync.ts, storage.ts, conflict.ts, offline.ts
+    - **Unused hooks**: useMarkdown.ts, useKeyboardShortcuts.ts, useDragAndDrop.ts, usePerformanceMonitor.ts, useSmartCache.ts, useTemplates.ts
+    - **Unused components**: VirtualizedNoteList.tsx, NoteItem.tsx, Loading.tsx
+    - **Unused background**: background.ts, service-worker.ts, entry.ts
+    - **Backup directory**: src_backup/ (85+ files, ~8,500 lines)
+  - **Total Dead Code Removed**: ~10,600+ lines
+  - **Validation**:
+    - ✅ Extension builds successfully with webpack production build
+    - ✅ No TypeScript compilation errors
+    - ✅ All 4 entry points (popup, background, content, options) build correctly
+    - ✅ Working API service (api.ts) preserved - only dead utils/api.ts imports removed
+  - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 17617 ms`, `✅ Manifest fixed successfully`
+  - **Production Impact**: Significantly reduced codebase size, eliminated broken import paths, improved build times and code clarity
+
 - [x] **P1-CN-A014** Fix template duplication by filtering built-in templates from user templates response
   - **Completed**: 2025-11-02 22:25:00
   - **Difficulty**: NORMAL
