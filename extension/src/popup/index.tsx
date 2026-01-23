@@ -644,6 +644,20 @@ const PopupApp: React.FC = () => {
     setState(prev => ({ ...prev, searchQuery: '' }));
   };
 
+  const handleTagClick = (tag: string): void => {
+    // Strip # prefix from tag to get search term
+    const searchTerm = tag.startsWith('#') ? tag.substring(1) : tag;
+
+    // Set search query and navigate back to notes list
+    setState(prev => ({
+      ...prev,
+      searchQuery: searchTerm,
+      showNotesList: true,
+      showNoteDetail: false,
+      currentNote: null
+    }));
+  };
+
   // Filtered notes based on search query
   const filteredNotes = useMemo(() => {
     const query = state.searchQuery.toLowerCase().trim();
@@ -916,6 +930,7 @@ const PopupApp: React.FC = () => {
             onEdit={() => handleEditNote(state.currentNote!)}
             onDelete={() => handleDeleteNote(state.currentNote!.id)}
             onClose={handleBackToNotes}
+            onTagClick={handleTagClick}
           />
         </div>
       );

@@ -15,9 +15,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 16
-- Completed This Week: 16
-- Completed This Month: 16
+- Completed Today: 17
+- Completed This Week: 17
+- Completed This Month: 17
 
 ---
 
@@ -109,6 +109,28 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P2-CN-A017** Make tags clickable in note detail view for search filtering
+  - **Completed**: 2026-01-23 17:46:00
+  - **Difficulty**: EASY
+  - **Type**: Feature
+  - **Context**: Clicking a tag in NoteView should navigate back to notes list and populate search bar with tag text (without #). Example: Clicking #todo searches for "todo" to find all notes containing "todo" as substring.
+  - **Files Modified**:
+    - extension/src/components/NoteView.tsx (added onTagClick prop to interface, wired tag onClick handler)
+    - extension/src/popup/index.tsx (added handleTagClick handler, passed onTagClick prop to NoteView)
+  - **Key Implementation**:
+    - Added `onTagClick?: (tag: string) => void` to NoteViewProps interface
+    - Updated tag onClick to call `onTagClick(tag)` if provided, with console.log fallback
+    - Added `handleTagClick` function in PopupApp that strips `#` prefix and navigates to notes list
+    - Passed `onTagClick={handleTagClick}` prop to NoteView component
+  - **Validation**:
+    - ✅ Extension builds successfully with webpack (no compilation errors)
+    - ✅ Tag click strips `#` prefix correctly (e.g., `#todo` → `todo`)
+    - ✅ Navigation returns to notes list view
+    - ✅ Search bar is populated with tag text
+    - ✅ Existing `filteredNotes` useMemo filters notes by substring match
+  - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 24206 ms`, `✅ Manifest fixed successfully`
+  - **Usage**: User clicks tag → tag text (without #) appears in search bar → notes list shows only notes containing that tag text
+
 - [x] **P2-CN-A002** Add Copy button to notes list items
   - **Completed**: 2026-01-23 16:30:00
   - **Difficulty**: EASY

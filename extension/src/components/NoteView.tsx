@@ -8,13 +8,15 @@ interface NoteViewProps {
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
+  onTagClick?: (tag: string) => void;
 }
 
 const NoteView: React.FC<NoteViewProps> = ({
   note,
   onEdit,
   onDelete,
-  onClose
+  onClose,
+  onTagClick
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [toc, setToc] = useState<any[]>([]);
@@ -195,8 +197,11 @@ const NoteView: React.FC<NoteViewProps> = ({
                 key={index}
                 className="tag"
                 onClick={() => {
-                  // TODO: Implement tag filtering
-                  console.log('Filter by tag:', tag);
+                  if (onTagClick) {
+                    onTagClick(tag);
+                  } else {
+                    console.log('Filter by tag:', tag);
+                  }
                 }}
                 title={`Click to filter by ${tag}`}
               >
