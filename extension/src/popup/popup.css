@@ -992,6 +992,13 @@ body {
   background-color: rgba(220, 38, 38, 0.1);
 }
 
+/* Copy mini button styling */
+.copy-mini-btn:hover {
+  border-color: #16A34A;
+  color: #16A34A;
+  background-color: rgba(22, 163, 74, 0.1);
+}
+
 /* SVG icon styling */
 .mini-action-btn svg {
   width: 14px;

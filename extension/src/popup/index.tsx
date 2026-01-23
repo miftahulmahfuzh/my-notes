@@ -40,6 +40,9 @@ interface AppState {
   // Form state for creating notes
   newNoteTitle: string;
   newNoteContent: string;
+
+  // Copy feedback state
+  copiedNoteId: string | null;  // Track which note was last copied for visual feedback
 }
 
 const PopupApp: React.FC = () => {
@@ -75,7 +78,10 @@ const PopupApp: React.FC = () => {
 
     // Form state for creating notes
     newNoteTitle: '',
-    newNoteContent: ''
+    newNoteContent: '',
+
+    // Copy feedback state
+    copiedNoteId: null
   });
 
   // Initialize auth on component mount
@@ -388,6 +394,30 @@ const PopupApp: React.FC = () => {
         isLoading: false
       }));
       console.error('Error deleting note:', error);
+    }
+  };
+
+  /**
+   * Copy note content to clipboard with visual feedback
+   * @param content - The note content to copy
+   * @param noteId - The ID of the note being copied (for feedback tracking)
+   * @param event - The click event (to stop propagation)
+   */
+  const handleCopyNoteContent = async (content: string, noteId: string, event: React.MouseEvent): Promise<void> => {
+    event.stopPropagation(); // Prevent triggering handleNoteClick
+
+    try {
+      await navigator.clipboard.writeText(content);
+
+      // Show visual feedback by setting the copied note ID
+      setState(prev => ({ ...prev, copiedNoteId: noteId }));
+
+      // Clear the feedback after 2 seconds
+      setTimeout(() => {
+        setState(prev => ({ ...prev, copiedNoteId: null }));
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy note content:', error);
     }
   };
 
@@ -778,6 +808,17 @@ const PopupApp: React.FC = () => {
                     <div className="note-meta">
                       <span className="note-date">{formatDate(note.created_at)}</span>
                       <div className="note-actions">
+                        <button
+                          onClick={(e) => handleCopyNoteContent(note.content, note.id, e)}
+                          className="mini-action-btn copy-mini-btn"
+                          title="Copy content"
+                          aria-label={`Copy content from: ${note.title || 'Untitled Note'}`}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                          </svg>
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

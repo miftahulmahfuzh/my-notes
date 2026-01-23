@@ -4,7 +4,7 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2026-01-23T15:40:00Z
+**Last Updated**: 2026-01-23T16:35:00Z
 
 **Total Active Tasks**: 2
 
@@ -15,9 +15,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 14
-- Completed This Week: 14
-- Completed This Month: 14
+- Completed Today: 15
+- Completed This Week: 15
+- Completed This Month: 15
 
 ---
 
@@ -33,6 +33,26 @@
   - **Impact**: Users cannot edit notes from the list view, requiring workarounds to access note editor
 
 ### [P2] Medium
+- [x] **P2-CN-A002** Add Copy button to notes list items
+  - **Completed**: 2026-01-23 16:30:00
+  - **Difficulty**: EASY
+  - **Type**: Feature
+  - **Context**: Add a Copy button beside the Delete button in each note item on the notes list page. Clicking the Copy button copies only the note's content (not the title) to the clipboard with visual feedback.
+  - **Files Modified**:
+    - extension/src/popup/index.tsx (added copiedNoteId state, handleCopyNoteContent function, Copy button JSX)
+    - extension/src/popup/popup.css (added .copy-mini-btn:hover style)
+  - **Key Implementation**:
+    - Added `copiedNoteId: string | null` to AppState interface for tracking visual feedback
+    - Added `handleCopyNoteContent(content, noteId, event)` function that copies content and shows 2-second feedback
+    - Added Copy button with green hover state (#16A34A) in note actions container
+    - Used `event.stopPropagation()` to prevent triggering note detail navigation
+  - **Validation**:
+    - ✅ Extension builds successfully with webpack (no compilation errors)
+    - ✅ Copy button uses same SVG icon as NoteView for consistency
+    - ✅ Visual feedback tracked via React state for multiple buttons in list
+    - ✅ Green hover styling matches copy action semantics
+  - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 23263 ms`, `✅ Manifest fixed successfully`
+
 - [ ] **P2-CN-A001** Test and verify note listing functionality end-to-end
   - **Difficulty**: NORMAL
   - **Context**: Note creation and saving to database verified, but note listing feature not yet tested
@@ -64,6 +84,26 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P2-CN-A002** Add Copy button to notes list items
+  - **Completed**: 2026-01-23 16:30:00
+  - **Difficulty**: EASY
+  - **Type**: Feature
+  - **Context**: Add a Copy button beside the Delete button in each note item on the notes list page. Clicking the Copy button copies only the note's content (not the title) to the clipboard with visual feedback.
+  - **Files Modified**:
+    - extension/src/popup/index.tsx (added copiedNoteId state, handleCopyNoteContent function, Copy button JSX)
+    - extension/src/popup/popup.css (added .copy-mini-btn:hover style)
+  - **Key Implementation**:
+    - Added `copiedNoteId: string | null` to AppState interface for tracking visual feedback
+    - Added `handleCopyNoteContent(content, noteId, event)` function that copies content and shows 2-second feedback
+    - Added Copy button with green hover state (#16A34A) in note actions container
+    - Used `event.stopPropagation()` to prevent triggering note detail navigation
+  - **Validation**:
+    - ✅ Extension builds successfully with webpack (no compilation errors)
+    - ✅ Copy button uses same SVG icon as NoteView for consistency
+    - ✅ Visual feedback tracked via React state for multiple buttons in list
+    - ✅ Green hover styling matches copy action semantics
+  - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 23263 ms`, `✅ Manifest fixed successfully`
+
 - [x] **P3-CN-A000** Purge dead code from frontend extension
   - **Completed**: 2026-01-23 15:40:00
   - **Difficulty**: EASY
