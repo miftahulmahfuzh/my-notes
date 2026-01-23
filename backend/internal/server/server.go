@@ -320,7 +320,6 @@ func (s *Server) setupRoutes() {
 		protected.HandleFunc("/import", s.handlers.ExportImport.ImportData).Methods("POST")
 		protected.HandleFunc("/export/formats", s.handlers.ExportImport.GetExportFormats).Methods("GET")
 		protected.HandleFunc("/import/info", s.handlers.ExportImport.GetImportInfo).Methods("GET")
-		protected.HandleFunc("/export/history", s.handlers.ExportImport.GetExportHistory).Methods("GET")
 		protected.HandleFunc("/import/validate", s.handlers.ExportImport.ValidateImportFile).Methods("POST")
 	}
 

@@ -221,19 +221,6 @@ func (h *ExportImportHandler) GetImportInfo(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(info)
 }
 
-// GetExportHistory returns user's export history (if we want to track this)
-func (h *ExportImportHandler) GetExportHistory(w http.ResponseWriter, r *http.Request) {
-	// This could be implemented to track export history
-	// For now, return empty history
-	history := []map[string]interface{}{}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"history": history,
-		"total":   0,
-	})
-}
-
 // ValidateImportFile validates an import file without actually importing
 func (h *ExportImportHandler) ValidateImportFile(w http.ResponseWriter, r *http.Request) {
 	// Just verify user is authenticated
@@ -350,42 +337,4 @@ func (h *ExportImportHandler) validateZIPFile(content []byte) map[string]interfa
 	validation["preview"].(map[string]interface{})["file_size"] = len(content)
 
 	return validation
-}
-
-// Helper functions
-
-// getUserIDFromContext extracts user ID from request context
-func getUserIDFromContext(r *http.Request) (string, bool) {
-	userID, ok := r.Context().Value("user_id").(string)
-	return userID, ok
-}
-
-// sendJSONResponse sends a JSON response
-func sendJSONResponse(w http.ResponseWriter, data interface{}, statusCode int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(data)
-}
-
-// sendErrorResponse sends an error response
-func sendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"error": message,
-		"status": statusCode,
-	})
-}
-
-// LogExport logs export operations for monitoring
-func LogExport(userID, format string, includeTemplates bool, success bool) {
-	log.Printf("EXPORT: user=%s format=%s templates=%t success=%t",
-		userID, format, includeTemplates, success)
-}
-
-// LogImport logs import operations for monitoring
-func LogImport(userID, filename string, result *services.ImportResult) {
-	log.Printf("IMPORT: user=%s file=%s notes=%d tags=%d success=%t errors=%d",
-		userID, filename, result.ImportedNotes, result.ImportedTags,
-		result.Success, len(result.Errors))
 }

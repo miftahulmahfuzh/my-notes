@@ -147,7 +147,7 @@ func (s *ExportImportService) exportAsMarkdown(ctx context.Context, userID strin
 	}
 
 	// Create zip file in memory
-	var buf strings.Builder
+	var buf bytes.Buffer
 	zipWriter := zip.NewWriter(&buf)
 
 	// Add each note as a markdown file
@@ -213,7 +213,7 @@ func (s *ExportImportService) exportAsMarkdown(ctx context.Context, userID strin
 		return nil, fmt.Errorf("failed to close zip writer: %w", err)
 	}
 
-	return []byte(buf.String()), nil
+	return buf.Bytes(), nil
 }
 
 // exportAsHTML exports notes as HTML file
@@ -271,7 +271,7 @@ func (s *ExportImportService) exportAsHTML(ctx context.Context, userID string, i
 
 // exportAsZIP exports data as a comprehensive ZIP archive
 func (s *ExportImportService) exportAsZIP(ctx context.Context, userID string, includeTemplates bool) ([]byte, error) {
-	var buf strings.Builder
+	var buf bytes.Buffer
 	zipWriter := zip.NewWriter(&buf)
 
 	// Add JSON export
@@ -320,7 +320,7 @@ For more information about Silence Notes, visit the project documentation.
 		return nil, fmt.Errorf("failed to close zip writer: %w", err)
 	}
 
-	return []byte(buf.String()), nil
+	return buf.Bytes(), nil
 }
 
 // ImportUserData imports user data from uploaded file
