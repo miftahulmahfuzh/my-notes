@@ -3,6 +3,7 @@
 *.exe~
 *.dll
 *.so
+docker container stop my-notes-postgres
 *.dylib
 
 # Test binary, built with `go test -c`
@@ -61,6 +62,9 @@ tmp/
 # Docker
 .dockerignore
 
+*/migrate
 /backend/server
 *_code_analyzer.md
 consolidate_auth.md
+
+.workflows/plan/

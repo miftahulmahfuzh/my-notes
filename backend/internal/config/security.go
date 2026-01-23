@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -26,9 +25,6 @@ type SecurityConfig struct {
 
 	// Token configuration
 	Token TokenConfig `yaml:"token"`
-
-	// Database security
-	Database DatabaseSecurityConfig `yaml:"database"`
 }
 
 // RateLimitConfig holds rate limiting configuration
@@ -113,41 +109,10 @@ type MonitoringConfig struct {
 // TokenConfig holds token configuration
 type TokenConfig struct {
 	// JWT configuration
-	SecretKey      string        `yaml:"secret_key"`
 	AccessExpiry   time.Duration `yaml:"access_expiry" default:"15m"`
 	RefreshExpiry  time.Duration `yaml:"refresh_expiry" default:"24h"`
 	Issuer         string        `yaml:"issuer" default:"silence-notes"`
 	Audience       string        `yaml:"audience" default:"silence-notes-users"`
-
-	// Token validation
-	ValidateIssuer bool          `yaml:"validate_issuer" default:"true"`
-	ValidateAudience bool         `yaml:"validate_audience" default:"true"`
-	Leeway         time.Duration `yaml:"leeway" default:"10s"`
-
-	// Token blacklist
-	EnableBlacklist bool          `yaml:"enable_blacklist" default:"true"`
-	BlacklistCache  time.Duration `yaml:"blacklist_cache" default:"5m"`
-}
-
-// DatabaseSecurityConfig holds database security configuration
-type DatabaseSecurityConfig struct {
-	// Connection security
-	SSLMode        string `yaml:"ssl_mode" default:"require"`
-	MaxConnections  int    `yaml:"max_connections" default:"100"`
-	MaxIdleTime     int    `yaml:"max_idle_time" default:"30"`
-
-	// Query security
-	QueryTimeout    time.Duration `yaml:"query_timeout" default:"30s"`
-	MaxQueryRows    int           `yaml:"max_query_rows" default:"10000"`
-
-	// Connection pooling
-	MaxIdleConns    int `yaml:"max_idle_conns" default:"10"`
-	MinConns        int `yaml:"min_conns" default:"1"`
-	MaxConnLifetime int `yaml:"max_conn_lifetime" default:"3600"`
-
-	// Encryption
-	EncryptDataAtRest bool `yaml:"encrypt_data_at_rest" default:"true"`
-	EncryptionKey    string `yaml:"encryption_key"`
 }
 
 // GetDefaultSecurityConfig returns the default security configuration
@@ -235,22 +200,6 @@ func GetDefaultSecurityConfig() *SecurityConfig {
 			RefreshExpiry:   24 * time.Hour,
 			Issuer:          "silence-notes",
 			Audience:        "silence-notes-users",
-			ValidateIssuer:   true,
-			ValidateAudience: true,
-			Leeway:          10 * time.Second,
-			EnableBlacklist: true,
-			BlacklistCache:  5 * time.Minute,
-		},
-		Database: DatabaseSecurityConfig{
-			SSLMode:        "require",
-			MaxConnections:  100,
-			MaxIdleTime:     30,
-			QueryTimeout:    30 * time.Second,
-			MaxQueryRows:    10000,
-			MaxIdleConns:    10,
-			MinConns:        1,
-			MaxConnLifetime: 3600,
-			EncryptDataAtRest: true,
 		},
 	}
 }
@@ -306,55 +255,6 @@ func GetProductionSecurityConfig() *SecurityConfig {
 	config.Monitoring.EnableMetrics = true
 
 	return config
-}
-
-// ValidateSecurityConfig validates the security configuration
-func ValidateSecurityConfig(config *SecurityConfig) error {
-	// Validate rate limiting
-	if config.RateLimiting.GlobalRequestsPerSecond <= 0 {
-		return fmt.Errorf("global_requests_per_second must be positive")
-	}
-
-	if config.RateLimiting.GlobalBurstSize <= 0 {
-		return fmt.Errorf("global_burst_size must be positive")
-	}
-
-	if config.RateLimiting.UserRequestsPerMinute <= 0 {
-		return fmt.Errorf("user_requests_per_minute must be positive")
-	}
-
-	// Validate session configuration
-	if config.Session.SessionTimeout <= 0 {
-		return fmt.Errorf("session_timeout must be positive")
-	}
-
-	if config.Session.MaxSessions <= 0 {
-		return fmt.Errorf("max_sessions must be positive")
-	}
-
-	// Validate token configuration
-	if config.Token.AccessExpiry <= 0 {
-		return fmt.Errorf("access_expiry must be positive")
-	}
-
-	if config.Token.RefreshExpiry <= 0 {
-		return fmt.Errorf("refresh_expiry must be positive")
-	}
-
-	if config.Token.RefreshExpiry <= config.Token.AccessExpiry {
-		return fmt.Errorf("refresh_expiry must be greater than access_expiry")
-	}
-
-	// Validate database configuration
-	if config.Database.MaxConnections <= 0 {
-		return fmt.Errorf("max_connections must be positive")
-	}
-
-	if config.Database.QueryTimeout <= 0 {
-		return fmt.Errorf("query_timeout must be positive")
-	}
-
-	return nil
 }
 
 // IsDevelopmentMode checks if the application is running in development mode

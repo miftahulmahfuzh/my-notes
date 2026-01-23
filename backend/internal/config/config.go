@@ -13,7 +13,6 @@ import (
 type Config struct {
 	Server   ServerConfig   `yaml:"server" env-prefix:"SERVER_"`
 	Database DatabaseConfig `yaml:"database" env-prefix:"DB_"`
-	Redis    RedisConfig    `yaml:"redis" env-prefix:"REDIS_"`
 	Auth     AuthConfig     `yaml:"auth" env-prefix:"AUTH_"`
 	App      AppConfig      `yaml:"app" env-prefix:"APP_"`
 	CORS     CORSConfig     `yaml:"cors" env-prefix:"CORS_"`
@@ -36,14 +35,6 @@ type DatabaseConfig struct {
 	User     string `yaml:"user" env:"USER" envDefault:"postgres"`
 	Password string `yaml:"password" env:"PASSWORD" envRequired:"true"`
 	SSLMode  string `yaml:"ssl_mode" env:"SSLMODE" envDefault:"disable"`
-}
-
-// RedisConfig represents Redis configuration
-type RedisConfig struct {
-	Host     string `yaml:"host" env:"HOST" envDefault:"localhost"`
-	Port     int    `yaml:"port" env:"PORT" envDefault:"6379"`
-	Password string `yaml:"password" env:"PASSWORD" envDefault:""`
-	DB       int    `yaml:"db" env:"DB" envDefault:"0"`
 }
 
 // AuthConfig represents authentication configuration
@@ -109,12 +100,6 @@ func LoadConfig(configPath string) (*Config, error) {
 			User:     getEnv("DB_USER", "postgres"),
 			Password: getEnv("DB_PASSWORD", ""),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
-		},
-		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", "localhost"),
-			Port:     getEnvInt("REDIS_PORT", 6379),
-			Password: getEnv("REDIS_PASSWORD", ""),
-			DB:       getEnvInt("REDIS_DB", 0),
 		},
 		Auth: AuthConfig{
 			JWTSecret:         getEnv("JWT_SECRET", ""),
@@ -202,11 +187,6 @@ func (c *DatabaseConfig) DSN() string {
 // Address returns the server address
 func (c *ServerConfig) Address() string {
 	return fmt.Sprintf("%s:%s", c.Host, c.Port)
-}
-
-// RedisAddr returns the Redis address
-func (c *RedisConfig) RedisAddr() string {
-	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
 // Helper functions
