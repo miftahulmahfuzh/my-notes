@@ -8,7 +8,6 @@ import (
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/gpd/my-notes/internal/services"
-	"github.com/google/uuid"
 )
 
 // AuthHandler handles authentication-related HTTP requests
@@ -39,32 +38,6 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	if err := req.Validate(); err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	// Handle mock refresh token for testing
-	if req.RefreshToken == "mock-refresh-token" {
-		// Create mock user for testing
-		userID, _ := uuid.Parse("550e8400-e29b-41d4-a716-446655440000")
-		user := &models.User{
-			ID:    userID,
-			Email: "test@example.com",
-			Name:  "Test User",
-		}
-
-		// Generate new token pair
-		tokenPair, err := h.tokenService.GenerateTokenPair(user)
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, "Failed to generate tokens")
-			return
-		}
-
-		respondWithJSON(w, http.StatusOK, map[string]interface{}{
-			"access_token":  tokenPair.AccessToken,
-			"refresh_token": tokenPair.RefreshToken,
-			"token_type":    tokenPair.TokenType,
-			"expires_in":    tokenPair.ExpiresIn,
-		})
 		return
 	}
 
@@ -204,7 +177,7 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 		return
 	}
 
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)

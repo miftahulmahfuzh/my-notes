@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/gpd/my-notes/internal/auth"
@@ -45,15 +44,7 @@ func NewChromeAuthHandler(
 }
 
 // ExchangeChromeToken exchanges Chrome Identity token for app tokens
-//
-// DEPRECATED: Use /api/v1/auth/google instead.
-// This endpoint is for backward compatibility with the old Chrome extension auth system
-// and will be removed in version 2.0. Migration to the new OAuth flow is recommended.
-//
-// Old system: Chrome Identity API direct token exchange
-// New system: Standard Google OAuth 2.0 flow with redirect
 func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.Request) {
-	log.Println("[DEPRECATED] /api/v1/auth/chrome is deprecated, use /api/v1/auth/google")
 	var req ChromeAuthRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request body")
@@ -65,41 +56,28 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// DEBUG: Log token details (first few chars only for security)
-	tokenPreview := req.Token
-	if len(tokenPreview) > 20 {
-		tokenPreview = tokenPreview[:20]
-	}
-	log.Printf("DEBUG: Received Chrome token (first %d chars): %s...", len(tokenPreview), tokenPreview)
-
 	// Validate Chrome token with Google
 	userInfo, err := h.validateChromeToken(req.Token)
 	if err != nil {
-		log.Printf("DEBUG: Token validation failed: %v", err)
 		respondWithError(w, http.StatusUnauthorized, fmt.Sprintf("Invalid Chrome token: %v", err))
 		return
 	}
 
 	// Get or create user
-	log.Printf("DEBUG: Attempting to get/create user for email: %s", userInfo.Email)
 	user, err := h.getOrCreateUser(userInfo)
 	if err != nil {
-		log.Printf("DEBUG: User creation failed: %v", err)
 		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to create user: %v", err))
 		return
 	}
 
 	// Check if user already has an existing Chrome extension session
 	existingSessions, err := h.userService.GetActiveSessions(user.ID.String())
-	if err != nil {
-		log.Printf("DEBUG: Failed to get existing sessions: %v", err)
-	} else {
+	if err == nil {
 		// Look for existing Chrome extension sessions
 		for _, existingSession := range existingSessions {
 			if existingSession.UserAgent == "Chrome-Extension" && existingSession.IsActive {
 				// Reuse existing Chrome extension session
 				sessionID := existingSession.ID
-				log.Printf("DEBUG: Reusing existing Chrome session: %s", sessionID)
 
 				// Generate JWT tokens with the existing session ID
 				tokenPair, err := h.tokenService.GenerateTokenPairWithSession(user, sessionID)
@@ -117,7 +95,6 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 					SessionID:    sessionID,
 				}
 
-				log.Printf("DEBUG: Reused session response - User email: %s, Name: %s, Session: %s", response.User.Email, response.User.Name, sessionID)
 				respondWithJSON(w, http.StatusOK, response)
 				return
 			}
@@ -125,16 +102,13 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 	}
 
 	// No existing Chrome session found, create a new one
-	log.Printf("DEBUG: No existing Chrome session found, creating new session for user: %s", user.ID.String())
 	session, err := h.userService.CreateSession(user.ID.String(), "127.0.0.1", "Chrome-Extension")
 	var sessionID string
 	if err != nil {
 		// For Chrome extensions, create a simple session if CreateSession fails
 		sessionID = fmt.Sprintf("chrome-session-%s", user.ID.String())
-		log.Printf("DEBUG: Created simple Chrome session ID: %s", sessionID)
 	} else {
 		sessionID = session.ID
-		log.Printf("DEBUG: Created new session for Chrome extension: %s", sessionID)
 	}
 
 	// Generate JWT tokens with the actual session ID
@@ -150,11 +124,9 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 		RefreshToken: tokenPair.RefreshToken,
 		TokenType:    tokenPair.TokenType,
 		ExpiresIn:    tokenPair.ExpiresIn,
-		SessionID:    sessionID, // Include session ID in response
+		SessionID:    sessionID,
 	}
 
-	// DEBUG: Log the response being sent
-	log.Printf("DEBUG: Sending response - User email: %s, Name: %s, Session: %s", response.User.Email, response.User.Name, sessionID)
 	respondWithJSON(w, http.StatusOK, response)
 }
 
@@ -180,13 +152,10 @@ func (h *ChromeAuthHandler) validateChromeToken(token string) (*auth.GoogleUserI
 	}
 	defer resp.Body.Close()
 
-	log.Printf("DEBUG: Google tokeninfo response status: %d", resp.StatusCode)
-
 	if resp.StatusCode != http.StatusOK {
 		// Read the response body for debugging
 		body, _ := io.ReadAll(resp.Body)
-		log.Printf("DEBUG: Google tokeninfo error response: %s", string(body))
-		return nil, fmt.Errorf("token validation failed with status: %d", resp.StatusCode)
+		return nil, fmt.Errorf("token validation failed with status: %d, response: %s", resp.StatusCode, string(body))
 	}
 
 	var tokenInfo struct {
@@ -205,10 +174,6 @@ func (h *ChromeAuthHandler) validateChromeToken(token string) (*auth.GoogleUserI
 	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
 		return nil, fmt.Errorf("failed to decode tokeninfo response: %w", err)
 	}
-
-	// DEBUG: Log what fields we received from Google
-	log.Printf("DEBUG: Google tokeninfo response - Email: %s, Name: %s, EmailVerified: %s",
-		tokenInfo.Email, tokenInfo.Name, tokenInfo.EmailVerified)
 
 	// Validate required fields
 	if tokenInfo.Email == "" {
@@ -261,4 +226,3 @@ func (h *ChromeAuthHandler) getOrCreateUser(googleUserInfo *auth.GoogleUserInfo)
 
 	return user, nil
 }
-
