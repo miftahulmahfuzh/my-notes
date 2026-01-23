@@ -4,15 +4,15 @@
 
 **Project Code**: SN
 
-**Last Updated**: 2025-01-22T05:35:00Z
+**Last Updated**: 2026-01-23T13:58:00Z
 
-**Total Active Tasks**: 0
+**Total Active Tasks**: 1
 
 ## Quick Stats
 - P0 Critical: 0
 - P1 High: 0
 - P2 Medium: 0
-- P3 Low: 0
+- P3 Low: 1
 - P4 Backlog: 0
 - Blocked: 0
 - Completed Today: 1
@@ -33,7 +33,12 @@
 - *No medium priority tasks identified*
 
 ### [P3] Low
-- *No low priority tasks identified*
+- [ ] **P3-SN-A005** Purge stale code from backend/internal/database
+  - **Difficulty**: EASY
+  - **Type**: Refactor
+  - **Context**: Remove unused functions (GetConnectionStats, CreateMigration, getExistingMigrations) and replace deprecated ioutil package with os package in migrate.go
+  - **Status**: in_progress
+  - **Plan**: `.workflows/plan/P3-SN-A005.md`
 
 ### [P4] Backlog
 - *No backlog tasks identified*

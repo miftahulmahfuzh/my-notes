@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -66,7 +65,7 @@ func (m *Migrator) GetPendingMigrations() ([]string, error) {
 		return nil, err
 	}
 
-	files, err := ioutil.ReadDir(m.migrationsPath)
+	files, err := os.ReadDir(m.migrationsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +147,7 @@ func (m *Migrator) Down() error {
 func (m *Migrator) applyMigration(version string) error {
 	// Read migration file
 	upFile := filepath.Join(m.migrationsPath, version+".up.sql")
-	content, err := ioutil.ReadFile(upFile)
+	content, err := os.ReadFile(upFile)
 	if err != nil {
 		return fmt.Errorf("failed to read migration file %s: %w", upFile, err)
 	}
@@ -186,7 +185,7 @@ func (m *Migrator) rollbackMigration(version string) error {
 		return fmt.Errorf("rollback file not found for migration %s", version)
 	}
 
-	content, err := ioutil.ReadFile(downFile)
+	content, err := os.ReadFile(downFile)
 	if err != nil {
 		return fmt.Errorf("failed to read rollback file %s: %w", downFile, err)
 	}
@@ -255,46 +254,4 @@ func (m *Migrator) Status() error {
 	}
 
 	return nil
-}
-
-// CreateMigration creates a new migration file pair
-func (m *Migrator) CreateMigration(name string) error {
-	timestamp := fmt.Sprintf("%d", len(m.getExistingMigrations())+1)
-
-	upFile := filepath.Join(m.migrationsPath, fmt.Sprintf("%s_create_%s_table.up.sql", timestamp, name))
-	downFile := filepath.Join(m.migrationsPath, fmt.Sprintf("%s_create_%s_table.down.sql", timestamp, name))
-
-	// Create up migration
-	upContent := fmt.Sprintf(`-- Create %s table
--- TODO: Add your migration SQL here
-`, name)
-
-	if err := ioutil.WriteFile(upFile, []byte(upContent), 0644); err != nil {
-		return fmt.Errorf("failed to create up migration file: %w", err)
-	}
-
-	// Create down migration
-	downContent := fmt.Sprintf(`-- Drop %s table
--- TODO: Add your rollback SQL here
-`, name)
-
-	if err := ioutil.WriteFile(downFile, []byte(downContent), 0644); err != nil {
-		return fmt.Errorf("failed to create down migration file: %w", err)
-	}
-
-	fmt.Printf("Created migration files:\n  %s\n  %s\n", upFile, downFile)
-	return nil
-}
-
-func (m *Migrator) getExistingMigrations() []string {
-	files, _ := ioutil.ReadDir(m.migrationsPath)
-	var migrations []string
-	for _, file := range files {
-		if strings.HasSuffix(file.Name(), ".up.sql") {
-			version := strings.TrimSuffix(file.Name(), ".up.sql")
-			migrations = append(migrations, version)
-		}
-	}
-	sort.Strings(migrations)
-	return migrations
 }

@@ -152,17 +152,3 @@ func dropTestDatabase(cfg config.DatabaseConfig, dbName string) {
 		return
 	}
 }
-
-// GetConnectionStats returns connection pool statistics
-func GetConnectionStats(db *sql.DB) map[string]interface{} {
-	stats := db.Stats()
-	return map[string]interface{}{
-		"open_connections":     stats.OpenConnections,
-		"in_use":              stats.InUse,
-		"idle":                stats.Idle,
-		"wait_count":          stats.WaitCount,
-		"wait_duration":       stats.WaitDuration,
-		"max_idle_closed":     stats.MaxIdleClosed,
-		"max_lifetime_closed": stats.MaxLifetimeClosed,
-	}
-}
