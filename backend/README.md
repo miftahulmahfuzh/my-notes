@@ -70,8 +70,8 @@ cp .env.example .env
 # Create PostgreSQL database
 createdb silence_notes
 
-# Run migrations
-go run cmd/migrate/main.go up
+# Run migrations (auto-applied on server start in dev/test mode)
+go run cmd/server/main.go
 ```
 
 5. **Start the server**
@@ -153,8 +153,7 @@ go run cmd/server/main.go
 ```
 backend/
 ├── cmd/                    # Application entry points
-│   ├── server/            # Main server application
-│   └── migrate/           # Database migration tool
+│   └── server/            # Main server application (auto-runs migrations in dev/test)
 ├── internal/              # Private application code
 │   ├── auth/             # Authentication logic
 │   ├── config/           # Configuration management
@@ -329,9 +328,8 @@ GRANT ALL PRIVILEGES ON DATABASE silence_notes TO silence_notes_user;
 
 3. **Run migrations**
 ```bash
-go run cmd/migrate/main.go up
-
-# Or using migrate tool
+# Migrations are auto-applied on server start in dev/test mode
+# For production, use golang-migrate or similar:
 migrate -path migrations -database "postgres://user:password@localhost/silence_notes" up
 ```
 

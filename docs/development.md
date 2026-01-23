@@ -84,8 +84,8 @@ npm test
 # Start PostgreSQL and Redis with Docker
 docker-compose -f docker-compose.dev.yml up -d
 
-# Run migrations
-go run cmd/migrate/main.go -action=up
+# Run migrations (auto-applied on server start in dev/test mode)
+go run cmd/server/main.go
 ```
 
 ## 📋 Development Workflow
@@ -189,8 +189,7 @@ git commit -m "test(notes): add unit tests for note validation"
 ```
 backend/
 ├── cmd/                    # Applications
-│   ├── server/            # Main API server
-│   └── migrate/           # Database migration tool
+│   └── server/            # Main API server (auto-runs migrations in dev/test)
 ├── internal/              # Private application code
 │   ├── config/           # Configuration management
 │   ├── database/         # Database connections and migrations
@@ -576,28 +575,32 @@ describe('ApiService', () => {
 
 ### Migrations
 
-1. **Create new migration**
+Migrations are auto-applied on server start in **dev/test mode**. For production:
+
+1. **Create new migration file manually**
    ```bash
-   go run cmd/migrate/main.go -action=create -name=add_note_field
+   # Create numbered migration files in backend/migrations/
+   # e.g., 009_add_note_field.up.sql and 009_add_note_field.down.sql
    ```
 
 2. **Write migration SQL**
    ```sql
-   -- 005_add_note_field.up.sql
+   -- 009_add_note_field.up.sql
    ALTER TABLE notes ADD COLUMN new_field VARCHAR(100);
 
-   -- 005_add_note_field.down.sql
+   -- 009_add_note_field.down.sql
    ALTER TABLE notes DROP COLUMN new_field;
    ```
 
-3. **Run migrations**
+3. **Run migrations** (auto-applied in dev/test, use golang-migrate for production)
    ```bash
-   go run cmd/migrate/main.go -action=up
+   # Install golang-migrate: https://github.com/golang-migrate/migrate
+   migrate -path backend/migrations -database "postgres://user:pass@localhost/silence_notes?sslmode=disable" up
    ```
 
 4. **Rollback if needed**
    ```bash
-   go run cmd/migrate/main.go -action=down
+   migrate -path backend/migrations -database "postgres://user:pass@localhost/silence_notes?sslmode=disable" down 1
    ```
 
 ### Database Schema Changes
@@ -650,7 +653,8 @@ func TestNoteConstraints(t *testing.T) {
 
 4. **Run migrations**
    ```bash
-   ./silence-notes-api -migrate-up
+   # Use golang-migrate CLI for production
+   migrate -path backend/migrations -database "postgres://user:pass@host/silence_notes?sslmode=require" up
    ```
 
 ### Extension Deployment

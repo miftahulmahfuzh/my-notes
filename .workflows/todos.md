@@ -67,7 +67,6 @@
     - `(*Config).IsProduction()` method - kept as it's used in backend/tests/config_test.go
   - **Validation Results**:
     - ✅ Server builds successfully: `go build ./cmd/server`
-    - ✅ Migrate builds successfully: `go build ./cmd/migrate`
     - ✅ No compilation errors related to removed code
     - ✅ Package-level functions (getEnv, getEnvInt, etc.) accessible across both files in same package
   - **Impact**: Removed ~70 lines of unused/stale code, improving codebase maintainability
@@ -196,7 +195,6 @@
 
 #### Validation Results
 - ✅ Server builds successfully: `go build ./cmd/server`
-- ✅ Migrate builds successfully: `go build ./cmd/migrate`
 - ✅ No compilation errors related to removed code
 - ✅ Package-level functions accessible across both files
 

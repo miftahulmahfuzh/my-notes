@@ -477,7 +477,9 @@ The application uses a custom migration system that tracks applied migrations in
 docker exec my-notes-postgres psql -U test_user -d my_notes_test -c "SELECT * FROM schema_migrations ORDER BY version;"
 
 # Manually run migrations (if needed)
-go -C backend run cmd/migrate/main.go up
+# In dev/test, migrations auto-run on server start
+# For production, use golang-migrate:
+migrate -path backend/migrations -database "postgres://user:pass@localhost/my_notes?sslmode=disable" up
 
 # Check migration files
 ls -la backend/migrations/*.sql | sort

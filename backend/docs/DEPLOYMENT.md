@@ -224,10 +224,7 @@ createdb silence_notes
 ### 2. Database Migration
 
 ```bash
-# Run database migrations
-go run cmd/migrate/main.go up
-
-# Or using the migrate tool
+# Run database migrations using golang-migrate
 migrate -path migrations -database "postgres://user:password@localhost/silence_notes?sslmode=require" up
 ```
 
