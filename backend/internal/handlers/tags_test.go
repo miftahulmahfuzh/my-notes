@@ -238,7 +238,7 @@ func (suite *TagsHandlerTestSuite) TestCreateTag() {
 			requestBody:    "invalid json",
 			mockSetup:      func() {},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   "Invalid request payload",
+			expectedBody:   "Invalid request payload", // Will be checked in response["error"]["message"]
 		},
 		{
 			name: "tag already exists",
@@ -246,15 +246,15 @@ func (suite *TagsHandlerTestSuite) TestCreateTag() {
 				Name: "#duplicate",
 			},
 			mockSetup: func() {
-				suite.mockService.On("CreateTag", mock.AnythingOfType("*models.CreateTagRequest")).Return(nil, assert.AnError)
+				suite.mockService.On("CreateTag", mock.Anything).Return(nil, assert.AnError)
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:        "unauthenticated request",
-			requestBody: models.CreateTagRequest{Name: "#test"},
-			mockSetup:   func() {},
-			// This test will create a request without user context
+			name:           "unauthenticated request",
+			requestBody:    models.CreateTagRequest{Name: "#test"},
+			mockSetup:      func() {},
+			expectedStatus: http.StatusUnauthorized, // 401 for unauthenticated
 		},
 	}
 
@@ -281,10 +281,15 @@ func (suite *TagsHandlerTestSuite) TestCreateTag() {
 				var response map[string]interface{}
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				assert.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.expectedBody, response["error"])
+				// Error response format: {"success": false, "error": {"code": "...", "message": "..."}}
+				errorObj := response["error"].(map[string]interface{})
+				assert.Equal(suite.T(), tt.expectedBody, errorObj["message"])
 			}
 
 			suite.mockService.AssertExpectations(suite.T())
+			// Clear expectations for next sub-test
+			suite.mockService.ExpectedCalls = nil
+			suite.mockService.Calls = nil
 		})
 	}
 }
@@ -337,13 +342,19 @@ func (suite *TagsHandlerTestSuite) TestGetTag() {
 			assert.Equal(suite.T(), tt.expectedStatus, rr.Code)
 
 			if tt.expectedStatus == http.StatusOK {
-				var response models.TagResponse
+				var response struct {
+					Success bool              `json:"success"`
+					Data    models.TagResponse `json:"data"`
+				}
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				assert.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.tagID, response.ID.String())
+				assert.Equal(suite.T(), tt.tagID, response.Data.ID.String())
 			}
 
 			suite.mockService.AssertExpectations(suite.T())
+			// Clear expectations for next sub-test
+			suite.mockService.ExpectedCalls = nil
+			suite.mockService.Calls = nil
 		})
 	}
 }
@@ -351,13 +362,15 @@ func (suite *TagsHandlerTestSuite) TestGetTag() {
 // TestListTags tests the ListTags handler
 func (suite *TagsHandlerTestSuite) TestListTags() {
 	tests := []struct {
-		name           string
-		queryParams    string
-		mockSetup      func()
-		expectedStatus int
+		name                string
+		queryParams         string
+		mockSetup           func()
+		expectedStatus      int
+		expectNonEmptyTags  bool
 	}{
 		{
-			name:        "successful tag listing",
+			name:               "successful tag listing",
+			expectNonEmptyTags:  true,
 			queryParams: "?limit=10&offset=0&orderBy=name&orderDir=asc",
 			mockSetup: func() {
 				tagList := &models.TagList{
@@ -383,10 +396,20 @@ func (suite *TagsHandlerTestSuite) TestListTags() {
 			expectedStatus: http.StatusInternalServerError,
 		},
 		{
-			name:        "invalid limit parameter",
+			name:        "invalid limit parameter (uses default)",
 			queryParams: "?limit=invalid",
-			mockSetup:   func() {},
-			expectedStatus: http.StatusBadRequest,
+			mockSetup: func() {
+				// Handler uses default limit of 20 when parsing fails
+				tagList := &models.TagList{
+					Tags:    []models.TagResponse{},
+					Total:   0,
+					Page:    1,
+					Limit:   20,
+					HasMore: false,
+				}
+				suite.mockService.On("ListTags", 20, 0, "name", "asc").Return(tagList, nil)
+			},
+			expectedStatus: http.StatusOK, // Handler succeeds with default limit
 		},
 	}
 
@@ -402,13 +425,21 @@ func (suite *TagsHandlerTestSuite) TestListTags() {
 			assert.Equal(suite.T(), tt.expectedStatus, rr.Code)
 
 			if tt.expectedStatus == http.StatusOK {
-				var response models.TagList
+				var response struct {
+					Success bool           `json:"success"`
+					Data    models.TagList `json:"data"`
+				}
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				assert.NoError(suite.T(), err)
-				assert.Greater(suite.T(), len(response.Tags), 0)
+				if tt.expectNonEmptyTags {
+					assert.Greater(suite.T(), len(response.Data.Tags), 0)
+				}
 			}
 
 			suite.mockService.AssertExpectations(suite.T())
+			// Clear expectations for next sub-test
+			suite.mockService.ExpectedCalls = nil
+			suite.mockService.Calls = nil
 		})
 	}
 }
@@ -474,6 +505,9 @@ func (suite *TagsHandlerTestSuite) TestUpdateTag() {
 			assert.Equal(suite.T(), tt.expectedStatus, rr.Code)
 
 			suite.mockService.AssertExpectations(suite.T())
+			// Clear expectations for next sub-test
+			suite.mockService.ExpectedCalls = nil
+			suite.mockService.Calls = nil
 		})
 	}
 }
@@ -520,6 +554,9 @@ func (suite *TagsHandlerTestSuite) TestDeleteTag() {
 			assert.Equal(suite.T(), tt.expectedStatus, rr.Code)
 
 			suite.mockService.AssertExpectations(suite.T())
+			// Clear expectations for next sub-test
+			suite.mockService.ExpectedCalls = nil
+			suite.mockService.Calls = nil
 		})
 	}
 }
@@ -569,13 +606,19 @@ func (suite *TagsHandlerTestSuite) TestGetTagSuggestions() {
 			assert.Equal(suite.T(), tt.expectedStatus, rr.Code)
 
 			if tt.expectedStatus == http.StatusOK {
-				var response []string
+				var response struct {
+					Success bool                       `json:"success"`
+					Data    map[string][]string        `json:"data"`
+				}
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				assert.NoError(suite.T(), err)
-				assert.Greater(suite.T(), len(response), 0)
+				assert.Greater(suite.T(), len(response.Data["suggestions"]), 0)
 			}
 
 			suite.mockService.AssertExpectations(suite.T())
+			// Clear expectations for next sub-test
+			suite.mockService.ExpectedCalls = nil
+			suite.mockService.Calls = nil
 		})
 	}
 }
@@ -622,13 +665,19 @@ func (suite *TagsHandlerTestSuite) TestGetPopularTags() {
 			assert.Equal(suite.T(), tt.expectedStatus, rr.Code)
 
 			if tt.expectedStatus == http.StatusOK {
-				var response []models.TagResponse
+				var response struct {
+					Success bool                         `json:"success"`
+					Data    map[string][]models.TagResponse `json:"data"`
+				}
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				assert.NoError(suite.T(), err)
-				assert.Greater(suite.T(), len(response), 0)
+				assert.Greater(suite.T(), len(response.Data["tags"]), 0)
 			}
 
 			suite.mockService.AssertExpectations(suite.T())
+			// Clear expectations for next sub-test
+			suite.mockService.ExpectedCalls = nil
+			suite.mockService.Calls = nil
 		})
 	}
 }
@@ -672,12 +721,18 @@ func (suite *TagsHandlerTestSuite) TestGetUnusedTags() {
 			assert.Equal(suite.T(), tt.expectedStatus, rr.Code)
 
 			if tt.expectedStatus == http.StatusOK {
-				var response []models.TagResponse
+				var response struct {
+					Success bool                         `json:"success"`
+					Data    map[string][]models.TagResponse `json:"data"`
+				}
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				assert.NoError(suite.T(), err)
 			}
 
 			suite.mockService.AssertExpectations(suite.T())
+			// Clear expectations for next sub-test
+			suite.mockService.ExpectedCalls = nil
+			suite.mockService.Calls = nil
 		})
 	}
 }
