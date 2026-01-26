@@ -188,7 +188,6 @@ func (suite *TagsHandlerTestSuite) SetupTest() {
 	suite.testUser = &models.User{
 		ID:    uuid.New(),
 		Email: "test@example.com",
-		Name:  "Test User",
 	}
 }
 
@@ -780,7 +779,6 @@ func (suite *TagsHandlerIntegrationTestSuite) createAuthenticatedRequest(method,
 	user := &models.User{
 		ID:    suite.userID,
 		Email: suite.userEmail,
-		Name:  "Test User",
 	}
 	ctx := context.WithValue(req.Context(), "user", user)
 	return req.WithContext(ctx)

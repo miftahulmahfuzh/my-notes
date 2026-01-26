@@ -21,7 +21,6 @@ func TestUserValidation(t *testing.T) {
 			user: &models.User{
 				GoogleID: "google_123",
 				Email:    "test@example.com",
-				Name:     "Test User",
 			},
 			expectError: false,
 		},
@@ -29,7 +28,6 @@ func TestUserValidation(t *testing.T) {
 			name: "Missing Google ID",
 			user: &models.User{
 				Email: "test@example.com",
-				Name:  "Test User",
 			},
 			expectError: true,
 			errorMsg:    "google_id is required",
@@ -38,39 +36,18 @@ func TestUserValidation(t *testing.T) {
 			name: "Missing email",
 			user: &models.User{
 				GoogleID: "google_123",
-				Name:     "Test User",
 			},
 			expectError: true,
 			errorMsg:    "email is required",
-		},
-		{
-			name: "Missing name",
-			user: &models.User{
-				GoogleID: "google_123",
-				Email:    "test@example.com",
-			},
-			expectError: true,
-			errorMsg:    "name is required",
 		},
 		{
 			name: "Email too long",
 			user: &models.User{
 				GoogleID: "google_123",
 				Email:    "verylongemailaddressthatdefinitelyexceedsthesecondhundredandfiftyfivecharacterlimitforvalidationpurposesandsomeextratexttomakesureitlongenoughandthiswilldefinitelybeover255characterslongenoughforvalidationtotriggeranerrorandmoretexttoensureitexceedsthelimit@example.com",
-				Name:     "Test User",
 			},
 			expectError: true,
 			errorMsg:    "email too long",
-		},
-		{
-			name: "Name too long",
-			user: &models.User{
-				GoogleID: "google_123",
-				Email:    "test@example.com",
-				Name:     string(make([]byte, 300)), // 300 characters
-			},
-			expectError: true,
-			errorMsg:    "name too long",
 		},
 	}
 
@@ -94,8 +71,7 @@ func TestUserResponse(t *testing.T) {
 	user := &models.User{
 		ID:        uuid.New(),
 		GoogleID:  "google_123",
-		Email:    "test@example.com",
-		Name:     "Test User",
+		Email:     "test@example.com",
 		AvatarURL: stringPtr("http://example.com/avatar.jpg"),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -105,7 +81,6 @@ func TestUserResponse(t *testing.T) {
 
 	assert.Equal(t, user.ID, response.ID)
 	assert.Equal(t, user.Email, response.Email)
-	assert.Equal(t, user.Name, response.Name)
 	assert.Equal(t, user.AvatarURL, response.AvatarURL)
 	assert.Equal(t, user.CreatedAt, response.CreatedAt)
 	// Note: GoogleID should not be in the response for security
@@ -115,7 +90,6 @@ func TestCreateUserRequest(t *testing.T) {
 	req := &models.CreateUserRequest{
 		GoogleID:  "google_123",
 		Email:     "test@example.com",
-		Name:      "Test User",
 		AvatarURL: stringPtr("http://example.com/avatar.jpg"),
 	}
 
@@ -123,7 +97,6 @@ func TestCreateUserRequest(t *testing.T) {
 
 	assert.Equal(t, req.GoogleID, user.GoogleID)
 	assert.Equal(t, req.Email, user.Email)
-	assert.Equal(t, req.Name, user.Name)
 	assert.Equal(t, req.AvatarURL, user.AvatarURL)
 	assert.WithinDuration(t, time.Now(), user.CreatedAt, time.Second)
 	assert.WithinDuration(t, time.Now(), user.UpdatedAt, time.Second)
