@@ -118,7 +118,7 @@ echo ""
 run_test_suite "JWT Tests" "./tests/auth/jwt_test.go" "skip"
 
 # JWT Validation Tests
-run_test_suite "JWT Validation Tests" "./tests/auth/jwt_validation_test.go" "skip"
+run_test_suite "JWT Validation Tests" "./tests/auth/jwt_validation_test.go ./tests/auth/jwt_test.go" "skip"
 
 # OAuth Service Tests (handles Google OAuth integration)
 run_test_suite "OAuth Service Tests" "./tests/auth/oauth_service_test.go" "skip"
