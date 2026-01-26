@@ -573,7 +573,7 @@ describe('LoginForm Component', () => {
       let authStateCallback: ((state: any) => void) | null = null;
 
       // @ts-ignore
-      authService.subscribe.mockImplementation((callback) => {
+      authService.subscribe.mockImplementation((callback: (state: any) => void) => {
         authStateCallback = callback;
         return () => {};
       });
@@ -585,7 +585,7 @@ describe('LoginForm Component', () => {
 
       // Simulate auth state change to loading
       if (authStateCallback) {
-        authStateCallback({
+        (authStateCallback as (state: any) => void)({
           isAuthenticated: false,
           isLoading: true,
           user: null,
