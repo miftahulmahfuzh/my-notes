@@ -90,13 +90,13 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # Note Service Tests (business logic for notes)
-run_test_suite "Note Service Tests" "./internal/services/note_service_test.go" ""
+run_test_suite "Note Service Tests" "./internal/services/" ""
 
 # Note Service Enhanced Tests
-run_test_suite "Note Service Enhanced Tests" "./internal/services/note_service_enhanced_test.go" ""
+run_test_suite "Note Service Enhanced Tests" "./internal/services/" ""
 
 # Tag Service Tests (business logic for tags, used by notes)
-run_test_suite "Tag Service Tests" "./internal/services/tag_service_test.go" ""
+run_test_suite "Tag Service Tests" "./internal/services/" ""
 
 # Tags Handler Tests
 run_test_suite "Tags Handler Tests" "./internal/handlers/tags_test.go" "skip"

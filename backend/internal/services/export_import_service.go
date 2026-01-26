@@ -167,7 +167,11 @@ func (s *ExportImportService) exportAsMarkdown(ctx context.Context, userID strin
 		}
 
 		// Write markdown content
-		content := fmt.Sprintf("# %s\n\n", note.Title)
+		title := ""
+		if note.Title != nil {
+			title = *note.Title
+		}
+		content := fmt.Sprintf("# %s\n\n", title)
 		content += note.Content
 		content += fmt.Sprintf("\n\n---\nCreated: %s\nUpdated: %s",
 			note.CreatedAt.Format("2006-01-02 15:04:05"),
@@ -248,6 +252,10 @@ func (s *ExportImportService) exportAsHTML(ctx context.Context, userID string, i
 `
 
 	for _, note := range notes {
+		title := ""
+		if note.Title != nil {
+			title = *note.Title
+		}
 		html += fmt.Sprintf(`
     <div class="note">
         <h2 class="note-title">%s</h2>
@@ -256,7 +264,7 @@ func (s *ExportImportService) exportAsHTML(ctx context.Context, userID string, i
             Created: %s | Updated: %s
         </div>
     </div>`,
-			note.Title,
+			title,
 			note.Content,
 			note.CreatedAt.Format("2006-01-02 15:04:05"),
 			note.UpdatedAt.Format("2006-01-02 15:04:05"))
@@ -594,7 +602,11 @@ func (s *ExportImportService) importNotes(ctx context.Context, userID string, no
 
 		if exists {
 			skipped++
-			skippedItems = append(skippedItems, fmt.Sprintf("Note '%s' already exists", note.Title))
+			title := "untitled"
+			if note.Title != nil {
+				title = *note.Title
+			}
+			skippedItems = append(skippedItems, fmt.Sprintf("Note '%s' already exists", title))
 			continue
 		}
 
@@ -605,7 +617,11 @@ func (s *ExportImportService) importNotes(ctx context.Context, userID string, no
 			note.ID, userID, note.Title, note.Content,
 			note.CreatedAt, note.UpdatedAt, note.Version)
 		if err != nil {
-			errors = append(errors, fmt.Sprintf("Failed to import note '%s': %v", note.Title, err))
+			title := "untitled"
+			if note.Title != nil {
+				title = *note.Title
+			}
+			errors = append(errors, fmt.Sprintf("Failed to import note '%s': %v", title, err))
 			continue
 		}
 
