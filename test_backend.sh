@@ -92,9 +92,6 @@ run_test_suite "Note Service Tests" "./internal/services/" ""
 # Tag Service Tests (business logic for tags, used by notes)
 run_test_suite "Tag Service Tests" "./internal/services/" ""
 
-# Tags Handler Tests
-run_test_suite "Tags Handler Tests" "./internal/handlers/tags_test.go ./internal/handlers/tags.go ./internal/handlers/auth.go" "skip"
-
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Template Tests${NC}"
 echo -e "${BLUE}========================================${NC}"
