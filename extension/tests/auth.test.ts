@@ -228,7 +228,9 @@ describe('AuthService', () => {
     it('initialize() handles storage errors gracefully', async () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      (chrome.storage.local.get as jest.Mock).mockImplementation(() => Promise.reject(new Error('Storage error')));
+      (chrome.storage.local.get as jest.Mock).mockImplementation(() => {
+        throw new Error('Storage error');
+      });
 
       const authState = await authService.initialize();
 
