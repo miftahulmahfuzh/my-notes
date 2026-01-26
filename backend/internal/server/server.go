@@ -165,11 +165,6 @@ func (s *Server) initializeServices() {
 	// Initialize notes handler
 	s.handlers.SetNotesHandler(notesHandler)
 
-	// Initialize template service and handler
-	templateService := services.NewTemplateService(s.db)
-	templateHandler := handlers.NewTemplateHandler(templateService)
-	s.handlers.SetTemplateHandler(templateHandler)
-
 	// Initialize export/import service and handler
 	exportImportService := services.NewExportImportService(s.db)
 	exportImportHandler := handlers.NewExportImportHandler(exportImportService)
@@ -274,20 +269,6 @@ func (s *Server) setupRoutes() {
 	// protected.HandleFunc("/tags", s.handlers.Tags.GetTags).Methods("GET")
 	// protected.HandleFunc("/tags", s.handlers.Tags.CreateTag).Methods("POST")
 	// protected.HandleFunc("/tags/suggestions", s.handlers.Tags.GetSuggestions).Methods("GET")
-
-	// Template routes
-	if s.handlers.Templates != nil {
-		protected.HandleFunc("/templates", s.handlers.Templates.GetTemplates).Methods("GET")
-		protected.HandleFunc("/templates", s.handlers.Templates.CreateTemplate).Methods("POST")
-		protected.HandleFunc("/templates/built-in", s.handlers.Templates.GetBuiltInTemplates).Methods("GET")
-		protected.HandleFunc("/templates/{id}", s.handlers.Templates.GetTemplate).Methods("GET")
-		protected.HandleFunc("/templates/{id}", s.handlers.Templates.UpdateTemplate).Methods("PUT")
-		protected.HandleFunc("/templates/{id}", s.handlers.Templates.DeleteTemplate).Methods("DELETE")
-		protected.HandleFunc("/templates/{id}/apply", s.handlers.Templates.ApplyTemplate).Methods("POST")
-		protected.HandleFunc("/templates/search", s.handlers.Templates.SearchTemplates).Methods("GET")
-		protected.HandleFunc("/templates/popular", s.handlers.Templates.GetPopularTemplates).Methods("GET")
-		protected.HandleFunc("/templates/stats", s.handlers.Templates.GetTemplateStats).Methods("GET")
-	}
 
 	// Export/Import routes
 	if s.handlers.ExportImport != nil {

@@ -6,7 +6,6 @@ interface ExportFormat {
   description: string;
   content_type: string;
   file_extension: string;
-  supports_templates: boolean;
 }
 
 interface ImportResult {
@@ -22,7 +21,6 @@ const ExportImport: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
   const [exportFormats, setExportFormats] = useState<ExportFormat[]>([]);
   const [selectedFormat, setSelectedFormat] = useState('json');
-  const [includeTemplates, setIncludeTemplates] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -86,7 +84,7 @@ const ExportImport: React.FC = () => {
         return;
       }
 
-      const url = `/api/v1/export?format=${selectedFormat}&include_templates=${includeTemplates}`;
+      const url = `/api/v1/export?format=${selectedFormat}`;
 
       const response = await fetch(url, {
         headers: {
@@ -255,18 +253,6 @@ const ExportImport: React.FC = () => {
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="form-group checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={includeTemplates}
-                onChange={(e) => setIncludeTemplates(e.target.checked)}
-                disabled={!exportFormats.find(f => f.format === selectedFormat)?.supports_templates}
-              />
-              Include templates in export
-            </label>
           </div>
 
           <button

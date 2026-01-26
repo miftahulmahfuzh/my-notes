@@ -11,7 +11,6 @@ type Handlers struct {
 	Auth         *AuthHandler
 	ChromeAuth   *ChromeAuthHandler
 	Notes        *NotesHandler
-	Templates    *TemplateHandler
 	ExportImport *ExportImportHandler
 	// Additional handlers will be added in subsequent phases:
 	// Search *SearchHandler
@@ -24,7 +23,6 @@ func NewHandlers() *Handlers {
 		Security:     nil, // Will be initialized after middleware is created
 		Auth:         nil, // Will be initialized after services are created
 		Notes:        nil, // Will be initialized after services are created
-		Templates:    nil, // Will be initialized after services are created
 		ExportImport: nil, // Will be initialized after services are created
 		// Additional handlers will be initialized in subsequent phases:
 		// Search: NewSearchHandler(...),
@@ -45,11 +43,6 @@ func (h *Handlers) SetAuthHandlers(authHandler *AuthHandler, chromeAuthHandler *
 // SetNotesHandler initializes the notes handler with service dependencies
 func (h *Handlers) SetNotesHandler(notesHandler *NotesHandler) {
 	h.Notes = notesHandler
-}
-
-// SetTemplateHandler initializes the template handler with service dependencies
-func (h *Handlers) SetTemplateHandler(templateHandler *TemplateHandler) {
-	h.Templates = templateHandler
 }
 
 // SetExportImportHandler initializes the export/import handler with service dependencies

@@ -186,35 +186,6 @@ export interface CreateNoteFromSelectionMessage {
   type: 'CREATE_NOTE_FROM_SELECTION';
 }
 
-/**
- * Template for note creation
- */
-export interface Template {
-  id: string;
-  name: string;
-  description: string;
-  content: string;
-  category: string;
-  variables: string[];
-  is_built_in: boolean;
-  usage_count: number;
-  icon: string;
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Template variable for substitution
- */
-export interface TemplateVariable {
-  name: string;
-  type: 'text' | 'date' | 'select';
-  description: string;
-  default_value?: string;
-  options?: string[]; // For select type
-}
-
 // Export Union type for all message types
 export type ExtensionMessage =
   | SyncNotesMessage

@@ -93,14 +93,6 @@ run_test_suite "Note Service Tests" "./internal/services/" ""
 run_test_suite "Tag Service Tests" "./internal/services/" ""
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  Template Tests${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo ""
-
-# Template Service Tests (handles template management)
-run_test_suite "Template Tests" "./tests/template/template_test.go" ""
-
-echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Authentication Tests${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
