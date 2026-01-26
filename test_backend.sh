@@ -99,7 +99,7 @@ run_test_suite "Note Service Enhanced Tests" "./internal/services/" ""
 run_test_suite "Tag Service Tests" "./internal/services/" ""
 
 # Tags Handler Tests
-run_test_suite "Tags Handler Tests" "./internal/handlers/tags_test.go" "skip"
+run_test_suite "Tags Handler Tests" "./internal/handlers/tags_test.go ./internal/handlers/tags.go ./internal/handlers/auth.go" "skip"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Template Tests${NC}"
