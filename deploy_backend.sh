@@ -22,6 +22,15 @@ until docker exec my-notes-postgres pg_isready -U test_user -d my_notes_test > /
 done
 echo "PostgreSQL is ready!"
 
+# Kill existing process on port 8080
+echo "Checking for existing process on port 8080..."
+if lsof -t -i:8080 > /dev/null 2>&1; then
+  kill -9 $(lsof -t -i:8080)
+  echo "Killed existing process on port 8080"
+else
+  echo "No existing process found on port 8080"
+fi
+
 # Export database connection variables for the backend
 export DB_NAME=my_notes_test
 export DB_USER=test_user
