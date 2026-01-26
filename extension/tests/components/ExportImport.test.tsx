@@ -63,7 +63,7 @@ describe('ExportImport Component', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Export & Import')).toBeInTheDocument();
-        expect(screen.getByText('Export Data')).toBeInTheDocument();
+        expect(screen.getAllByText('Export Data')).toHaveLength(2);
         expect(screen.getByText('Import Data')).toBeInTheDocument();
       });
     });
@@ -82,7 +82,8 @@ describe('ExportImport Component', () => {
       render(<ExportImport />);
 
       await waitFor(() => {
-        const exportTab = screen.getByText('Export Data');
+        const exportTabs = screen.getAllByText('Export Data');
+        const exportTab = exportTabs.find(el => el.classList.contains('tab-button'));
         expect(exportTab).toHaveClass('active');
       });
     });
