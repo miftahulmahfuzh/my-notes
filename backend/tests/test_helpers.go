@@ -54,7 +54,6 @@ func applyMigrations(t *testing.T, db *sql.DB) {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			google_id VARCHAR(255) UNIQUE,
 			email VARCHAR(255) UNIQUE NOT NULL,
-			name VARCHAR(255) NOT NULL,
 			avatar_url TEXT,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -533,15 +533,15 @@ func (suite *AuthFlowTestSuite) TestIntegrationWithDatabase() {
 
 	// Insert test user
 	_, err = suite.db.Exec(`
-		INSERT INTO users (id, google_id, email, name, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, NOW(), NOW())
+		INSERT INTO users (id, google_id, email, created_at, updated_at)
+		VALUES ($1, $2, $3, NOW(), NOW())
 		ON CONFLICT (id) DO NOTHING
-	`, testUserID, "google-123", "test@example.com", "Test User")
+	`, testUserID, "google-123", "test@example.com")
 	assert.NoError(suite.T(), err)
 
 	// Query test user
 	var user models.User
-	err = suite.db.QueryRow("SELECT id, email, name FROM users WHERE id = $1", testUserID).Scan(&user.ID, &user.Email, &user.Name)
+	err = suite.db.QueryRow("SELECT id, email FROM users WHERE id = $1", testUserID).Scan(&user.ID, &user.Email)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), testUserID, user.ID.String())
 }

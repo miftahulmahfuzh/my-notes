@@ -29,7 +29,6 @@ func createTestUser(t *testing.T, db interface{}, email string) *models.User {
 		ID:        userID,
 		GoogleID:  "google-123",
 		Email:     email,
-		Name:      "Test User",
 		AvatarURL: &avatarURL,
 		Preferences: models.UserPreferences{
 			Theme:              "light",
@@ -69,7 +68,6 @@ func TestTokenValidation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, user.ID.String(), claims.UserID)
 	assert.Equal(t, user.Email, claims.Email)
-	assert.Equal(t, user.Name, claims.Name)
 	assert.Equal(t, "notes-app", claims.Issuer)
 	assert.Equal(t, "notes-users", claims.Audience)
 }

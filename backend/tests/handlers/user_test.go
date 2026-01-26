@@ -123,14 +123,13 @@ func TestUpdateUserProfile(t *testing.T) {
 	}{
 		{
 			name:        "successful profile update",
-			requestBody: `{"name": "Updated Name", "avatar_url": "https://example.com/new-avatar.jpg"}`,
+			requestBody: `{"avatar_url": "https://example.com/new-avatar.jpg"}`,
 			setupContext: func(req *http.Request) *http.Request {
 				user := createTestUser()
 				return setupUserContext(req, user)
 			},
 			setupMocks: func(m *MockUserService) {
 				user := createTestUser()
-				user.Name = "Updated Name"
 				newAvatarURL := "https://example.com/new-avatar.jpg"
 				user.AvatarURL = &newAvatarURL
 				m.On("Update", mock.AnythingOfType("*models.User")).Return(user, nil)
@@ -138,22 +137,8 @@ func TestUpdateUserProfile(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:        "partial profile update",
-			requestBody: `{"name": "New Name Only"}`,
-			setupContext: func(req *http.Request) *http.Request {
-				user := createTestUser()
-				return setupUserContext(req, user)
-			},
-			setupMocks: func(m *MockUserService) {
-				user := createTestUser()
-				user.Name = "New Name Only"
-				m.On("Update", mock.AnythingOfType("*models.User")).Return(user, nil)
-			},
-			expectedStatus: http.StatusOK,
-		},
-		{
 			name:         "unauthenticated user",
-			requestBody:  `{"name": "Updated Name"}`,
+			requestBody:  `{"avatar_url": "https://example.com/new-avatar.jpg"}`,
 			setupContext: func(req *http.Request) *http.Request {
 				return req // No user context
 			},
@@ -215,17 +200,6 @@ func TestUpdateUserProfile(t *testing.T) {
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 				assert.True(t, response.Success)
-				// Verify the update was applied
-				if tt.requestBody != `invalid json` {
-					// Extract the name from the request body to check against response
-					var reqBody struct {
-						Name *string `json:"name,omitempty"`
-					}
-					json.Unmarshal([]byte(tt.requestBody), &reqBody)
-					if reqBody.Name != nil {
-						assert.Equal(t, *reqBody.Name, response.Data.Name)
-					}
-				}
 			}
 
 			mockUserService.AssertExpectations(t)

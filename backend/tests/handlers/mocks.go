@@ -106,7 +106,6 @@ func createTestUser() *models.User {
 		ID:          uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"),
 		GoogleID:    "google123",
 		Email:       "test@example.com",
-		Name:        "Test User",
 		AvatarURL:   &avatarURL,
 		Preferences: preferences,
 		CreatedAt:   time.Now(),

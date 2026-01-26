@@ -91,7 +91,6 @@ func TestTokenClaimsValidation(t *testing.T) {
 	// Verify all required claims are present
 	assert.NotEmpty(t, claims.UserID)
 	assert.NotEmpty(t, claims.Email)
-	assert.NotEmpty(t, claims.Name)
 	assert.NotEmpty(t, claims.Issuer)
 	assert.NotEmpty(t, claims.Audience)
 	assert.NotEmpty(t, claims.ID)
@@ -103,7 +102,6 @@ func TestTokenClaimsValidation(t *testing.T) {
 	// Verify claim values
 	assert.Equal(t, user.ID.String(), claims.UserID)
 	assert.Equal(t, user.Email, claims.Email)
-	assert.Equal(t, user.Name, claims.Name)
 	assert.Equal(t, "notes-app", claims.Issuer)
 	assert.Equal(t, "notes-users", claims.Audience)
 	assert.Equal(t, user.ID.String(), claims.Subject)
