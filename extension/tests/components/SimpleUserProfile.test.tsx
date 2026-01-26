@@ -345,7 +345,7 @@ describe('SimpleUserProfile', () => {
 
       // Simulate auth state change
       if (subscribeCallback) {
-        subscribeCallback({
+        (subscribeCallback as (state: any) => void)({
           isAuthenticated: true,
           isLoading: false,
           user: updatedUser,
