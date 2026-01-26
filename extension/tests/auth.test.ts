@@ -20,7 +20,10 @@ describe('AuthService', () => {
       if (callback) callback(result);
       return Promise.resolve(result);
     });
-    (chrome.storage.local.set as jest.Mock).mockResolvedValue(undefined);
+    (chrome.storage.local.set as jest.Mock).mockImplementation((items: any, callback?: () => void) => {
+      if (callback) callback();
+      return Promise.resolve(undefined);
+    });
     (chrome.storage.local.remove as jest.Mock).mockResolvedValue(undefined);
 
     // Reset Chrome identity mocks
@@ -184,7 +187,14 @@ describe('AuthService', () => {
         })
         .mockImplementationOnce((keys: any, callback: any) => {
           const result: Record<string, any> = {
-            access_token: 'expired-token'
+            token_expiry: expiredTime.toString()
+          };
+          if (callback) callback(result);
+          return Promise.resolve(result);
+        })
+        .mockImplementationOnce((keys: any, callback: any) => {
+          const result: Record<string, any> = {
+            refresh_token: 'valid-refresh-token'
           };
           if (callback) callback(result);
           return Promise.resolve(result);

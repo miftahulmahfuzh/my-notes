@@ -315,11 +315,14 @@ export class AuthService {
 
       const data = await response.json();
 
-      // Update stored tokens
-      await this.storeToken(STORAGE_KEYS.ACCESS_TOKEN, data.access_token);
-      await this.storeToken(STORAGE_KEYS.REFRESH_TOKEN, data.refresh_token);
+      // The backend wraps responses in APIResponse format: { success: true, data: {...} }
+      const responseData = data.success ? data.data : data;
 
-      const expiryTime = Date.now() + (data.expires_in * 1000);
+      // Update stored tokens
+      await this.storeToken(STORAGE_KEYS.ACCESS_TOKEN, responseData.access_token);
+      await this.storeToken(STORAGE_KEYS.REFRESH_TOKEN, responseData.refresh_token);
+
+      const expiryTime = Date.now() + (responseData.expires_in * 1000);
       await this.storeToken(STORAGE_KEYS.TOKEN_EXPIRY, expiryTime.toString());
 
       return true;

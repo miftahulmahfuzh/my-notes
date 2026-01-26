@@ -1,8 +1,15 @@
 // Mock Chrome API for testing
 import { Note } from '../src/types';
 const createMockChromeStorage = () => ({
-  get: jest.fn().mockResolvedValue({}),
-  set: jest.fn().mockResolvedValue(undefined),
+  get: jest.fn().mockImplementation((keys: any, callback?: (result: any) => void) => {
+    const result: any = {};
+    if (callback) callback(result);
+    return Promise.resolve(result);
+  }),
+  set: jest.fn().mockImplementation((items: any, callback?: () => void) => {
+    if (callback) callback();
+    return Promise.resolve(undefined);
+  }),
   remove: jest.fn().mockResolvedValue(undefined),
   clear: jest.fn().mockResolvedValue(undefined),
 });
