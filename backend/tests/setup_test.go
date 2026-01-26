@@ -116,13 +116,13 @@ func CreateTestUser(t *testing.T, db *sql.DB, email string) string {
 	googleID := fmt.Sprintf("google_%s", userID.String())
 
 	query := `
-		INSERT INTO users (id, google_id, email, name, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, NOW(), NOW())
+		INSERT INTO users (id, google_id, email, created_at, updated_at)
+		VALUES ($1, $2, $3, NOW(), NOW())
 		RETURNING id
 	`
 
 	var id string
-	err := db.QueryRow(query, userID, googleID, email, "Test User").Scan(&id)
+	err := db.QueryRow(query, userID, googleID, email).Scan(&id)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}

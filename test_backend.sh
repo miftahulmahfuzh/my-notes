@@ -155,7 +155,7 @@ run_test_suite "Security Integration Tests" "./tests/integration/security_test.g
 run_test_suite "Server Tests" "./tests/server_test.go" "skip"
 
 # Migrations Tests
-run_test_suite "Migrations Tests" "./tests/migrations_test.go" ""
+run_test_suite "Migrations Tests" "./tests/migrations_test.go ./tests/setup_test.go ./tests/tests.go" ""
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Test Summary${NC}"
