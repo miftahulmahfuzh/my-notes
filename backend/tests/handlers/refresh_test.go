@@ -76,8 +76,8 @@ func TestTokenRefreshValidation(t *testing.T) {
 					"test-secret-key-that-is-long-enough-for-hs256",
 					15*time.Minute,
 					24*time.Hour,
-					"notes-app",
-					"notes-users",
+					"silence-notes",
+					"silence-notes-users",
 				)
 				user := createTestUser()
 
