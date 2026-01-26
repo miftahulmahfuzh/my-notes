@@ -98,7 +98,7 @@ type UserStats struct {
 // UserSearchResult represents a user search result
 type UserSearchResult struct {
 	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
+	Email     string    `json:"email"`
 	AvatarURL *string   `json:"avatar_url,omitempty"`
 }
 
@@ -107,7 +107,6 @@ type User struct {
 	ID          uuid.UUID      `json:"id" db:"id"`
 	GoogleID    string         `json:"google_id" db:"google_id"`
 	Email       string         `json:"email" db:"email"`
-	Name        string         `json:"name" db:"name"`
 	AvatarURL   *string        `json:"avatar_url,omitempty" db:"avatar_url"`
 	Preferences UserPreferences `json:"preferences" db:"preferences"`
 	CreatedAt   time.Time      `json:"created_at" db:"created_at"`
@@ -118,7 +117,6 @@ type User struct {
 type UserResponse struct {
 	ID          uuid.UUID      `json:"id"`
 	Email       string         `json:"email"`
-	Name        string         `json:"name"`
 	AvatarURL   *string        `json:"avatar_url,omitempty"`
 	Preferences UserPreferences `json:"preferences"`
 	CreatedAt   time.Time      `json:"created_at"`
@@ -129,7 +127,6 @@ func (u *User) ToResponse() UserResponse {
 	return UserResponse{
 		ID:          u.ID,
 		Email:       u.Email,
-		Name:        u.Name,
 		AvatarURL:   u.AvatarURL,
 		Preferences: u.Preferences,
 		CreatedAt:   u.CreatedAt,
@@ -144,14 +141,8 @@ func (u *User) Validate() error {
 	if u.Email == "" {
 		return fmt.Errorf("email is required")
 	}
-	if u.Name == "" {
-		return fmt.Errorf("name is required")
-	}
 	if len(u.Email) > 255 {
 		return fmt.Errorf("email too long (max 255 characters)")
-	}
-	if len(u.Name) > 255 {
-		return fmt.Errorf("name too long (max 255 characters)")
 	}
 	if len(u.GoogleID) > 255 {
 		return fmt.Errorf("google_id too long (max 255 characters)")
@@ -196,13 +187,11 @@ type UserList struct {
 type CreateUserRequest struct {
 	GoogleID  string  `json:"google_id" validate:"required"`
 	Email     string  `json:"email" validate:"required,email"`
-	Name      string  `json:"name" validate:"required"`
 	AvatarURL *string `json:"avatar_url,omitempty"`
 }
 
 // UpdateUserRequest represents the request to update a user
 type UpdateUserRequest struct {
-	Name      *string `json:"name,omitempty"`
 	AvatarURL *string `json:"avatar_url,omitempty"`
 }
 
@@ -211,7 +200,6 @@ func (r *CreateUserRequest) ToUser() *User {
 	return &User{
 		GoogleID:  r.GoogleID,
 		Email:     r.Email,
-		Name:      r.Name,
 		AvatarURL: r.AvatarURL,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
