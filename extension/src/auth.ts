@@ -263,6 +263,12 @@ export class AuthService {
       // The backend wraps responses in APIResponse format: { success: true, data: {...} }
       const responseData = data.success ? data.data : data;
 
+      // Validate required fields exist in response
+      if (!responseData.user || !responseData.access_token || !responseData.refresh_token) {
+        console.error('[Auth] Invalid response: missing required fields');
+        return null;
+      }
+
       const authResponse = {
         user: responseData.user,
         accessToken: responseData.access_token,
