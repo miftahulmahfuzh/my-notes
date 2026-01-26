@@ -34,6 +34,14 @@ jest.mock('../../src/api', () => ({
   NoteResponse: {},
 }));
 
+// Mock MarkdownPreview component to avoid ESM issues
+jest.mock('../../src/components/MarkdownPreview', () => ({
+  __esModule: true,
+  default: ({ content }: { content: string }) => (
+    <div data-testid="markdown-preview">{content}</div>
+  ),
+}));
+
 // Mock clipboard API
 Object.assign(navigator, {
   clipboard: {

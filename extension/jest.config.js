@@ -6,9 +6,11 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
+    '^.+\\.css$': '<rootDir>/tests/__mocks__/styleMock.js',
+    '^.+\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-markdown|remark-gfm|react-syntax-highlighter)/)',
+    'node_modules/(?!(react-markdown|remark-gfm|react-syntax-highlighter|vfile|unist|is-plain-obj|bail|extend|is-plain-obj|repeat-string|unified|micromark|devlop|decode-named-character-reference|character-entities|character-entities-legacy|property-information|trim-lines|trough)/)',
   ],
   transform: {
     '^.+\\.tsx?$': [
@@ -17,6 +19,7 @@ module.exports = {
         tsconfig: '<rootDir>/tsconfig.test.json',
       },
     ],
+    '^.+\\.js$': 'babel-jest',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
