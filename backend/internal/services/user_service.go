@@ -46,10 +46,10 @@ func (s *UserService) CreateOrUpdateFromGoogle(userInfo *auth.GoogleUserInfo) (*
 	// Check if user exists
 	var user models.User
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, google_id, email, name, avatar_url, preferences, created_at, updated_at
+		`SELECT id, google_id, email, avatar_url, preferences, created_at, updated_at
 		 FROM users WHERE google_id = $1`,
 		userInfo.ID).Scan(
-		&user.ID, &user.GoogleID, &user.Email, &user.Name, &user.AvatarURL,
+		&user.ID, &user.GoogleID, &user.Email, &user.AvatarURL,
 		&user.Preferences, &user.CreatedAt, &user.UpdatedAt)
 
 	if err == sql.ErrNoRows {
@@ -58,7 +58,6 @@ func (s *UserService) CreateOrUpdateFromGoogle(userInfo *auth.GoogleUserInfo) (*
 			ID:        uuid.New(),
 			GoogleID:  userInfo.ID,
 			Email:     userInfo.Email,
-			Name:      userInfo.Name,
 			AvatarURL: &userInfo.Picture,
 			Preferences: models.UserPreferences{
 				Theme:              "light",
@@ -80,7 +79,6 @@ func (s *UserService) CreateOrUpdateFromGoogle(userInfo *auth.GoogleUserInfo) (*
 		return nil, fmt.Errorf("failed to query user: %w", err)
 	} else {
 		// Update existing user
-		user.Name = userInfo.Name
 		user.AvatarURL = &userInfo.Picture
 		user.UpdatedAt = time.Now()
 
@@ -99,10 +97,10 @@ func (s *UserService) GetByID(userID string) (*models.User, error) {
 
 	var user models.User
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, google_id, email, name, avatar_url, preferences, created_at, updated_at
+		`SELECT id, google_id, email, avatar_url, preferences, created_at, updated_at
 		 FROM users WHERE id = $1`,
 		userID).Scan(
-		&user.ID, &user.GoogleID, &user.Email, &user.Name, &user.AvatarURL,
+		&user.ID, &user.GoogleID, &user.Email, &user.AvatarURL,
 		&user.Preferences, &user.CreatedAt, &user.UpdatedAt)
 
 	if err == sql.ErrNoRows {
@@ -120,10 +118,10 @@ func (s *UserService) GetByEmail(email string) (*models.User, error) {
 
 	var user models.User
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, google_id, email, name, avatar_url, preferences, created_at, updated_at
+		`SELECT id, google_id, email, avatar_url, preferences, created_at, updated_at
 		 FROM users WHERE email = $1`,
 		email).Scan(
-		&user.ID, &user.GoogleID, &user.Email, &user.Name, &user.AvatarURL,
+		&user.ID, &user.GoogleID, &user.Email, &user.AvatarURL,
 		&user.Preferences, &user.CreatedAt, &user.UpdatedAt)
 
 	if err == sql.ErrNoRows {
@@ -208,14 +206,14 @@ func (s *UserService) Update(user *models.User) (*models.User, error) {
 
 	query := `
 		UPDATE users
-		SET name = $1, avatar_url = $2, preferences = $3, updated_at = $4
-		WHERE id = $5
-		RETURNING id, google_id, email, name, avatar_url, preferences, created_at, updated_at
+		SET avatar_url = $1, preferences = $2, updated_at = $3
+		WHERE id = $4
+		RETURNING id, google_id, email, avatar_url, preferences, created_at, updated_at
 	`
 
 	err := s.db.QueryRowContext(ctx, query,
-		user.Name, user.AvatarURL, user.Preferences, user.UpdatedAt, user.ID).Scan(
-		&user.ID, &user.GoogleID, &user.Email, &user.Name, &user.AvatarURL,
+		user.AvatarURL, user.Preferences, user.UpdatedAt, user.ID).Scan(
+		&user.ID, &user.GoogleID, &user.Email, &user.AvatarURL,
 		&user.Preferences, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
@@ -390,7 +388,7 @@ func (s *UserService) GetUserStats(userID string) (*models.UserStats, error) {
 	return stats, nil
 }
 
-// SearchUsers searches for users by name or email
+// SearchUsers searches for users by email
 func (s *UserService) SearchUsers(query string, page, limit int) ([]models.User, int, error) {
 	ctx := context.Background()
 
@@ -400,7 +398,7 @@ func (s *UserService) SearchUsers(query string, page, limit int) ([]models.User,
 	var total int
 	err := s.db.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM users
-		 WHERE name ILIKE $1 OR email ILIKE $1`,
+		 WHERE email ILIKE $1`,
 		"%"+query+"%").Scan(&total)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get total users count: %w", err)
@@ -408,10 +406,10 @@ func (s *UserService) SearchUsers(query string, page, limit int) ([]models.User,
 
 	// Get users with pagination
 	dbQuery := `
-		SELECT id, google_id, email, name, avatar_url, preferences, created_at, updated_at
+		SELECT id, google_id, email, avatar_url, preferences, created_at, updated_at
 		FROM users
-		WHERE name ILIKE $1 OR email ILIKE $1
-		ORDER BY name
+		WHERE email ILIKE $1
+		ORDER BY email
 		LIMIT $2 OFFSET $3
 	`
 
@@ -424,7 +422,7 @@ func (s *UserService) SearchUsers(query string, page, limit int) ([]models.User,
 	var users []models.User
 	for rows.Next() {
 		var user models.User
-		err := rows.Scan(&user.ID, &user.GoogleID, &user.Email, &user.Name, &user.AvatarURL,
+		err := rows.Scan(&user.ID, &user.GoogleID, &user.Email, &user.AvatarURL,
 			&user.Preferences, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to scan user: %w", err)
@@ -449,12 +447,12 @@ func (s *UserService) createUser(ctx context.Context, user *models.User) error {
 	}
 
 	query := `
-		INSERT INTO users (id, google_id, email, name, avatar_url, preferences, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO users (id, google_id, email, avatar_url, preferences, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
 	_, err = s.db.ExecContext(ctx, query,
-		user.ID, user.GoogleID, user.Email, user.Name, user.AvatarURL,
+		user.ID, user.GoogleID, user.Email, user.AvatarURL,
 		preferencesJSON, user.CreatedAt, user.UpdatedAt)
 
 	return err
@@ -463,12 +461,12 @@ func (s *UserService) createUser(ctx context.Context, user *models.User) error {
 func (s *UserService) updateUser(ctx context.Context, user *models.User) error {
 	query := `
 		UPDATE users
-		SET name = $1, avatar_url = $2, updated_at = $3
-		WHERE id = $4
+		SET avatar_url = $1, updated_at = $2
+		WHERE id = $3
 	`
 
 	_, err := s.db.ExecContext(ctx, query,
-		user.Name, user.AvatarURL, user.UpdatedAt, user.ID)
+		user.AvatarURL, user.UpdatedAt, user.ID)
 
 	return err
 }
