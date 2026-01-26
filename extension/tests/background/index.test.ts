@@ -53,18 +53,15 @@ describe('Background Service Worker', () => {
 
   describe('1. Message Listener Registration', () => {
     test('registers message listener on startup', () => {
-      expect(chrome.runtime.onMessage.addListener).toHaveBeenCalled();
-      expect(chrome.runtime.onMessage.addListener).toHaveBeenCalledTimes(1);
+      expect(mockListeners.onMessage.length).toBe(1);
     });
 
     test('registers onInstalled listener on startup', () => {
-      expect(chrome.runtime.onInstalled.addListener).toHaveBeenCalled();
-      expect(chrome.runtime.onInstalled.addListener).toHaveBeenCalledTimes(1);
+      expect(mockListeners.onInstalled.length).toBe(1);
     });
 
     test('registers onStartup listener on startup', () => {
-      expect(chrome.runtime.onStartup.addListener).toHaveBeenCalled();
-      expect(chrome.runtime.onStartup.addListener).toHaveBeenCalledTimes(1);
+      expect(mockListeners.onStartup.length).toBe(1);
     });
 
     test('message listener returns true to keep channel open', () => {
