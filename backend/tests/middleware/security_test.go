@@ -89,7 +89,6 @@ func createTestUser(t *testing.T) *models.User {
 		ID:          userID,
 		GoogleID:    "google-123",
 		Email:       "test@example.com",
-		Name:        "Test User",
 		AvatarURL:   nil,
 		Preferences: models.UserPreferences{
 			Theme:              "light",
