@@ -667,6 +667,27 @@ const PopupApp: React.FC = () => {
     setState(prev => ({ ...prev, searchQuery: '' }));
   };
 
+  // Keyboard shortcut: Ctrl+C to clear search query
+  useEffect(() => {
+    if (!state.showNotesList) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+C or Command+C (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        // Only clear if there's an active search query
+        if (state.searchQuery) {
+          e.preventDefault(); // Prevent default copy behavior
+          handleClearSearch();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [state.showNotesList, state.searchQuery]);
+
   const handleTagClick = (tag: string): void => {
     // Strip # prefix from tag to get search term
     const searchTerm = tag.startsWith('#') ? tag.substring(1) : tag;
@@ -839,7 +860,7 @@ const PopupApp: React.FC = () => {
                 onClick={handleClearSearch}
                 aria-label="Clear search"
               >
-                <X size={10} strokeWidth={2} />
+                <X size={17} strokeWidth={2} />
               </button>
             )}
             <button
