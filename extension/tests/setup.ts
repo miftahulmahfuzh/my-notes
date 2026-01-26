@@ -145,16 +145,18 @@ beforeEach(() => {
   // Clear all mocks before each test
   jest.clearAllMocks();
 
-  // Reset Chrome storage mocks to default state
-  (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
-  (chrome.storage.local.set as jest.Mock).mockResolvedValue(undefined);
-  (chrome.storage.local.remove as jest.Mock).mockResolvedValue(undefined);
-  (chrome.storage.local.clear as jest.Mock).mockResolvedValue(undefined);
+  // Reset Chrome storage mocks to default state (only if storage exists)
+  if (chrome?.storage) {
+    (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
+    (chrome.storage.local.set as jest.Mock).mockResolvedValue(undefined);
+    (chrome.storage.local.remove as jest.Mock).mockResolvedValue(undefined);
+    (chrome.storage.local.clear as jest.Mock).mockResolvedValue(undefined);
 
-  (chrome.storage.sync.get as jest.Mock).mockResolvedValue({});
-  (chrome.storage.sync.set as jest.Mock).mockResolvedValue(undefined);
-  (chrome.storage.sync.remove as jest.Mock).mockResolvedValue(undefined);
-  (chrome.storage.sync.clear as jest.Mock).mockResolvedValue(undefined);
+    (chrome.storage.sync.get as jest.Mock).mockResolvedValue({});
+    (chrome.storage.sync.set as jest.Mock).mockResolvedValue(undefined);
+    (chrome.storage.sync.remove as jest.Mock).mockResolvedValue(undefined);
+    (chrome.storage.sync.clear as jest.Mock).mockResolvedValue(undefined);
+  }
 
   // Reset fetch mock
   (global.fetch as jest.Mock).mockClear();

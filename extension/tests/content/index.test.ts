@@ -28,11 +28,13 @@ beforeAll(() => {
   // @ts-ignore
   global.chrome = mockChrome;
 
-  // Mock window.location
-  // @ts-ignore
-  window.location = {
-    href: 'https://example.com',
-  };
+  // Mock window.location.href using Object.defineProperty
+  Object.defineProperty(window, 'location', {
+    writable: true,
+    value: {
+      href: 'https://example.com',
+    },
+  });
 
   // @ts-ignore
   global.window = global.window || {};
@@ -63,10 +65,16 @@ describe('Content Script', () => {
       value: '',
     });
 
-    // Reset document.title and window.location.href
+    // Setup window.location.href
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: {
+        href: 'https://example.com/test-page',
+      },
+    });
+
+    // Reset document.title
     document.title = 'Test Page Title';
-    // @ts-ignore
-    window.location.href = 'https://example.com/test-page';
 
     // Reset getSelection mock
     mockGetSelection.mockReturnValue({
@@ -638,7 +646,7 @@ describe('Content Script', () => {
 
       // The callback logs when executed
       if (callback) {
-        (callback as EventListener)();
+        (callback as EventListener)(new Event('DOMContentLoaded'));
         expect(consoleSpy).toHaveBeenCalledWith('Silence Notes: Content script DOM loaded');
       }
 
