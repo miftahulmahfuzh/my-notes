@@ -49,7 +49,7 @@ const STORAGE_KEYS = {
 /**
  * Authentication Service Class
  */
-class AuthService {
+export class AuthService {
   private static instance: AuthService;
   private authState: AuthState;
   private listeners: Set<(state: AuthState) => void> = new Set();

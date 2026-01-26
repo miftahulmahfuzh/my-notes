@@ -7,20 +7,16 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-markdown|remark-gfm|react-syntax-highlighter)/)',
+  ],
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
-      tsconfig: {
-        target: 'ES2020',
-        module: 'CommonJS',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        baseUrl: './src',
-        paths: {
-          '@/*': ['*'],
-          '@/types/*': ['types/*'],
-        },
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: '<rootDir>/tsconfig.test.json',
       },
-    }],
+    ],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
@@ -45,4 +41,9 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+  globals: {
+    'ts-jest': {
+      isolatedModules: false,
+    },
+  },
 };
