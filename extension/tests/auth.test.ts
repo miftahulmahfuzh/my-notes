@@ -14,6 +14,9 @@ describe('AuthService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Reset Chrome runtime.lastError
+    (chrome.runtime as any).lastError = null;
+
     // Reset Chrome storage mocks
     (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
       const result: Record<string, any> = {};
@@ -40,6 +43,14 @@ describe('AuthService', () => {
     (global.fetch as jest.Mock).mockClear();
 
     authService = AuthService.getInstance();
+
+    // Reset auth state for each test
+    authService.setAuthState({
+      isAuthenticated: false,
+      isLoading: false,
+      user: null,
+      error: null
+    });
 
     mockUser = {
       id: 'test-user-id',
