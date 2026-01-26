@@ -14,7 +14,6 @@ type Claims struct {
 	UserID    string `json:"user_id"`
 	SessionID string `json:"session_id"`
 	Email     string `json:"email"`
-	Name      string `json:"name"`
 	Issuer    string `json:"iss"`
 	Audience  string `json:"aud"`
 	jwt.RegisteredClaims
@@ -59,7 +58,6 @@ func (s *TokenService) GenerateTokenPair(user *models.User) (*TokenPair, error) 
 		UserID:    user.ID.String(),
 		SessionID: sessionID,
 		Email:     user.Email,
-		Name:      user.Name,
 		Issuer:    s.issuer,
 		Audience:  s.audience,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -83,7 +81,6 @@ func (s *TokenService) GenerateTokenPair(user *models.User) (*TokenPair, error) 
 		UserID:    user.ID.String(),
 		SessionID: sessionID,
 		Email:     user.Email,
-		Name:      user.Name,
 		Issuer:    s.issuer,
 		Audience:  s.audience,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -119,7 +116,6 @@ func (s *TokenService) GenerateTokenPairWithSession(user *models.User, sessionID
 		UserID:    user.ID.String(),
 		SessionID: sessionID, // Use the provided session ID
 		Email:     user.Email,
-		Name:      user.Name,
 		Issuer:    s.issuer,
 		Audience:  s.audience,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -143,7 +139,6 @@ func (s *TokenService) GenerateTokenPairWithSession(user *models.User, sessionID
 		UserID:    user.ID.String(),
 		SessionID: sessionID, // Use the provided session ID
 		Email:     user.Email,
-		Name:      user.Name,
 		Issuer:    s.issuer,
 		Audience:  s.audience,
 		RegisteredClaims: jwt.RegisteredClaims{
