@@ -146,9 +146,6 @@ func (s *Server) initializeServices() {
 	noteService := services.NewNoteService(s.db, tagService)
 	notesHandler := handlers.NewNotesHandler(noteService)
 
-	// Initialize security handler with middleware dependencies
-	s.handlers.SetSecurityMiddleware(s.rateLimitMW, s.sessionMW)
-
 	// Initialize auth handlers
 	s.handlers.SetAuthHandlers(authHandler, chromeAuthHandler)
 
@@ -270,13 +267,6 @@ func (s *Server) setupRoutes() {
 	}
 
 	// Search routes are now handled by the notes handler
-
-	// Security and monitoring routes
-	if s.handlers.Security != nil {
-		protected.HandleFunc("/security/rate-limit", s.handlers.Security.GetRateLimitInfo).Methods("GET")
-		protected.HandleFunc("/security/session-info", s.handlers.Security.GetSessionInfo).Methods("GET")
-		protected.HandleFunc("/security/metrics", s.handlers.Security.GetSecurityMetrics).Methods("GET")
-	}
 
 	// Static routes for serving assets (if needed)
 	// s.router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))

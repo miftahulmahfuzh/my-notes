@@ -61,7 +61,7 @@ func (suite *SecurityTestSuite) TestSecurityHeaders() {
 		},
 		{
 			name:     "Protected endpoint headers",
-			endpoint: "/api/v1/user/profile",
+			endpoint: "/api/v1/notes",
 			expectedHeaders: map[string]string{
 				"X-Content-Type-Options": "nosniff",
 				"X-Frame-Options":        "DENY",
@@ -124,7 +124,7 @@ func (suite *SecurityTestSuite) TestInputValidation() {
 			endpoint:       "/api/v1/auth/refresh",
 			method:         "POST",
 			body:           map[string]interface{}{"refresh_token": strings.Repeat("A", 2000000)}, // 2MB
-			expectedStatus: http.StatusUnauthorized,
+			expectedStatus: http.StatusRequestEntityTooLarge,
 		},
 	}
 
@@ -245,7 +245,7 @@ func (suite *SecurityTestSuite) TestAuthenticationBypass() {
 
 	for _, tc := range testCases {
 		suite.T().Run(tc.name, func(t *testing.T) {
-			req := suite.createTestRequest("GET", "/api/v1/user/profile", nil)
+			req := suite.createTestRequest("GET", "/api/v1/notes", nil)
 			if tc.authHeader != "" {
 				req.Header.Set("Authorization", tc.authHeader)
 			}
@@ -289,7 +289,7 @@ func (suite *SecurityTestSuite) TestCSRFProtection() {
 func (suite *SecurityTestSuite) TestSessionSecurity() {
 	suite.T().Run("Session fixation prevention", func(t *testing.T) {
 		// Simulate session fixation attempt
-		req := suite.createTestRequest("GET", "/api/v1/user/profile", nil)
+		req := suite.createTestRequest("GET", "/api/v1/notes", nil)
 		req.Header.Set("Authorization", "Bearer mock-token")
 		req.Header.Set("Cookie", "session-id=attacker-controlled-session")
 		w := httptest.NewRecorder()
@@ -306,21 +306,6 @@ func (suite *SecurityTestSuite) TestSessionSecurity() {
 			}
 		}
 	})
-
-	suite.T().Run("Concurrent session limit", func(t *testing.T) {
-		// Test that users can't exceed session limits
-		// This would require actual session management to be fully implemented
-		req := suite.createTestRequest("GET", "/api/v1/security/session-info", nil)
-		req.Header.Set("Authorization", "Bearer mock-token")
-		w := httptest.NewRecorder()
-
-		suite.server.GetRouter().ServeHTTP(w, req)
-
-		// Should either succeed or indicate session limit reached
-		assert.True(t, w.Code == http.StatusOK ||
-			w.Code == http.StatusUnauthorized ||
-			w.Code == http.StatusTooManyRequests)
-	})
 }
 
 // TestSecurityMonitoring tests security event monitoring
@@ -334,7 +319,7 @@ func (suite *SecurityTestSuite) TestSecurityMonitoring() {
 			{
 				name: "Failed authentication",
 				action: func() {
-					req := suite.createTestRequest("GET", "/api/v1/user/profile", nil)
+					req := suite.createTestRequest("GET", "/api/v1/notes", nil)
 					req.Header.Set("Authorization", "Bearer invalid-token")
 					w := httptest.NewRecorder()
 					suite.server.GetRouter().ServeHTTP(w, req)
@@ -372,24 +357,6 @@ func (suite *SecurityTestSuite) TestSecurityMonitoring() {
 				// Security events should be logged
 				// This would require checking logs or monitoring endpoints
 			})
-		}
-	})
-
-	suite.T().Run("Security metrics collection", func(t *testing.T) {
-		req := suite.createTestRequest("GET", "/api/v1/security/metrics", nil)
-		req.Header.Set("Authorization", "Bearer mock-token")
-		w := httptest.NewRecorder()
-
-		suite.server.GetRouter().ServeHTTP(w, req)
-
-		// Should return security metrics (or require auth, or be rate limited)
-		assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusUnauthorized || w.Code == http.StatusTooManyRequests)
-
-		if w.Code == http.StatusOK {
-			var response map[string]interface{}
-			err := json.Unmarshal(w.Body.Bytes(), &response)
-			require.NoError(t, err)
-			assert.NotNil(t, response["metrics"])
 		}
 	})
 }
