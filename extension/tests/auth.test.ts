@@ -27,7 +27,10 @@ describe('AuthService', () => {
       if (callback) callback();
       return Promise.resolve(undefined);
     });
-    (chrome.storage.local.remove as jest.Mock).mockResolvedValue(undefined);
+    (chrome.storage.local.remove as jest.Mock).mockImplementation((keys: any, callback?: () => void) => {
+      if (callback) callback();
+      return Promise.resolve(undefined);
+    });
 
     // Reset Chrome identity mocks
     (chrome.identity.getAuthToken as jest.Mock).mockImplementation((params, callback) => {

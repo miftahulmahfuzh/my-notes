@@ -10,7 +10,10 @@ const createMockChromeStorage = () => ({
     if (callback) callback();
     return Promise.resolve(undefined);
   }),
-  remove: jest.fn().mockResolvedValue(undefined),
+  remove: jest.fn().mockImplementation((keys: any, callback?: () => void) => {
+    if (callback) callback();
+    return Promise.resolve(undefined);
+  }),
   clear: jest.fn().mockResolvedValue(undefined),
 });
 
