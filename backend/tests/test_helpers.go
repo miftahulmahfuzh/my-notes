@@ -1,9 +1,8 @@
-package integration
+package tests
 
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -245,12 +244,4 @@ func cleanupTestData(t *testing.T, db *sql.DB) {
 			t.Logf("Warning: Failed to clean up table %s: %v", table, err)
 		}
 	}
-}
-
-// getEnv gets environment variable with default value
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }
