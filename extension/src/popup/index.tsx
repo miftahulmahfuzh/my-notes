@@ -916,7 +916,7 @@ const PopupApp: React.FC = () => {
             </div>
           )}
 
-          <div className="section">
+          <div className="section section-with-top-margin">
             <div className="flex gap-3">
               <button
                 onClick={handleCreateNoteClick}

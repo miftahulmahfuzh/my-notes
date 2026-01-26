@@ -391,6 +391,10 @@ body {
   margin-bottom: 0;
 }
 
+.section-with-top-margin {
+  margin-top: var(--space-6);
+}
+
 /* Grid layouts */
 .grid-cols-1 {
   display: grid;
