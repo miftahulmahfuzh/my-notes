@@ -70,3 +70,6 @@ consolidate_auth.md
 .workflows/plan/
 backend/internal/handlers/.workflows/plan
 extension/.workflows/plan
+docs/plans/
+
+IMPLEMENTATION_PLAN_REMOVE_USERNAME.md

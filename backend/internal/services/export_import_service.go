@@ -108,10 +108,10 @@ func (s *ExportImportService) exportAsJSON(ctx context.Context, userID string, i
 	}
 
 	// Get user info for export metadata
-	username, err := s.getUserName(ctx, userID)
+	userEmail, err := s.getUserEmail(ctx, userID)
 	if err != nil {
-		log.Printf("Warning: failed to get username: %v", err)
-		username = "unknown"
+		log.Printf("Warning: failed to get user email: %v", err)
+		userEmail = "unknown"
 	}
 
 	// Create export data
@@ -119,7 +119,7 @@ func (s *ExportImportService) exportAsJSON(ctx context.Context, userID string, i
 		ExportInfo: ExportInfo{
 			Version:        "1.0",
 			ExportedAt:     time.Now(),
-			ExportedBy:     username,
+			ExportedBy:     userEmail,
 			Format:         string(FormatJSON),
 			TotalNotes:     len(notes),
 			TotalTags:      len(tags),
@@ -524,11 +524,11 @@ func (s *ExportImportService) getUserTemplates(ctx context.Context, userID strin
 	return templates, nil
 }
 
-func (s *ExportImportService) getUserName(ctx context.Context, userID string) (string, error) {
-	query := `SELECT name FROM users WHERE id = $1`
-	var name string
-	err := s.db.QueryRowContext(ctx, query, userID).Scan(&name)
-	return name, err
+func (s *ExportImportService) getUserEmail(ctx context.Context, userID string) (string, error) {
+	query := `SELECT email FROM users WHERE id = $1`
+	var email string
+	err := s.db.QueryRowContext(ctx, query, userID).Scan(&email)
+	return email, err
 }
 
 func (s *ExportImportService) getNoteCount(ctx context.Context, userID string) int {

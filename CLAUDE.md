@@ -74,7 +74,7 @@ The following backend routes exist but are NOT used by the Chrome extension:
 ## Database Schema
 
 ```sql
-Users:      id, google_id, email, name, avatar_url
+Users:      id, google_id, email, avatar_url, created_at, updated_at
 Notes:      id, user_id, title, content, created_at, updated_at
 Tags:       id, name
 NoteTags:   note_id, tag_id

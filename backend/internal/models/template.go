@@ -90,14 +90,6 @@ var BuiltInVariables = map[string]TemplateVariable{
 		DefaultValue: "{{datetime}}",
 		Required:     false,
 	},
-	"user_name": {
-		Name:         "user_name",
-		Type:         "text",
-		Label:        "User Name",
-		Description:  "Current user's name",
-		DefaultValue: "{{user_name}}",
-		Required:     false,
-	},
 	"user_email": {
 		Name:         "user_email",
 		Type:         "email",
