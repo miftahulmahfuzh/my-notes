@@ -105,8 +105,8 @@ GET    /api/v1/search/notes    # Search notes
 
 ### Backend (Go)
 ```bash
-go run cmd/server/main.go      # Run server
-go test ./...                   # Run tests
+./deploy_backend.sh
+USE_POSTGRE_DURING_TEST=true ./test_backend.sh  # Run tests
 ```
 
 ### Frontend (Extension)
