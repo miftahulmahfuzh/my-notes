@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"testing"
 	"time"
 
 	"github.com/gpd/my-notes/internal/auth"
+	"github.com/gpd/my-notes/internal/handlers"
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
@@ -111,4 +113,24 @@ func createTestUser() *models.User {
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
+}
+
+// setupAuthHandler creates a test auth handler with mock services
+func setupAuthHandler(t *testing.T) (*handlers.AuthHandler, *MockUserService) {
+	// Create token service with test values
+	tokenService := auth.NewTokenService(
+		"test-secret-key-that-is-long-enough-for-hs256",
+		15*time.Minute,
+		24*time.Hour,
+		"silence-notes",
+		"silence-notes-users",
+	)
+
+	// Create mock user service
+	mockUserService := new(MockUserService)
+
+	// Create auth handler
+	authHandler := handlers.NewAuthHandler(tokenService, mockUserService)
+
+	return authHandler, mockUserService
 }
