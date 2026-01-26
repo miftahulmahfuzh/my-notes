@@ -950,6 +950,8 @@ const PopupApp: React.FC = () => {
   );
 };
 
+export default PopupApp;
+
 // Initialize the popup
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('root');
