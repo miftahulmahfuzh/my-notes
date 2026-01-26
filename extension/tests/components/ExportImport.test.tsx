@@ -27,16 +27,20 @@ describe('ExportImport Component', () => {
     global.URL.createObjectURL = jest.fn(() => 'blob:test-url');
     global.URL.revokeObjectURL = jest.fn();
 
-    // Mock document.createElement for download link
+    // Mock document.createElement for download link (only for 'a' tags)
+    const originalCreateElement = document.createElement.bind(document);
     const mockLink = {
       href: '',
       download: '',
       click: jest.fn(),
       style: {},
     };
-    jest.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
-    jest.spyOn(document.body, 'appendChild').mockImplementation(() => mockLink as any);
-    jest.spyOn(document.body, 'removeChild').mockImplementation(() => mockLink as any);
+    jest.spyOn(document, 'createElement').mockImplementation((tagName) => {
+      if (tagName === 'a') {
+        return mockLink as any;
+      }
+      return originalCreateElement(tagName);
+    });
   });
 
   afterEach(() => {
