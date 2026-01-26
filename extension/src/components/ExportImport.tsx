@@ -358,7 +358,7 @@ const ExportImport: React.FC = () => {
                 </div>
               )}
 
-              {importResult.skipped_items?.length > 0 && (
+              {importResult.skipped_items && importResult.skipped_items.length > 0 && (
                 <div className="skipped-items">
                   <h5>Skipped Items:</h5>
                   <ul>
@@ -369,7 +369,7 @@ const ExportImport: React.FC = () => {
                 </div>
               )}
 
-              {importResult.errors?.length > 0 && (
+              {importResult.errors && importResult.errors.length > 0 && (
                 <div className="import-errors">
                   <h5>Errors:</h5>
                   <ul>

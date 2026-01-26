@@ -31,7 +31,6 @@ module.exports = {
     '<rootDir>/src/**/*.test.tsx',
   ],
   testPathIgnorePatterns: [
-    '<rootDir>/e2e/',
     '<rootDir>/node_modules/',
     '<rootDir>/dist/',
   ],

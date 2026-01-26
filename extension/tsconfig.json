@@ -28,13 +28,7 @@
     "types": ["chrome", "jest", "@types/jest", "@testing-library/jest-dom", "node"]
   },
   "include": [
-    "src/types/index.ts",
-    "src/types/storage.ts",
-    "src/types/auth.ts",
-    "src/api.ts",
-    "src/auth.ts",
-    "src/utils/errorHandling.ts",
-    "src/utils/storage.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -44,12 +38,6 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "src_backup/**/*",
-    "src/hooks/**/*",
-    "src/components/**/*.tsx",
-    "src/background/**/*",
-    "src/content/**/*",
-    "src/options/**/*",
-    "src/utils/config.ts"
+    "src_backup/**/*"
   ]
 }
