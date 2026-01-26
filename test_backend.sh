@@ -81,9 +81,6 @@ run_test_suite "Notes Integration Tests" "./tests/handlers/notes_integration_tes
 # Auth Handler Tests (handles POST /api/v1/auth/refresh, DELETE /api/v1/auth/logout)
 run_test_suite "Auth Refresh Token Tests" "./tests/handlers/refresh_test.go ./tests/handlers/mocks.go" "skip"
 
-# User Handler Tests (handles GET/PUT /api/v1/user/profile, /api/v1/user/preferences, /api/v1/user/sessions)
-run_test_suite "User Handler Tests" "./tests/handlers/user_test.go ./tests/handlers/mocks.go" "skip"
-
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Service Tests${NC}"
 echo -e "${BLUE}========================================${NC}"

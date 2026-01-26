@@ -152,8 +152,6 @@ func (s *Server) initializeServices() {
 		s.userService,
 	)
 
-	userHandler := handlers.NewUserHandler(s.userService)
-
 	// Initialize note service and handler
 	noteService := services.NewNoteService(s.db, tagService)
 	notesHandler := handlers.NewNotesHandler(noteService)
@@ -162,7 +160,7 @@ func (s *Server) initializeServices() {
 	s.handlers.SetSecurityMiddleware(s.rateLimitMW, s.sessionMW)
 
 	// Initialize auth handlers
-	s.handlers.SetAuthHandlers(authHandler, chromeAuthHandler, userHandler)
+	s.handlers.SetAuthHandlers(authHandler, chromeAuthHandler)
 
 	// Initialize notes handler
 	s.handlers.SetNotesHandler(notesHandler)
@@ -253,16 +251,6 @@ func (s *Server) setupRoutes() {
 	// Token management routes
 	if s.handlers.Auth != nil {
 		protected.HandleFunc("/auth/logout", s.handlers.Auth.Logout).Methods("DELETE")
-	}
-
-	// User profile routes
-	if s.handlers.User != nil {
-		protected.HandleFunc("/user/profile", s.handlers.User.GetProfile).Methods("GET")
-		protected.HandleFunc("/user/profile", s.handlers.User.UpdateUserProfile).Methods("PUT")
-		protected.HandleFunc("/user/preferences", s.handlers.User.GetUserPreferences).Methods("GET")
-		protected.HandleFunc("/user/preferences", s.handlers.User.UpdateUserPreferences).Methods("PUT")
-		protected.HandleFunc("/user/sessions", s.handlers.User.GetUserSessions).Methods("GET")
-		protected.HandleFunc("/user/sessions/{sessionId}", s.handlers.User.DeleteUserSession).Methods("DELETE")
 	}
 
 	// Note routes

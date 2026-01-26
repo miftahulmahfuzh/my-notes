@@ -10,7 +10,6 @@ type Handlers struct {
 	Security     *SecurityHandler
 	Auth         *AuthHandler
 	ChromeAuth   *ChromeAuthHandler
-	User         *UserHandler
 	Notes        *NotesHandler
 	Tags         *TagsHandler
 	Templates    *TemplateHandler
@@ -25,7 +24,6 @@ func NewHandlers() *Handlers {
 		Health:       NewHealthHandler(),
 		Security:     nil, // Will be initialized after middleware is created
 		Auth:         nil, // Will be initialized after services are created
-		User:         nil, // Will be initialized after services are created
 		Notes:        nil, // Will be initialized after services are created
 		Tags:         nil, // Will be initialized after services are created
 		Templates:    nil, // Will be initialized after services are created
@@ -40,11 +38,10 @@ func (h *Handlers) SetSecurityMiddleware(rateLimitMW *middleware.RateLimitingMid
 	h.Security = NewSecurityHandler(rateLimitMW, sessionMW)
 }
 
-// SetAuthHandlers initializes the auth and user handlers with service dependencies
-func (h *Handlers) SetAuthHandlers(authHandler *AuthHandler, chromeAuthHandler *ChromeAuthHandler, userHandler *UserHandler) {
+// SetAuthHandlers initializes the auth handlers with service dependencies
+func (h *Handlers) SetAuthHandlers(authHandler *AuthHandler, chromeAuthHandler *ChromeAuthHandler) {
 	h.Auth = authHandler
 	h.ChromeAuth = chromeAuthHandler
-	h.User = userHandler
 }
 
 // SetNotesHandler initializes the notes handler with service dependencies
