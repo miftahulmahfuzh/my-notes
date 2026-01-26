@@ -340,7 +340,7 @@ describe('AuthService', () => {
       await authService.authenticate();
 
       // Verify storage calls
-      expect(chrome.storage.local.set).toHaveBeenCalledTimes(4); // access_token, refresh_token, session_id, token_expiry, user_info
+      expect(chrome.storage.local.set).toHaveBeenCalledTimes(5); // access_token, refresh_token, session_id, token_expiry, user_info
 
       const setCalls = (chrome.storage.local.set as jest.Mock).mock.calls;
       const storedData = setCalls.reduce((acc, [data]) => ({ ...acc, ...data }), {});
