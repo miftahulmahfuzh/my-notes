@@ -103,15 +103,6 @@ run_test_suite "JWT Tests" "./tests/auth/jwt_test.go" "skip"
 # JWT Validation Tests
 run_test_suite "JWT Validation Tests" "./tests/auth/jwt_validation_test.go ./tests/auth/jwt_test.go" "skip"
 
-# OAuth Service Tests (handles Google OAuth integration)
-run_test_suite "OAuth Service Tests" "./tests/auth/oauth_service_test.go" "skip"
-
-# PKCE Tests (OAuth flow)
-run_test_suite "PKCE Tests" "./tests/auth/pkce_test.go" "skip"
-
-# Google Config Tests
-run_test_suite "Google Config Tests" "./tests/auth/google_config_test.go" "skip"
-
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Middleware Tests${NC}"
 echo -e "${BLUE}========================================${NC}"

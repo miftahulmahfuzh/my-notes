@@ -59,12 +59,9 @@ func (suite *AuthFlowTestSuite) SetupSuite() {
 			SSLMode:  "disable",
 		},
 		Auth: config.AuthConfig{
-			JWTSecret:        "test-secret-key-for-testing",
-			GoogleClientID:   "test-google-client-id",
-			GoogleClientSecret: "test-google-client-secret",
-			GoogleRedirectURL: "http://localhost:3000/auth/callback",
-			TokenExpiry:      1, // 1 hour for testing
-			RefreshExpiry:    24, // 1 day for testing
+			JWTSecret:     "test-secret-key-for-testing",
+			TokenExpiry:   1,   // 1 hour for testing
+			RefreshExpiry: 24,  // 1 day for testing
 		},
 	}
 
@@ -152,74 +149,8 @@ func (suite *AuthFlowTestSuite) TestHealthCheck() {
 
 // TestCompleteAuthFlow tests the complete authentication flow
 func (suite *AuthFlowTestSuite) TestCompleteAuthFlow() {
-	// Step 1: Test Google OAuth initiation
-	// NOTE: This endpoint is not yet implemented (returns 404)
-	// Skipping until the endpoint is implemented
-	suite.T().Skip("POST /api/v1/auth/google endpoint not yet implemented")
-
-	// Step 1: Test Google OAuth initiation
-	suite.T().Run("Google OAuth Initiation", func(t *testing.T) {
-		suite.T().Skip("POST /api/v1/auth/google endpoint not yet implemented")
-
-		authRequest := map[string]interface{}{
-			"redirect_uri": "http://localhost:3000/auth/callback",
-			"state":        "test-state-123",
-		}
-
-		reqBody, _ := json.Marshal(authRequest)
-		req := suite.createTestRequest("POST", "/api/v1/auth/google", bytes.NewBuffer(reqBody))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
-
-		suite.server.GetRouter().ServeHTTP(w, req)
-
-		// This should return a mock OAuth URL for testing
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		var response map[string]interface{}
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		require.NoError(t, err)
-
-		// Extract data from the wrapped API response format
-		data := response["data"].(map[string]interface{})
-		assert.NotEmpty(t, data["auth_url"])
-	})
-
-	// Step 2: Test token exchange (mocked)
-	// NOTE: This endpoint is not yet implemented (returns 404)
-	// Skipping until the endpoint is implemented
-	suite.T().Run("Token Exchange", func(t *testing.T) {
-		suite.T().Skip("POST /api/v1/auth/exchange endpoint not yet implemented")
-
-		tokenRequest := map[string]interface{}{
-			"code":         "mock-auth-code",
-			"state":        "test-state-123",
-			"redirect_uri": "http://localhost:3000/auth/callback",
-		}
-
-		reqBody, _ := json.Marshal(tokenRequest)
-		req := suite.createTestRequest("POST", "/api/v1/auth/exchange", bytes.NewBuffer(reqBody))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
-
-		suite.server.GetRouter().ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			t.Logf("Response body: %s", w.Body.String())
-		}
-
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		var response map[string]interface{}
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		require.NoError(t, err)
-
-		// Extract data from the wrapped API response format
-		data := response["data"].(map[string]interface{})
-		assert.NotEmpty(t, data["access_token"])
-		assert.NotEmpty(t, data["refresh_token"])
-		assert.Equal(t, "Bearer", data["token_type"])
-	})
+	// Chrome extension authentication uses Chrome Identity API, not standard OAuth
+	// This test validates the Chrome-specific authentication flow
 
 	// Step 3: Test protected resource access
 	suite.T().Run("Protected Resource Access", func(t *testing.T) {

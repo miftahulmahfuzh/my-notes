@@ -25,7 +25,6 @@ type Server struct {
 	db            *sql.DB
 	userService   services.UserServiceInterface
 	tokenService  *auth.TokenService
-	oauthService  *auth.OAuthService
 	sessionStore  sessions.Store
 	securityMW    *middleware.SecurityMiddleware
 	sessionMW     *middleware.SessionMiddleware
@@ -113,15 +112,6 @@ func (s *Server) initializeServices() {
 		WhitelistedUsers:        securityConfig.RateLimiting.WhitelistedUsers,
 	}
 	s.rateLimitMW = middleware.NewRateLimitingMiddleware(s.userService, s.tokenService, rateLimitConfig)
-
-	// Initialize OAuth service
-	googleConfig := &auth.GoogleConfig{
-		ClientID:     s.config.Auth.GoogleClientID,
-		ClientSecret: s.config.Auth.GoogleClientSecret,
-		RedirectURL:  s.config.Auth.GoogleRedirectURL,
-		Scopes:       auth.DefaultScopes(),
-	}
-	s.oauthService = auth.NewOAuthService(googleConfig)
 
 	// Initialize session store
 	sessionSecret := []byte(s.config.Auth.JWTSecret)
