@@ -270,7 +270,7 @@ describe('AuthService', () => {
 
     it('authenticate() handles token retrieval failure', async () => {
       (chrome.identity.getAuthToken as jest.Mock).mockImplementation((params, callback) => {
-        chrome.runtime.lastError = { message: 'OAuth error' };
+        (chrome.runtime as any).lastError = { message: 'OAuth error' };
         if (callback) callback();
         return Promise.resolve();
       });
@@ -931,7 +931,7 @@ describe('AuthService', () => {
     it('handles null token from Chrome Identity API', async () => {
       (chrome.identity.getAuthToken as jest.Mock).mockImplementation((params, callback) => {
         if (callback) callback(null);
-        chrome.runtime.lastError = null;
+        (chrome.runtime as any).lastError = null;
         return Promise.resolve(null);
       });
 

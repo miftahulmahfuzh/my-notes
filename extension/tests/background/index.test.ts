@@ -6,7 +6,7 @@
 describe('Background Service Worker', () => {
   let mockListeners: {
     onMessage: Array<(message: any, sender: any, sendResponse: jest.Mock) => boolean>;
-    onInstalled: Array<() => void>;
+    onInstalled: Array<(details: any) => void>;
     onStartup: Array<() => void>;
   };
   let mockSendResponse: jest.Mock;
@@ -690,7 +690,7 @@ describe('Background Service Worker', () => {
 
     test('handles message with circular references', () => {
       const listener = mockListeners.onMessage[0];
-      const message = { type: 'GET_STATUS' };
+      const message: any = { type: 'GET_STATUS' };
       message.self = message;
 
       expect(() => {
