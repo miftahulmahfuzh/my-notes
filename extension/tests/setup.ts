@@ -1,4 +1,5 @@
 // Mock Chrome API for testing
+import { Note } from '../src/types';
 const createMockChromeStorage = () => ({
   get: jest.fn().mockResolvedValue({}),
   set: jest.fn().mockResolvedValue(undefined),
@@ -20,6 +21,9 @@ const mockChrome = {
       dispatch: jest.fn(),
     },
     onInstalled: {
+      addListener: jest.fn(),
+    },
+    onStartup: {
       addListener: jest.fn(),
     },
     onConnect: {
@@ -126,22 +130,22 @@ beforeEach(() => {
   jest.clearAllMocks();
 
   // Reset Chrome storage mocks to default state
-  chrome.storage.local.get.mockResolvedValue({});
-  chrome.storage.local.set.mockResolvedValue(undefined);
-  chrome.storage.local.remove.mockResolvedValue(undefined);
-  chrome.storage.local.clear.mockResolvedValue(undefined);
+  (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
+  (chrome.storage.local.set as jest.Mock).mockResolvedValue(undefined);
+  (chrome.storage.local.remove as jest.Mock).mockResolvedValue(undefined);
+  (chrome.storage.local.clear as jest.Mock).mockResolvedValue(undefined);
 
-  chrome.storage.sync.get.mockResolvedValue({});
-  chrome.storage.sync.set.mockResolvedValue(undefined);
-  chrome.storage.sync.remove.mockResolvedValue(undefined);
-  chrome.storage.sync.clear.mockResolvedValue(undefined);
+  (chrome.storage.sync.get as jest.Mock).mockResolvedValue({});
+  (chrome.storage.sync.set as jest.Mock).mockResolvedValue(undefined);
+  (chrome.storage.sync.remove as jest.Mock).mockResolvedValue(undefined);
+  (chrome.storage.sync.clear as jest.Mock).mockResolvedValue(undefined);
 
   // Reset fetch mock
   (global.fetch as jest.Mock).mockClear();
 });
 
 // Global test utilities
-global.createMockNote = (overrides: Partial<Note> = {}): Note => ({
+(global as any).createMockNote = (overrides: Partial<Note> = {}): Note => ({
   id: 'test-note-id',
   title: 'Test Note',
   content: 'Test content #hashtag',
