@@ -237,6 +237,18 @@ describe('ExportImport Component', () => {
     });
 
     it('should export to Markdown format', async () => {
+      (fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          formats: [
+            { id: 'json', name: 'JSON', description: 'Complete data export' },
+            { id: 'markdown', name: 'Markdown', description: 'Individual files' },
+            { id: 'html', name: 'HTML', description: 'Web-friendly format' },
+            { id: 'zip', name: 'ZIP Archive', description: 'Multiple formats' },
+          ],
+        }),
+      });
+
       render(<ExportImport />);
 
       await waitFor(() => {
@@ -246,8 +258,9 @@ describe('ExportImport Component', () => {
       const formatSelect = screen.getByLabelText('Export Format');
       await userEvent.selectOptions(formatSelect, 'markdown');
 
-      const exportButton = screen.getByText('Export Data');
-      await userEvent.click(exportButton);
+      const exportButtons = screen.getAllByText('Export Data');
+      const exportButton = exportButtons.find(el => el.classList.contains('export-btn'));
+      await userEvent.click(exportButton!);
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith(
@@ -262,6 +275,18 @@ describe('ExportImport Component', () => {
     });
 
     it('should export to HTML format', async () => {
+      (fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          formats: [
+            { id: 'json', name: 'JSON', description: 'Complete data export' },
+            { id: 'markdown', name: 'Markdown', description: 'Individual files' },
+            { id: 'html', name: 'HTML', description: 'Web-friendly format' },
+            { id: 'zip', name: 'ZIP Archive', description: 'Multiple formats' },
+          ],
+        }),
+      });
+
       render(<ExportImport />);
 
       await waitFor(() => {
@@ -271,8 +296,9 @@ describe('ExportImport Component', () => {
       const formatSelect = screen.getByLabelText('Export Format');
       await userEvent.selectOptions(formatSelect, 'html');
 
-      const exportButton = screen.getByText('Export Data');
-      await userEvent.click(exportButton);
+      const exportButtons = screen.getAllByText('Export Data');
+      const exportButton = exportButtons.find(el => el.classList.contains('export-btn'));
+      await userEvent.click(exportButton!);
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith(
@@ -287,6 +313,18 @@ describe('ExportImport Component', () => {
     });
 
     it('should export to ZIP format', async () => {
+      (fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          formats: [
+            { id: 'json', name: 'JSON', description: 'Complete data export' },
+            { id: 'markdown', name: 'Markdown', description: 'Individual files' },
+            { id: 'html', name: 'HTML', description: 'Web-friendly format' },
+            { id: 'zip', name: 'ZIP Archive', description: 'Multiple formats' },
+          ],
+        }),
+      });
+
       render(<ExportImport />);
 
       await waitFor(() => {
@@ -296,8 +334,9 @@ describe('ExportImport Component', () => {
       const formatSelect = screen.getByLabelText('Export Format');
       await userEvent.selectOptions(formatSelect, 'zip');
 
-      const exportButton = screen.getByText('Export Data');
-      await userEvent.click(exportButton);
+      const exportButtons = screen.getAllByText('Export Data');
+      const exportButton = exportButtons.find(el => el.classList.contains('export-btn'));
+      await userEvent.click(exportButton!);
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith(
