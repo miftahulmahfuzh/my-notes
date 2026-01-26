@@ -39,7 +39,7 @@ describe('Background Service Worker', () => {
     });
 
     // Import background script - this registers all listeners
-    require('../src/background/index');
+    require('../../src/background/index');
   });
 
   beforeEach(() => {
