@@ -28,6 +28,30 @@ func createTestDB() *sql.DB {
 	return db
 }
 
+// GetServerTestConfig returns a test configuration for server testing
+func GetServerTestConfig() *config.Config {
+	return &config.Config{
+		Server: config.ServerConfig{
+			Host: "localhost",
+			Port: "9999",
+		},
+		App: config.AppConfig{
+			Environment: "test",
+			Debug:       false,
+		},
+		CORS: config.CORSConfig{
+			AllowedOrigins:   []string{"*"},
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"*"},
+			AllowCredentials: false,
+			MaxAge:           86400,
+		},
+		Auth: config.AuthConfig{
+			JWTSecret: "test-secret-key-that-is-long-enough-for-validation",
+		},
+	}
+}
+
 func TestServerInitialization(t *testing.T) {
 	cfg := &config.Config{
 		Server: config.ServerConfig{
@@ -196,7 +220,7 @@ func TestCORSMiddleware(t *testing.T) {
 }
 
 func TestRequestIDMiddleware(t *testing.T) {
-	cfg := GetTestConfig()
+	cfg := GetServerTestConfig()
 
 	handlers := handlers.NewHandlers()
 	srv := server.NewServer(&config.Config{
@@ -227,7 +251,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 }
 
 func TestSecurityHeadersMiddleware(t *testing.T) {
-	cfg := GetTestConfig()
+	cfg := GetServerTestConfig()
 
 	handlers := handlers.NewHandlers()
 	srv := server.NewServer(&config.Config{
@@ -255,7 +279,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 }
 
 func TestContentTypeMiddleware(t *testing.T) {
-	cfg := GetTestConfig()
+	cfg := GetServerTestConfig()
 
 	handlers := handlers.NewHandlers()
 	srv := server.NewServer(&config.Config{
@@ -298,7 +322,7 @@ func TestContentTypeMiddleware(t *testing.T) {
 }
 
 func TestNotFoundHandler(t *testing.T) {
-	cfg := GetTestConfig()
+	cfg := GetServerTestConfig()
 
 	handlers := handlers.NewHandlers()
 	srv := server.NewServer(&config.Config{
@@ -326,7 +350,7 @@ func TestNotFoundHandler(t *testing.T) {
 }
 
 func TestServerGracefulShutdown(t *testing.T) {
-	cfg := GetTestConfig()
+	cfg := GetServerTestConfig()
 
 	handlers := handlers.NewHandlers()
 	srv := server.NewServer(&config.Config{
