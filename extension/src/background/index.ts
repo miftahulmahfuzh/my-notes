@@ -24,15 +24,31 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background received message:', message);
 
+  // Helper to safely send response
+  const safeSendResponse = (response: any) => {
+    try {
+      sendResponse(response);
+    } catch (error) {
+      console.error('Error sending response:', error);
+    }
+  };
+
+  // Handle null or undefined message
+  if (!message || typeof message.type !== 'string') {
+    console.log('Unknown message type:', message?.type);
+    safeSendResponse({ error: 'Unknown message type' });
+    return true;
+  }
+
   // Basic message handling
   switch (message.type) {
     case 'GET_STATUS':
-      sendResponse({ status: 'ok', timestamp: Date.now() });
+      safeSendResponse({ status: 'ok', timestamp: Date.now() });
       break;
 
     default:
       console.log('Unknown message type:', message.type);
-      sendResponse({ error: 'Unknown message type' });
+      safeSendResponse({ error: 'Unknown message type' });
   }
 
   return true; // Keep the message channel open for async responses

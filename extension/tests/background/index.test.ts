@@ -75,8 +75,7 @@ describe('Background Service Worker', () => {
     });
 
     test('returns unsubscribe function from addListener', () => {
-      const addListenerCalls = (chrome.runtime.onMessage.addListener as jest.Mock).mock.calls;
-      expect(addListenerCalls.length).toBeGreaterThan(0);
+      expect(mockListeners.onMessage.length).toBeGreaterThan(0);
 
       // The listener registration should return an unsubscribe function
       // We can't directly test this, but we can verify the pattern
