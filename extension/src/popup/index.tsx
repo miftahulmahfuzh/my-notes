@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { authService, AuthState } from '../auth';
 import { apiService, Note, NoteResponse, CreateNoteRequest, UpdateNoteRequest } from '../api';
 import { CONFIG } from '../utils/config';
+import { stripHashtags } from '../utils/contentUtils';
 import { LoginForm } from '../components/LoginForm';
 import { SimpleUserProfile } from '../components/SimpleUserProfile';
 import NoteView from '../components/NoteView';
@@ -409,7 +410,7 @@ const PopupApp: React.FC = () => {
     event.stopPropagation(); // Prevent triggering handleNoteClick
 
     try {
-      await navigator.clipboard.writeText(content);
+      await navigator.clipboard.writeText(stripHashtags(content));
 
       // Show visual feedback by setting the copied note ID
       setState(prev => ({ ...prev, copiedNoteId: noteId }));

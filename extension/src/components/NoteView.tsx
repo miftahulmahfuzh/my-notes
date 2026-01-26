@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Note } from '../types';
 import MarkdownPreview from './MarkdownPreview';
 import { extractTOC, extractMetadata } from '../utils/markdown';
+import { stripHashtags } from '../utils/contentUtils';
 
 interface NoteViewProps {
   note: Note;
@@ -78,7 +79,7 @@ const NoteView: React.FC<NoteViewProps> = ({
 
   const handleCopyContent = async () => {
     try {
-      await navigator.clipboard.writeText(note.content);
+      await navigator.clipboard.writeText(stripHashtags(note.content));
       // Show success feedback
       const button = document.getElementById('copy-btn');
       if (button) {
