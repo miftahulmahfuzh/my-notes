@@ -62,10 +62,10 @@ func (suite *NotesIntegrationTestSuite) SetupSuite() {
 
 	// Insert test user into database
 	query := `
-		INSERT INTO users (id, google_id, email, name, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, NOW(), NOW())
+		INSERT INTO users (id, google_id, email, created_at, updated_at)
+		VALUES ($1, $2, $3, NOW(), NOW())
 	`
-	_, err = suite.db.Exec(query, suite.userID, "google_"+suite.userID.String(), suite.userEmail, "Test User")
+	_, err = suite.db.Exec(query, suite.userID, "google_"+suite.userID.String(), suite.userEmail)
 	require.NoError(suite.T(), err, "Failed to create test user")
 
 	// Create tag service with real database
@@ -131,7 +131,6 @@ func (suite *NotesIntegrationTestSuite) makeRequest(method, endpoint string, bod
 	ctx := context.WithValue(req.Context(), "user", &models.User{
 		ID:    suite.userID,
 		Email: suite.userEmail,
-		Name:  "Test User",
 	})
 	req = req.WithContext(ctx)
 
