@@ -392,14 +392,14 @@ body {
 }
 
 .section-with-top-margin {
-  margin-top: var(--space-6);
+  margin-top: var(--space-4);
 }
 
 /* Grid layouts */
 .grid-cols-1 {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
 /* Flex utilities */
@@ -585,11 +585,15 @@ body {
 .notes-search-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  justify-content: flex-start;
+  gap: var(--space-1);
   margin-bottom: var(--space-6);
   padding-bottom: var(--space-4);
   border-bottom: 2px solid var(--neutral-950);
+}
+
+.notes-search-header .btn-primary {
+  margin-left: auto;
 }
 
 .search-bar-container {
@@ -651,6 +655,29 @@ body {
 .search-clear-btn:hover {
   color: var(--neutral-950);
   background: var(--neutral-200);
+}
+
+/* Standalone clear button (outside search field) */
+.search-clear-btn-standalone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+  border: 2px solid var(--neutral-950);
+  color: var(--neutral-950);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: 0;
+  transition: background-color 200ms ease-in-out;
+  flex-shrink: 0;
+}
+
+.search-clear-btn-standalone:hover {
+  background: var(--neutral-200);
+}
+
+.search-clear-btn-standalone:active {
+  transform: translate(1px, 1px);
 }
 
 /* Note Items */

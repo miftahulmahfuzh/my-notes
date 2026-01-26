@@ -9,7 +9,7 @@ import { SimpleUserProfile } from '../components/SimpleUserProfile';
 import NoteView from '../components/NoteView';
 import NoteEditor from '../components/NoteEditor';
 import TemplatePage from '../components/TemplatePage';
-import { FileText, BookOpen, LogOut } from 'lucide-react';
+import { FileText, BookOpen, LogOut, X } from 'lucide-react';
 
 // Styles
 import './popup.css';
@@ -832,14 +832,16 @@ const PopupApp: React.FC = () => {
                 value={state.searchQuery}
                 onChange={handleSearchChange}
               />
-              {state.searchQuery && (
-                <button className="search-clear-btn" onClick={handleClearSearch}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              )}
             </div>
+            {state.searchQuery && (
+              <button
+                className="search-clear-btn-standalone"
+                onClick={handleClearSearch}
+                aria-label="Clear search"
+              >
+                <X size={10} strokeWidth={2} />
+              </button>
+            )}
             <button
               onClick={handleCreateNoteClick}
               className="btn-primary"
