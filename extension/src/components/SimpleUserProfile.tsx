@@ -36,9 +36,10 @@ export const SimpleUserProfile: React.FC<SimpleUserProfileProps> = ({ onLogout }
   };
 
   const getUserInitials = (user: User): string => {
-    if (!user.name) return '?';
-    return user.name
-      .split(' ')
+    // Use email to generate initials since name field is not available
+    return user.email
+      .split('@')[0]
+      .split('.')
       .map(word => word[0])
       .join('')
       .toUpperCase()
@@ -55,7 +56,7 @@ export const SimpleUserProfile: React.FC<SimpleUserProfileProps> = ({ onLogout }
         {user.avatar_url ? (
           <img
             src={user.avatar_url}
-            alt={user.name}
+            alt={user.email}
             className="avatar-img"
           />
         ) : (
@@ -66,7 +67,6 @@ export const SimpleUserProfile: React.FC<SimpleUserProfileProps> = ({ onLogout }
       </div>
 
       <div className="user-info">
-        <div className="user-name">{user.name}</div>
         <div className="user-email">{user.email}</div>
       </div>
 

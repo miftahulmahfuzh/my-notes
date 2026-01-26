@@ -301,13 +301,9 @@ func (sm *SecurityMiddleware) EnhancedAuth(next http.Handler) http.Handler {
 			// For mock tokens in test, create a mock user
 			if tokenString == "valid-mock-token" || tokenString == "mock-access-token" {
 				userID, _ := uuid.Parse("550e8400-e29b-41d4-a716-446655440000") // same UUID as claims
-				preferences := models.UserPreferences{
-					EmailNotifications: true, // Enable for higher rate limits in tests
-				}
 				user = &models.User{
-					ID:          userID,
-					Email:       "test@example.com",
-					Preferences: preferences,
+					ID:    userID,
+					Email: "test@example.com",
 				}
 			} else {
 				sm.logSecurityEvent(security.EventAuthenticationFailure, security.LevelError, "User not found for valid token", r, claims.UserID)

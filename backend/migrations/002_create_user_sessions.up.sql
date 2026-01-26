@@ -14,15 +14,3 @@ CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON user_sessions(is_active);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_last_seen ON user_sessions(last_seen);
 
--- Create token_blacklist table for JWT token invalidation
-CREATE TABLE IF NOT EXISTS token_blacklist (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    token_id TEXT NOT NULL UNIQUE,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
--- Create indexes for token blacklist
-CREATE INDEX IF NOT EXISTS idx_token_blacklist_token_id ON token_blacklist(token_id);
-CREATE INDEX IF NOT EXISTS idx_token_blacklist_expires_at ON token_blacklist(expires_at);
-

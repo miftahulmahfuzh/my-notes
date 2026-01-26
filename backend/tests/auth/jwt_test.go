@@ -30,14 +30,6 @@ func createTestUser(t *testing.T, db interface{}, email string) *models.User {
 		GoogleID:  "google-123",
 		Email:     email,
 		AvatarURL: &avatarURL,
-		Preferences: models.UserPreferences{
-			Theme:              "light",
-			Language:           "en",
-			TimeZone:           "UTC",
-			EmailNotifications: true,
-			AutoSave:           true,
-			DefaultNoteView:    "grid",
-		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}

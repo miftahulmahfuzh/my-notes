@@ -197,22 +197,15 @@ func (rlm *RateLimitingMiddleware) allowUserRequest(userID string, r *http.Reque
 // createUserLimiter creates a rate limiter for a user based on their tier
 func (rlm *RateLimitingMiddleware) createUserLimiter(userID string) *TokenBucket {
 	// Get user to check their tier/status
-	user, err := rlm.userService.GetByID(userID)
+	_, err := rlm.userService.GetByID(userID)
 	if err != nil {
 		// Default rate limiting for unknown users
 		return NewTokenBucket(60, 1) // 60 requests per minute
 	}
 
-	// Rate limiting based on user status/preferences
-	// This could be enhanced with subscription tiers, etc.
-	switch {
-	case user.Preferences.EmailNotifications:
-		// Premium users get higher limits
-		return NewTokenBucket(200, 2) // 200 requests per minute
-	default:
-		// Standard users
-		return NewTokenBucket(float64(rlm.config.UserRequestsPerMinute), 1)
-	}
+	// Standard rate limiting for all users
+	// This could be enhanced with subscription tiers in the future
+	return NewTokenBucket(float64(rlm.config.UserRequestsPerMinute), 1)
 }
 
 // allowEndpointRequest checks if endpoint request is allowed

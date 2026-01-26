@@ -86,18 +86,10 @@ func (m *MockUserService) AddUser(user *models.User) {
 func createTestUser(t *testing.T) *models.User {
 	userID := uuid.New()
 	return &models.User{
-		ID:          userID,
-		GoogleID:    "google-123",
-		Email:       "test@example.com",
-		AvatarURL:   nil,
-		Preferences: models.UserPreferences{
-			Theme:              "light",
-			Language:           "en",
-			TimeZone:           "UTC",
-			EmailNotifications: true,
-			AutoSave:           true,
-			DefaultNoteView:    "grid",
-		},
+		ID:        userID,
+		GoogleID:  "google-123",
+		Email:     "test@example.com",
+		AvatarURL: nil,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}

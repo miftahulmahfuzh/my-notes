@@ -22,6 +22,7 @@ func TestMigrationsUp(t *testing.T) {
 	tables := []string{
 		"schema_migrations",
 		"users",
+		"user_sessions",
 		"notes",
 		"tags",
 		"note_tags",
@@ -46,10 +47,8 @@ func TestMigrationsUp(t *testing.T) {
 
 func TestMigrationsRollback(t *testing.T) {
 	// NOTE: This test has incorrect expectations about which migration is rolled back.
-	// The test expects migration 007 (add_user_preferences) to be rolled back,
-	// but migrator.Down() only rolls back ONE migration (009).
 	// Skipping until test expectations are corrected.
-	t.Skip("Test has incorrect migration rollback expectations")
+	t.Skip("Migration rollback test needs update for current migration structure")
 
 	if !USE_POSTGRE_DURING_TEST {
 		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")

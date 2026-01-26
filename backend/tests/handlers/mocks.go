@@ -95,23 +95,14 @@ func (m *MockUserService) SearchUsers(query string, page, limit int) ([]models.U
 // Helper function to create a test user
 func createTestUser() *models.User {
 	avatarURL := "https://example.com/avatar.jpg"
-	preferences := models.UserPreferences{
-		Theme:              "dark",
-		Language:           "en",
-		TimeZone:           "America/New_York",
-		EmailNotifications: true,
-		AutoSave:           true,
-		DefaultNoteView:    "list",
-	}
 
 	return &models.User{
-		ID:          uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"),
-		GoogleID:    "google123",
-		Email:       "test@example.com",
-		AvatarURL:   &avatarURL,
-		Preferences: preferences,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:        uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"),
+		GoogleID:  "google123",
+		Email:     "test@example.com",
+		AvatarURL: &avatarURL,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }
 

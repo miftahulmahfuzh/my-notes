@@ -1,57 +1,12 @@
 package models
 
 import (
-	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
-
-// UserPreferences represents user preferences and settings
-type UserPreferences struct {
-	Theme              string `json:"theme" db:"theme"`
-	Language           string `json:"language" db:"language"`
-	TimeZone           string `json:"timezone" db:"timezone"`
-	EmailNotifications bool   `json:"email_notifications" db:"email_notifications"`
-	AutoSave           bool   `json:"auto_save" db:"auto_save"`
-	DefaultNoteView    string `json:"default_note_view" db:"default_note_view"`
-}
-
-// DefaultUserPreferences returns default preferences for new users
-func DefaultUserPreferences() UserPreferences {
-	return UserPreferences{
-		Theme:              "dark",
-		Language:           "en",
-		TimeZone:           "UTC",
-		EmailNotifications: true,
-		AutoSave:           true,
-		DefaultNoteView:    "grid",
-	}
-}
-
-// Scan implements the sql.Scanner interface for UserPreferences
-func (up *UserPreferences) Scan(value interface{}) error {
-	if value == nil {
-		*up = DefaultUserPreferences()
-		return nil
-	}
-
-	switch v := value.(type) {
-	case []byte:
-		return json.Unmarshal(v, up)
-	case string:
-		return json.Unmarshal([]byte(v), up)
-	default:
-		return fmt.Errorf("cannot scan %T into UserPreferences", value)
-	}
-}
-
-// Value implements the driver.Valuer interface for UserPreferences
-func (up UserPreferences) Value() (driver.Value, error) {
-	return json.Marshal(up)
-}
 
 // UserSession represents a user session
 type UserSession struct {
@@ -104,32 +59,29 @@ type UserSearchResult struct {
 
 // User represents a user in the system
 type User struct {
-	ID          uuid.UUID      `json:"id" db:"id"`
-	GoogleID    string         `json:"google_id" db:"google_id"`
-	Email       string         `json:"email" db:"email"`
-	AvatarURL   *string        `json:"avatar_url,omitempty" db:"avatar_url"`
-	Preferences UserPreferences `json:"preferences" db:"preferences"`
-	CreatedAt   time.Time      `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at" db:"updated_at"`
+	ID        uuid.UUID `json:"id" db:"id"`
+	GoogleID  string    `json:"google_id" db:"google_id"`
+	Email     string    `json:"email" db:"email"`
+	AvatarURL *string   `json:"avatar_url,omitempty" db:"avatar_url"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // UserResponse is the safe response format for user data
 type UserResponse struct {
-	ID          uuid.UUID      `json:"id"`
-	Email       string         `json:"email"`
-	AvatarURL   *string        `json:"avatar_url,omitempty"`
-	Preferences UserPreferences `json:"preferences"`
-	CreatedAt   time.Time      `json:"created_at"`
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	AvatarURL *string   `json:"avatar_url,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // ToResponse converts User to UserResponse (omits sensitive data)
 func (u *User) ToResponse() UserResponse {
 	return UserResponse{
-		ID:          u.ID,
-		Email:       u.Email,
-		AvatarURL:   u.AvatarURL,
-		Preferences: u.Preferences,
-		CreatedAt:   u.CreatedAt,
+		ID:        u.ID,
+		Email:     u.Email,
+		AvatarURL: u.AvatarURL,
+		CreatedAt: u.CreatedAt,
 	}
 }
 
@@ -166,7 +118,7 @@ func (u *User) Scan(value interface{}) error {
 }
 
 // Value implements the driver.Valuer interface for UUID
-func (u User) Value() (driver.Value, error) {
+func (u User) Value() (interface{}, error) {
 	return u.ID.Value()
 }
 
