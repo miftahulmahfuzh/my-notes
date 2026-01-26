@@ -6,12 +6,13 @@ docker container stop my-notes-postgres
 # Remove existing container
 docker container rm my-notes-postgres
 
-# Run new PostgreSQL container
+# Run new PostgreSQL container with persistent volume
 docker run --name my-notes-postgres \
   -e POSTGRES_DB=my_notes_test \
   -e POSTGRES_USER=test_user \
   -e POSTGRES_PASSWORD=test_password \
   -p 5432:5432 \
+  -v my_notes_postgres_data:/var/lib/postgresql/data \
   -d postgres:15
 
 # Wait for PostgreSQL to be ready
