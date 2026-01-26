@@ -4647,3 +4647,299 @@ body {
 }
 
 /* =========================================== */
+
+/* ===== BRUTALIST LOGIN FORM STYLES ===== */
+
+/* Login Form Container */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 2px solid var(--neutral-950);
+  min-height: 700px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Login Header */
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-12) var(--space-8) var(--space-8);
+  border-bottom: 2px solid var(--neutral-950);
+  text-align: center;
+}
+
+.login-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--neutral-950);
+  background: var(--white);
+  margin-bottom: var(--space-6);
+}
+
+.login-icon-wrapper svg {
+  color: var(--neutral-950);
+}
+
+.login-title {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: 2.5rem;
+  line-height: 1.1;
+  color: var(--neutral-950);
+  margin: 0 0 var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.login-divider {
+  width: 100%;
+  height: 2px;
+  background: var(--neutral-950);
+  margin: var(--space-4) 0;
+}
+
+.login-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  color: var(--neutral-500);
+  margin: var(--space-4) 0 0;
+  line-height: 1.5;
+}
+
+/* Login Content */
+.login-content {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-8);
+  gap: var(--space-8);
+}
+
+/* Feature Grid */
+.feature-grid {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--neutral-950);
+}
+
+.feature-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  background: var(--white);
+}
+
+.feature-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.feature-icon-wrapper svg {
+  color: var(--neutral-950);
+}
+
+.feature-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--neutral-950);
+}
+
+.feature-divider {
+  height: 2px;
+  background: var(--neutral-950);
+  margin: 0;
+}
+
+/* Google Login Button */
+.google-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4) var(--space-6);
+  background: var(--primary);
+  border: 2px solid var(--neutral-950);
+  border-radius: 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--white);
+  cursor: pointer;
+  transition: background-color 200ms ease-in-out;
+}
+
+.google-login-btn:hover {
+  background: var(--primary-dark);
+}
+
+.google-login-btn:active {
+  transform: translate(1px, 1px);
+}
+
+.google-icon {
+  flex-shrink: 0;
+}
+
+/* Login Footer */
+.login-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--neutral-200);
+}
+
+.security-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  color: var(--neutral-500);
+}
+
+.security-note svg {
+  color: var(--neutral-500);
+}
+
+/* Login Loading State */
+.login-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
+  min-height: 400px;
+  gap: var(--space-6);
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--neutral-200);
+  border-top: 3px solid var(--primary);
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--neutral-500);
+}
+
+/* Login Error Card */
+.login-error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-12) var(--space-8);
+  border: 2px solid var(--error);
+  background: #FEF2F2;
+  text-align: center;
+  min-height: 400px;
+  justify-content: center;
+  gap: var(--space-6);
+}
+
+.error-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--error);
+  background: var(--white);
+}
+
+.error-icon {
+  color: var(--error);
+}
+
+.error-heading {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--neutral-950);
+  margin: 0;
+}
+
+.error-message-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: var(--neutral-700);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.error-actions {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.error-retry-btn {
+  background: var(--primary);
+  color: var(--white);
+  border: 2px solid var(--neutral-950);
+  border-radius: 0;
+  padding: var(--space-3) var(--space-6);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 200ms ease-in-out;
+}
+
+.error-retry-btn:hover {
+  background: var(--primary-dark);
+}
+
+.error-dismiss-btn {
+  background: var(--neutral-200);
+  color: var(--neutral-700);
+  border: 2px solid var(--neutral-950);
+  border-radius: 0;
+  padding: var(--space-3) var(--space-6);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 200ms ease-in-out;
+}
+
+.error-dismiss-btn:hover {
+  background: var(--neutral-100);
+}
+
+/* Secondary button style reference (already exists but adding for error dismiss) */
+.btn-secondary {
+  background: var(--neutral-200);
+  color: var(--neutral-700);
+  border: 2px solid var(--neutral-950);
+  border-radius: 0;
+  padding: var(--space-3) var(--space-6);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 200ms ease-in-out;
+}
+
+.btn-secondary:hover {
+  background: var(--neutral-100);
+}
+
+/* =========================================== */

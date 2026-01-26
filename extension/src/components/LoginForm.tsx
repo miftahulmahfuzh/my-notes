@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authService, AuthState } from '../auth';
+import { Lock, FileText, RefreshCw, Hash, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 interface LoginFormProps {
   onAuthSuccess: () => void;
@@ -32,24 +33,26 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onAuthSuccess }) => {
 
   if (authState.isLoading) {
     return (
-      <div className="loading-state">
-        <div className="spinner"></div>
-        <p>Signing in...</p>
+      <div className="login-loading-state">
+        <div className="loading-spinner"></div>
+        <p className="loading-text">Signing in...</p>
       </div>
     );
   }
 
   if (authState.error) {
     return (
-      <div className="error-message">
-        <div className="error-icon">⚠️</div>
-        <h3>Authentication Failed</h3>
-        <p>{authState.error}</p>
+      <div className="login-error-card">
+        <div className="error-icon-wrapper">
+          <AlertTriangle className="error-icon" size={32} />
+        </div>
+        <h3 className="error-heading">Authentication Failed</h3>
+        <p className="error-message-text">{authState.error}</p>
         <div className="error-actions">
-          <button onClick={handleLogin} className="login-btn">
+          <button onClick={handleLogin} className="btn-primary error-retry-btn">
             Try Again
           </button>
-          <button onClick={handleRetry} className="retry-btn">
+          <button onClick={handleRetry} className="btn-secondary error-dismiss-btn">
             Dismiss
           </button>
         </div>
@@ -60,24 +63,35 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onAuthSuccess }) => {
   return (
     <div className="login-form">
       <div className="login-header">
-        <div className="login-icon">🔐</div>
-        <h2>Welcome to Silence Notes</h2>
-        <p>Sign in with your Google account to sync notes across devices</p>
+        <div className="login-icon-wrapper">
+          <ShieldCheck size={48} strokeWidth={1.5} />
+        </div>
+        <h1 className="login-title">SILENCE NOTES</h1>
+        <div className="login-divider"></div>
+        <p className="login-subtitle">Sign in with your Google account to sync notes across devices</p>
       </div>
 
       <div className="login-content">
-        <div className="feature-list">
-          <div className="feature-item">
-            <span className="feature-icon">📝</span>
-            <span>Create and manage notes</span>
+        <div className="feature-grid">
+          <div className="feature-row">
+            <div className="feature-icon-wrapper">
+              <FileText size={24} strokeWidth={2} />
+            </div>
+            <span className="feature-text">Create and manage notes</span>
           </div>
-          <div className="feature-item">
-            <span className="feature-icon">🔄</span>
-            <span>Sync across all your devices</span>
+          <div className="feature-divider"></div>
+          <div className="feature-row">
+            <div className="feature-icon-wrapper">
+              <RefreshCw size={24} strokeWidth={2} />
+            </div>
+            <span className="feature-text">Sync across all your devices</span>
           </div>
-          <div className="feature-item">
-            <span className="feature-icon">#</span>
-            <span>Organize with hashtags</span>
+          <div className="feature-divider"></div>
+          <div className="feature-row">
+            <div className="feature-icon-wrapper">
+              <Hash size={24} strokeWidth={2} />
+            </div>
+            <span className="feature-text">Organize with hashtags</span>
           </div>
         </div>
 
@@ -107,10 +121,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onAuthSuccess }) => {
         </button>
 
         <div className="login-footer">
-          <p className="security-note">
-            <span className="lock-icon">🔒</span>
-            Your data is secure and encrypted
-          </p>
+          <div className="security-note">
+            <Lock size={16} strokeWidth={2} />
+            <span>Your data is secure and encrypted</span>
+          </div>
         </div>
       </div>
     </div>
