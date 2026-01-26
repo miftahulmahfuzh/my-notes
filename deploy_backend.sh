@@ -31,4 +31,7 @@ export DB_PORT=5432
 export DB_SSLMODE=disable
 
 # Start backend server
-./backend/server
+echo "Starting backend server on :8080..."
+./backend/server &
+SERVER_PID=$!
+echo "Backend server started in background. PID: $SERVER_PID"
