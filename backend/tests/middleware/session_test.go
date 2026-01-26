@@ -48,6 +48,14 @@ func (suite *SessionMiddlewareTestSuite) SetupSuite() {
 	suite.userService = services.NewUserService(db)
 	suite.testUserID = "3631d096-4834-4a5f-a173-ae871efb408e"
 	suite.cleanupSessions = make([]string, 0)
+
+	// Create test user (required for session foreign key constraint)
+	_, err = suite.db.Exec(`
+		INSERT INTO users (id, google_id, email, created_at, updated_at)
+		VALUES ($1, $2, $3, NOW(), NOW())
+		ON CONFLICT (id) DO NOTHING
+	`, suite.testUserID, "test-google-id-session-test", "session-test@example.com")
+	require.NoError(suite.T(), err, "Failed to create test user")
 }
 
 // SetupTest runs before each test
@@ -77,6 +85,11 @@ func (suite *SessionMiddlewareTestSuite) TearDownTest() {
 // TearDownSuite runs once after all tests
 func (suite *SessionMiddlewareTestSuite) TearDownSuite() {
 	if suite.db != nil {
+		// Clean up test user
+		_, err := suite.db.Exec("DELETE FROM users WHERE id = $1", suite.testUserID)
+		if err != nil {
+			suite.T().Logf("Warning: Failed to cleanup test user: %v", err)
+		}
 		suite.db.Close()
 	}
 }
