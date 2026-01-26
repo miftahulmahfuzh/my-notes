@@ -160,7 +160,6 @@ func (h *ChromeAuthHandler) validateChromeToken(token string) (*auth.GoogleUserI
 
 	var tokenInfo struct {
 		Email         string `json:"email"`
-		Name          string `json:"name"`
 		Picture       string `json:"picture"`
 		EmailVerified string `json:"email_verified"`
 		Scope         string `json:"scope"`
@@ -193,7 +192,6 @@ func (h *ChromeAuthHandler) validateChromeToken(token string) (*auth.GoogleUserI
 		ID:            tokenInfo.UserID,
 		Email:         tokenInfo.Email,
 		VerifiedEmail: tokenInfo.EmailVerified == "true" || tokenInfo.EmailVerified == "",
-		Name:          tokenInfo.Name,
 		GivenName:     tokenInfo.GivenName,
 		FamilyName:    tokenInfo.FamilyName,
 		Picture:       tokenInfo.Picture,
@@ -203,9 +201,6 @@ func (h *ChromeAuthHandler) validateChromeToken(token string) (*auth.GoogleUserI
 	// For Chrome Identity API, be more lenient with validation
 	if googleUserInfo.ID == "" {
 		googleUserInfo.ID = "chrome-user-" + tokenInfo.Email // Generate a fallback ID
-	}
-	if googleUserInfo.Name == "" {
-		googleUserInfo.Name = tokenInfo.Email // Use email as fallback name
 	}
 
 	// Validate the Google user info (relaxed validation for Chrome)

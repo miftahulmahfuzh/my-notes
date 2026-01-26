@@ -9,7 +9,6 @@ type GoogleUserInfo struct {
 	ID            string `json:"id"`
 	Email         string `json:"email"`
 	VerifiedEmail bool   `json:"verified_email"`
-	Name          string `json:"name"`
 	GivenName     string `json:"given_name"`
 	FamilyName    string `json:"family_name"`
 	Picture       string `json:"picture"`
@@ -23,9 +22,6 @@ func (g *GoogleUserInfo) Validate() error {
 	}
 	if g.Email == "" {
 		return errors.New("google user email is required")
-	}
-	if g.Name == "" {
-		return errors.New("google user name is required")
 	}
 	return nil
 }
