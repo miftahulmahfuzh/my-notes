@@ -133,8 +133,8 @@ func TestTokenRefreshWithValidToken(t *testing.T) {
 		"test-secret-key-that-is-long-enough-for-hs256",
 		15*time.Minute,
 		24*time.Hour,
-		"notes-app",
-		"notes-users",
+		"silence-notes",
+		"silence-notes-users",
 	)
 
 	user := createTestUser()
@@ -194,8 +194,8 @@ func TestTokenRefreshFlow(t *testing.T) {
 		"test-secret-key-that-is-long-enough-for-hs256",
 		1*time.Minute, // Short expiry for testing
 		24*time.Hour,
-		"notes-app",
-		"notes-users",
+		"silence-notes",
+		"silence-notes-users",
 	)
 
 	user := createTestUser()
@@ -263,8 +263,8 @@ func TestTokenRefreshWithExpiredToken(t *testing.T) {
 		"test-secret-key-that-is-long-enough-for-hs256",
 		1*time.Millisecond, // Very short expiry
 		24*time.Hour,
-		"notes-app",
-		"notes-users",
+		"silence-notes",
+		"silence-notes-users",
 	)
 
 	// Create handler with the short-lived token service
@@ -398,8 +398,8 @@ func TestTokenRefreshResponseStructure(t *testing.T) {
 		"test-secret-key-that-is-long-enough-for-hs256",
 		15*time.Minute,
 		24*time.Hour,
-		"notes-app",
-		"notes-users",
+		"silence-notes",
+		"silence-notes-users",
 	)
 
 	// Generate a valid token pair
