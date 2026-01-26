@@ -43,7 +43,6 @@ func (h *UserHandler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var req struct {
-		Name      *string `json:"name,omitempty"`
 		AvatarURL *string `json:"avatar_url,omitempty"`
 	}
 
@@ -53,9 +52,6 @@ func (h *UserHandler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Update user fields if provided
-	if req.Name != nil {
-		user.Name = *req.Name
-	}
 	if req.AvatarURL != nil {
 		user.AvatarURL = req.AvatarURL
 	}

@@ -307,7 +307,6 @@ func (sm *SecurityMiddleware) EnhancedAuth(next http.Handler) http.Handler {
 				user = &models.User{
 					ID:          userID,
 					Email:       "test@example.com",
-					Name:        "Test User",
 					Preferences: preferences,
 				}
 			} else {
