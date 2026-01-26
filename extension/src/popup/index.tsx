@@ -9,6 +9,7 @@ import { SimpleUserProfile } from '../components/SimpleUserProfile';
 import NoteView from '../components/NoteView';
 import NoteEditor from '../components/NoteEditor';
 import TemplatePage from '../components/TemplatePage';
+import { FileText, BookOpen, LogOut } from 'lucide-react';
 
 // Styles
 import './popup.css';
@@ -255,6 +256,27 @@ const PopupApp: React.FC = () => {
       return email.slice(0, 2).toUpperCase();
     }
     return 'ME';
+  };
+
+  const formatMemberSinceDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+
+    // Add ordinal suffix to day
+    const getOrdinalSuffix = (n: number) => {
+      if (n > 3 && n < 21) return 'th';
+      switch (n % 10) {
+        case 1: return 'st';
+        case 2: return 'nd';
+        case 3: return 'rd';
+        default: return 'th';
+      }
+    };
+
+    return `${month} ${day}${getOrdinalSuffix(day)} ${year}`;
   };
 
   // ===== NAVIGATION FUNCTIONS FOR NOTE DETAIL AND EDIT VIEWS =====
@@ -722,14 +744,16 @@ const PopupApp: React.FC = () => {
           <div className="section">
             <div className="user-profile">
               <div className="user-avatar">
-                {getUserInitials(state.authState.user?.name || '', state.authState.user?.email || '')}
+                {getUserInitials(state.authState.user?.email || '', state.authState.user?.email || '')}
               </div>
               <div className="user-info">
-                <div className="user-name">{state.authState.user?.name}</div>
                 <div className="user-email">{state.authState.user?.email}</div>
+                <div className="user-name">
+                  {state.authState.user?.created_at && `Noting quietly since ${formatMemberSinceDate(state.authState.user.created_at)}`}
+                </div>
               </div>
-              <button className="btn-tertiary" onClick={handleLogout}>
-                Logout
+              <button className="btn-logout-icon" onClick={handleLogout} aria-label="Logout">
+                <LogOut size={18} strokeWidth={2} />
               </button>
             </div>
           </div>
@@ -826,7 +850,9 @@ const PopupApp: React.FC = () => {
 
           {filteredNotes.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">📝</div>
+              <div className="empty-icon">
+                <FileText size={48} strokeWidth={1.5} />
+              </div>
               <h3 className="empty-title">{state.searchQuery ? 'No notes match your search' : 'No notes yet'}</h3>
               <p className="empty-text">{state.searchQuery ? 'Try a different search term' : 'Create your first note to get started!'}</p>
               {!state.searchQuery && (
@@ -986,37 +1012,39 @@ const PopupApp: React.FC = () => {
           <div className="header-content">
             <div className="user-profile">
               <div className="user-avatar">
-                {getUserInitials(state.authState.user?.name || '', state.authState.user?.email || '')}
+                {getUserInitials(state.authState.user?.email || '', state.authState.user?.email || '')}
               </div>
               <div className="user-info">
-                <div className="user-name">{state.authState.user?.name}</div>
                 <div className="user-email">{state.authState.user?.email}</div>
+                <div className="user-name">
+                  {state.authState.user?.created_at && `Noting quietly since ${formatMemberSinceDate(state.authState.user.created_at)}`}
+                </div>
               </div>
             </div>
-            <button className="btn-tertiary" onClick={handleLogout}>
-              Logout
+            <button className="btn-logout-icon" onClick={handleLogout} aria-label="Logout">
+              <LogOut size={18} strokeWidth={2} />
             </button>
           </div>
         </div>
 
         <div className="welcome-section">
           <h1 className="welcome-title font-display">Silence Notes</h1>
-          <p className="welcome-subtitle">Welcome, {state.authState.user?.name?.split(' ')[0] || 'User'}!</p>
+          <p className="welcome-subtitle">Welcome!</p>
           <p className="text-sm">Your brutalist note-taking companion</p>
         </div>
 
         <div className="action-grid">
           <div className="action-card" onClick={handleCreateNoteClick}>
-            <div className="action-icon">📝</div>
+            <div className="action-icon">
+              <FileText size={28} strokeWidth={2} />
+            </div>
             <div className="action-title">Create Note</div>
           </div>
           <div className="action-card" onClick={handleViewAllNotesClick}>
-            <div className="action-icon">📚</div>
+            <div className="action-icon">
+              <BookOpen size={28} strokeWidth={2} />
+            </div>
             <div className="action-title">View All Notes</div>
-          </div>
-          <div className="action-card" onClick={handleSearchNotesClick}>
-            <div className="action-icon">🔍</div>
-            <div className="action-title">Search Notes</div>
           </div>
         </div>
       </div>

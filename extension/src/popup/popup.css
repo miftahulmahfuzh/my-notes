@@ -277,6 +277,27 @@ body {
   transform: translateX(4px);
 }
 
+/* Logout Icon Button */
+.btn-logout-icon {
+  background-color: transparent;
+  color: var(--neutral-500);
+  padding: var(--space-2);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-colors);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-logout-icon:hover {
+  color: var(--primary);
+}
+
+.btn-logout-icon svg {
+  color: inherit;
+}
+
 /* ===== INPUTS ===== */
 .input-group {
   margin-bottom: var(--space-3);
@@ -464,22 +485,23 @@ body {
 
 .user-name {
   font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--neutral-950);
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--neutral-500);
   margin-bottom: 2px;
 }
 
 .user-email {
   font-family: 'Inter', sans-serif;
-  font-size: 0.75rem;
-  color: var(--neutral-500);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--neutral-950);
 }
 
 /* Action Buttons Grid */
 .action-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
   padding: 0 var(--space-8);
 }
@@ -504,13 +526,21 @@ body {
   transform: translateY(-2px);
 }
 
+.action-card:hover .action-icon svg {
+  color: var(--white);
+}
+
 .action-icon {
   width: 48px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  color: var(--neutral-950);
+}
+
+.action-icon svg {
+  color: inherit;
 }
 
 .action-title {
@@ -672,9 +702,18 @@ body {
 }
 
 .empty-icon {
-  font-size: 3rem;
-  margin-bottom: var(--space-4);
-  opacity: 0.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--space-4);
+  color: var(--neutral-300);
+}
+
+.empty-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .empty-title {
