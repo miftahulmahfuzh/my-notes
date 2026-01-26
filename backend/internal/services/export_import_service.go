@@ -17,7 +17,7 @@ import (
 	"github.com/gpd/my-notes/internal/models"
 )
 
-// ExportImportService handles export and import operations for notes and templates
+// ExportImportService handles export and import operations for notes
 type ExportImportService struct {
 	db *sql.DB
 }
@@ -39,21 +39,19 @@ const (
 
 // ExportData represents the structure for exported data
 type ExportData struct {
-	ExportInfo ExportInfo        `json:"export_info"`
-	Notes      []models.Note     `json:"notes"`
-	Tags       []models.Tag      `json:"tags,omitempty"`
-	Templates  []models.Template `json:"templates,omitempty"`
+	ExportInfo ExportInfo    `json:"export_info"`
+	Notes      []models.Note `json:"notes"`
+	Tags       []models.Tag  `json:"tags,omitempty"`
 }
 
 // ExportInfo contains metadata about the export
 type ExportInfo struct {
-	Version       string    `json:"version"`
-	ExportedAt    time.Time `json:"exported_at"`
-	ExportedBy    string    `json:"exported_by"`
-	Format        string    `json:"format"`
-	TotalNotes    int       `json:"total_notes"`
-	TotalTags     int       `json:"total_tags"`
-	TotalTemplates int      `json:"total_templates"`
+	Version    string    `json:"version"`
+	ExportedAt time.Time `json:"exported_at"`
+	ExportedBy string    `json:"exported_by"`
+	Format     string    `json:"format"`
+	TotalNotes int       `json:"total_notes"`
+	TotalTags  int       `json:"total_tags"`
 }
 
 // ImportResult represents the result of an import operation
@@ -67,23 +65,23 @@ type ImportResult struct {
 }
 
 // ExportUserData exports user data in the specified format
-func (s *ExportImportService) ExportUserData(ctx context.Context, userID string, format ExportFormat, includeTemplates bool) ([]byte, error) {
+func (s *ExportImportService) ExportUserData(ctx context.Context, userID string, format ExportFormat) ([]byte, error) {
 	switch format {
 	case FormatJSON:
-		return s.exportAsJSON(ctx, userID, includeTemplates)
+		return s.exportAsJSON(ctx, userID)
 	case FormatMarkdown:
-		return s.exportAsMarkdown(ctx, userID, includeTemplates)
+		return s.exportAsMarkdown(ctx, userID)
 	case FormatHTML:
-		return s.exportAsHTML(ctx, userID, includeTemplates)
+		return s.exportAsHTML(ctx, userID)
 	case FormatZIP:
-		return s.exportAsZIP(ctx, userID, includeTemplates)
+		return s.exportAsZIP(ctx, userID)
 	default:
 		return nil, fmt.Errorf("unsupported export format: %s", format)
 	}
 }
 
 // exportAsJSON exports data as JSON format
-func (s *ExportImportService) exportAsJSON(ctx context.Context, userID string, includeTemplates bool) ([]byte, error) {
+func (s *ExportImportService) exportAsJSON(ctx context.Context, userID string) ([]byte, error) {
 	// Get user's notes
 	notes, err := s.getUserNotes(ctx, userID)
 	if err != nil {
@@ -97,16 +95,6 @@ func (s *ExportImportService) exportAsJSON(ctx context.Context, userID string, i
 		tags = []models.Tag{}
 	}
 
-	// Get user's templates if requested
-	var templates []models.Template
-	if includeTemplates {
-		templates, err = s.getUserTemplates(ctx, userID)
-		if err != nil {
-			log.Printf("Warning: failed to get templates: %v", err)
-			templates = []models.Template{}
-		}
-	}
-
 	// Get user info for export metadata
 	userEmail, err := s.getUserEmail(ctx, userID)
 	if err != nil {
@@ -117,17 +105,15 @@ func (s *ExportImportService) exportAsJSON(ctx context.Context, userID string, i
 	// Create export data
 	exportData := ExportData{
 		ExportInfo: ExportInfo{
-			Version:        "1.0",
-			ExportedAt:     time.Now(),
-			ExportedBy:     userEmail,
-			Format:         string(FormatJSON),
-			TotalNotes:     len(notes),
-			TotalTags:      len(tags),
-			TotalTemplates: len(templates),
+			Version:    "1.0",
+			ExportedAt: time.Now(),
+			ExportedBy: userEmail,
+			Format:     string(FormatJSON),
+			TotalNotes: len(notes),
+			TotalTags:  len(tags),
 		},
-		Notes:     notes,
-		Tags:      tags,
-		Templates: templates,
+		Notes: notes,
+		Tags:  tags,
 	}
 
 	// Convert to JSON
@@ -140,7 +126,7 @@ func (s *ExportImportService) exportAsJSON(ctx context.Context, userID string, i
 }
 
 // exportAsMarkdown exports notes as individual markdown files (zipped)
-func (s *ExportImportService) exportAsMarkdown(ctx context.Context, userID string, includeTemplates bool) ([]byte, error) {
+func (s *ExportImportService) exportAsMarkdown(ctx context.Context, userID string) ([]byte, error) {
 	notes, err := s.getUserNotes(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get notes: %w", err)
@@ -183,34 +169,6 @@ func (s *ExportImportService) exportAsMarkdown(ctx context.Context, userID strin
 		}
 	}
 
-	// Add templates if requested
-	if includeTemplates {
-		templates, err := s.getUserTemplates(ctx, userID)
-		if err == nil {
-			for _, template := range templates {
-				filename := "templates/" + s.sanitizeFilename(template.Name) + ".md"
-				if filename == "templates/.md" {
-					filename = fmt.Sprintf("templates/template_%s.md", template.ID)
-				}
-
-				fileWriter, err := zipWriter.Create(filename)
-				if err != nil {
-					continue
-				}
-
-				content := fmt.Sprintf("# %s\n\n", template.Name)
-				content += template.Description
-				content += fmt.Sprintf("\n\n---\nCategory: %s\nVariables: %v",
-					template.Category, template.Variables)
-
-				_, err = fileWriter.Write([]byte(content))
-				if err != nil {
-					continue
-				}
-			}
-		}
-	}
-
 	// Close zip writer
 	err = zipWriter.Close()
 	if err != nil {
@@ -221,7 +179,7 @@ func (s *ExportImportService) exportAsMarkdown(ctx context.Context, userID strin
 }
 
 // exportAsHTML exports notes as HTML file
-func (s *ExportImportService) exportAsHTML(ctx context.Context, userID string, includeTemplates bool) ([]byte, error) {
+func (s *ExportImportService) exportAsHTML(ctx context.Context, userID string) ([]byte, error) {
 	notes, err := s.getUserNotes(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get notes: %w", err)
@@ -278,26 +236,26 @@ func (s *ExportImportService) exportAsHTML(ctx context.Context, userID string, i
 }
 
 // exportAsZIP exports data as a comprehensive ZIP archive
-func (s *ExportImportService) exportAsZIP(ctx context.Context, userID string, includeTemplates bool) ([]byte, error) {
+func (s *ExportImportService) exportAsZIP(ctx context.Context, userID string) ([]byte, error) {
 	var buf bytes.Buffer
 	zipWriter := zip.NewWriter(&buf)
 
 	// Add JSON export
-	jsonData, err := s.exportAsJSON(ctx, userID, includeTemplates)
+	jsonData, err := s.exportAsJSON(ctx, userID)
 	if err == nil {
 		fileWriter, _ := zipWriter.Create("export.json")
 		fileWriter.Write(jsonData)
 	}
 
 	// Add HTML export
-	htmlData, err := s.exportAsHTML(ctx, userID, includeTemplates)
+	htmlData, err := s.exportAsHTML(ctx, userID)
 	if err == nil {
 		fileWriter, _ := zipWriter.Create("notes.html")
 		fileWriter.Write(htmlData)
 	}
 
 	// Add individual markdown files
-	mdData, err := s.exportAsMarkdown(ctx, userID, includeTemplates)
+	mdData, err := s.exportAsMarkdown(ctx, userID)
 	if err == nil {
 		fileWriter, _ := zipWriter.Create("markdown.zip")
 		fileWriter.Write(mdData)
@@ -391,13 +349,6 @@ func (s *ExportImportService) importFromJSON(ctx context.Context, userID string,
 		result.Errors = append(result.Errors, noteErrors...)
 	}
 
-	// Import templates if available
-	if len(exportData.Templates) > 0 {
-		_, skippedTemplates, templateErrors := s.importTemplates(ctx, userID, exportData.Templates)
-		result.SkippedItems = append(result.SkippedItems, skippedTemplates...)
-		result.Errors = append(result.Errors, templateErrors...)
-	}
-
 	if len(result.Errors) > 0 {
 		result.Message = fmt.Sprintf("Import completed with %d warnings", len(result.Errors))
 	}
@@ -488,40 +439,6 @@ func (s *ExportImportService) getUserTags(ctx context.Context, userID string) ([
 	}
 
 	return tags, nil
-}
-
-func (s *ExportImportService) getUserTemplates(ctx context.Context, userID string) ([]models.Template, error) {
-	query := `SELECT id, user_id, name, description, content, category, variables,
-			  is_public, icon, tags, usage_count, created_at, updated_at
-			  FROM templates WHERE user_id = $1 ORDER BY name`
-
-	rows, err := s.db.QueryContext(ctx, query, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var templates []models.Template
-	for rows.Next() {
-		var template models.Template
-		var tagsJSON sql.NullString
-		err := rows.Scan(&template.ID, &template.UserID, &template.Name,
-			&template.Description, &template.Content, &template.Category,
-			&template.Variables, &template.IsPublic, &template.Icon,
-			&tagsJSON, &template.UsageCount, &template.CreatedAt, &template.UpdatedAt)
-		if err != nil {
-			continue
-		}
-
-		// Parse tags JSON
-		if tagsJSON.Valid {
-			json.Unmarshal([]byte(tagsJSON.String), &template.Tags)
-		}
-
-		templates = append(templates, template)
-	}
-
-	return templates, nil
 }
 
 func (s *ExportImportService) getUserEmail(ctx context.Context, userID string) (string, error) {
@@ -622,51 +539,6 @@ func (s *ExportImportService) importNotes(ctx context.Context, userID string, no
 				title = *note.Title
 			}
 			errors = append(errors, fmt.Sprintf("Failed to import note '%s': %v", title, err))
-			continue
-		}
-
-		imported++
-	}
-
-	return imported, skippedItems, errors
-}
-
-func (s *ExportImportService) importTemplates(ctx context.Context, userID string, templates []models.Template) (int, []string, []string) {
-	var imported, skipped int
-	var skippedItems, errors []string
-
-	for _, template := range templates {
-		// Skip built-in templates
-		if template.IsBuiltIn {
-			skipped++
-			skippedItems = append(skippedItems, fmt.Sprintf("Built-in template '%s' skipped", template.Name))
-			continue
-		}
-
-		// Check if template already exists
-		var exists bool
-		checkQuery := `SELECT EXISTS(SELECT 1 FROM templates WHERE name = $1 AND user_id = $2)`
-		s.db.QueryRowContext(ctx, checkQuery, template.Name, userID).Scan(&exists)
-
-		if exists {
-			skipped++
-			skippedItems = append(skippedItems, fmt.Sprintf("Template '%s' already exists", template.Name))
-			continue
-		}
-
-		// Serialize tags to JSON
-		tagsJSON, _ := json.Marshal(template.Tags)
-
-		// Insert new template
-		insertQuery := `INSERT INTO templates (id, user_id, name, description, content, category,
-						variables, is_public, icon, tags, usage_count, created_at, updated_at)
-						VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
-		_, err := s.db.ExecContext(ctx, insertQuery,
-			template.ID, userID, template.Name, template.Description, template.Content,
-			template.Category, template.Variables, template.IsPublic, template.Icon,
-			tagsJSON, template.UsageCount, template.CreatedAt, template.UpdatedAt)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("Failed to import template '%s': %v", template.Name, err))
 			continue
 		}
 

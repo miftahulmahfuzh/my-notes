@@ -39,8 +39,6 @@ func (h *ExportImportHandler) ExportData(w http.ResponseWriter, r *http.Request)
 		format = services.FormatJSON
 	}
 
-	includeTemplates := r.URL.Query().Get("include_templates") == "true"
-
 	// Validate format
 	validFormats := map[services.ExportFormat]bool{
 		services.FormatJSON:    true,
@@ -59,7 +57,7 @@ func (h *ExportImportHandler) ExportData(w http.ResponseWriter, r *http.Request)
 	defer cancel()
 
 	// Export data
-	data, err := h.service.ExportUserData(ctx, userID, format, includeTemplates)
+	data, err := h.service.ExportUserData(ctx, userID, format)
 	if err != nil {
 		log.Printf("Export failed for user %s: %v", userID, err)
 		http.Error(w, fmt.Sprintf("Export failed: %s", err.Error()), http.StatusInternalServerError)
@@ -152,36 +150,32 @@ func (h *ExportImportHandler) ImportData(w http.ResponseWriter, r *http.Request)
 func (h *ExportImportHandler) GetExportFormats(w http.ResponseWriter, r *http.Request) {
 	formats := []map[string]interface{}{
 		{
-			"format":          "json",
-			"name":            "JSON",
-			"description":     "Complete data export in JSON format",
-			"content_type":    "application/json",
-			"file_extension":  ".json",
-			"supports_templates": true,
+			"format":         "json",
+			"name":           "JSON",
+			"description":    "Complete data export in JSON format",
+			"content_type":   "application/json",
+			"file_extension": ".json",
 		},
 		{
-			"format":          "markdown",
-			"name":            "Markdown",
-			"description":     "Individual markdown files for each note (zipped)",
-			"content_type":    "application/zip",
-			"file_extension":  ".zip",
-			"supports_templates": true,
+			"format":         "markdown",
+			"name":           "Markdown",
+			"description":    "Individual markdown files for each note (zipped)",
+			"content_type":   "application/zip",
+			"file_extension": ".zip",
 		},
 		{
-			"format":          "html",
-			"name":            "HTML",
-			"description":     "Notes formatted as HTML for viewing in browser",
-			"content_type":    "text/html",
-			"file_extension":  ".html",
-			"supports_templates": false,
+			"format":         "html",
+			"name":           "HTML",
+			"description":    "Notes formatted as HTML for viewing in browser",
+			"content_type":   "text/html",
+			"file_extension": ".html",
 		},
 		{
-			"format":          "zip",
-			"name":            "ZIP Archive",
-			"description":     "Complete export in multiple formats (JSON, HTML, Markdown)",
-			"content_type":    "application/zip",
-			"file_extension":  ".zip",
-			"supports_templates": true,
+			"format":         "zip",
+			"name":           "ZIP Archive",
+			"description":    "Complete export in multiple formats (JSON, HTML, Markdown)",
+			"content_type":   "application/zip",
+			"file_extension": ".zip",
 		},
 	}
 
@@ -201,14 +195,12 @@ func (h *ExportImportHandler) GetImportInfo(w http.ResponseWriter, r *http.Reque
 		"max_file_size":    "10MB",
 		"requirements": []string{
 			"Files must be exported from Silence Notes version 1.0 or later",
-			"JSON files must contain export_info, notes, and optionally tags and templates",
+			"JSON files must contain export_info, notes, and optionally tags",
 			"ZIP files should contain a valid JSON export file",
 		},
 		"import_process": []string{
 			"Existing notes with the same ID will be skipped",
 			"New notes and tags will be created",
-			"Built-in templates are not imported",
-			"User templates with the same name will be skipped",
 		},
 		"security_notes": []string{
 			"All imported data will be associated with your account",
