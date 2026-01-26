@@ -1336,15 +1336,12 @@ describe('saveShortcutConfig', () => {
     );
 
     localStorageSetSpy.mockRestore();
-
-    // Restore chrome
-    global.chrome = require('../../tests/setup').mockChrome;
   });
 
   it('should handle errors gracefully', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-    chrome.storage.local.set.mockRejectedValue(new Error('Storage error'));
+    (chrome.storage.local.set as jest.Mock).mockRejectedValue(new Error('Storage error'));
 
     const config: ShortcutConfig = {
       enabled: true,
@@ -1406,7 +1403,7 @@ describe('loadShortcutConfig', () => {
       userShortcuts: {},
     };
 
-    chrome.storage.local.get.mockResolvedValue({ shortcutConfig: config });
+    (chrome.storage.local.get as jest.Mock).mockResolvedValue({ shortcutConfig: config });
 
     const result = await loadShortcutConfig();
 
@@ -1415,7 +1412,7 @@ describe('loadShortcutConfig', () => {
   });
 
   it('should return null when config is not found in chrome.storage', async () => {
-    chrome.storage.local.get.mockResolvedValue({});
+    (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
 
     const result = await loadShortcutConfig();
 
@@ -1466,7 +1463,7 @@ describe('loadShortcutConfig', () => {
   it('should handle errors gracefully', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-    chrome.storage.local.get.mockRejectedValue(new Error('Storage error'));
+    (chrome.storage.local.get as jest.Mock).mockRejectedValue(new Error('Storage error'));
 
     const result = await loadShortcutConfig();
 
@@ -1510,7 +1507,7 @@ describe('loadShortcutConfig', () => {
       },
     };
 
-    chrome.storage.local.get.mockResolvedValue({ shortcutConfig: config });
+    (chrome.storage.local.get as jest.Mock).mockResolvedValue({ shortcutConfig: config });
 
     const result = await loadShortcutConfig();
 
@@ -2237,7 +2234,7 @@ describe('resetShortcuts', () => {
   it('should handle storage errors gracefully', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-    chrome.storage.local.set.mockRejectedValue(new Error('Storage error'));
+    (chrome.storage.local.set as jest.Mock).mockRejectedValue(new Error('Storage error'));
 
     await expect(resetShortcuts()).resolves.not.toThrow();
 
