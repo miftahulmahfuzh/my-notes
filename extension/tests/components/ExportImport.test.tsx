@@ -196,18 +196,6 @@ describe('ExportImport Component', () => {
     });
 
     it('should export to JSON format', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          formats: [
-            { id: 'json', name: 'JSON', description: 'Complete data export' },
-            { id: 'markdown', name: 'Markdown', description: 'Individual files' },
-            { id: 'html', name: 'HTML', description: 'Web-friendly format' },
-            { id: 'zip', name: 'ZIP Archive', description: 'Multiple formats' },
-          ],
-        }),
-      });
-
       render(<ExportImport />);
 
       await waitFor(() => {
@@ -237,18 +225,6 @@ describe('ExportImport Component', () => {
     });
 
     it('should export to Markdown format', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          formats: [
-            { id: 'json', name: 'JSON', description: 'Complete data export' },
-            { id: 'markdown', name: 'Markdown', description: 'Individual files' },
-            { id: 'html', name: 'HTML', description: 'Web-friendly format' },
-            { id: 'zip', name: 'ZIP Archive', description: 'Multiple formats' },
-          ],
-        }),
-      });
-
       render(<ExportImport />);
 
       await waitFor(() => {
@@ -275,18 +251,6 @@ describe('ExportImport Component', () => {
     });
 
     it('should export to HTML format', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          formats: [
-            { id: 'json', name: 'JSON', description: 'Complete data export' },
-            { id: 'markdown', name: 'Markdown', description: 'Individual files' },
-            { id: 'html', name: 'HTML', description: 'Web-friendly format' },
-            { id: 'zip', name: 'ZIP Archive', description: 'Multiple formats' },
-          ],
-        }),
-      });
-
       render(<ExportImport />);
 
       await waitFor(() => {
@@ -313,18 +277,6 @@ describe('ExportImport Component', () => {
     });
 
     it('should export to ZIP format', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          formats: [
-            { id: 'json', name: 'JSON', description: 'Complete data export' },
-            { id: 'markdown', name: 'Markdown', description: 'Individual files' },
-            { id: 'html', name: 'HTML', description: 'Web-friendly format' },
-            { id: 'zip', name: 'ZIP Archive', description: 'Multiple formats' },
-          ],
-        }),
-      });
-
       render(<ExportImport />);
 
       await waitFor(() => {
