@@ -149,7 +149,7 @@ echo ""
 run_test_suite "Auth Flow Integration Tests" "./tests/integration/auth_flow_test.go" ""
 
 # Security Integration Tests
-run_test_suite "Security Integration Tests" "./tests/integration/security_test.go" ""
+run_test_suite "Security Integration Tests" "./tests/integration/security_test.go ./tests/integration/auth_flow_test.go" ""
 
 # Server Tests
 run_test_suite "Server Tests" "./tests/server_test.go" "skip"
