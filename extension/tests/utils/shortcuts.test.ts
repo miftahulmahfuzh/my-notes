@@ -1206,7 +1206,7 @@ describe('createCommandPaletteItems', () => {
         id: 'Test-Action-ID',
         name: 'ACTION NAME',
         description: 'Test Description',
-        category: 'NOTE',
+        category: 'note',
         defaultKey: 'a',
         enabled: true,
         global: false,

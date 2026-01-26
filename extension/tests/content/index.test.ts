@@ -638,7 +638,7 @@ describe('Content Script', () => {
 
       // The callback logs when executed
       if (callback) {
-        callback();
+        (callback as EventListener)();
         expect(consoleSpy).toHaveBeenCalledWith('Silence Notes: Content script DOM loaded');
       }
 

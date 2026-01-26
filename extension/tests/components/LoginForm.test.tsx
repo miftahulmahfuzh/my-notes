@@ -449,7 +449,12 @@ describe('LoginForm Component', () => {
 
     it('should transition from loading to error state on failure', async () => {
       const user = userEvent.setup();
-      let authState = {
+      let authState: {
+        isAuthenticated: boolean;
+        isLoading: boolean;
+        user: null;
+        error: string | null;
+      } = {
         isAuthenticated: false,
         isLoading: false,
         user: null,
