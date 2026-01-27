@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import hljs from 'highlight.js/lib/common';
 
 // Import markdown CSS styles
 import './markdown.css';
+import './code-highlight.css';
 
 interface TOCItem {
   level: number;
@@ -154,15 +154,13 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
                         </svg>
                       </button>
                     </div>
-                    <SyntaxHighlighter
-                      style={tomorrow as any}
-                      language={language}
-                      PreTag="div"
-                      className="code-block"
-                      {...props}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
+                    <pre className="code-block">
+                      <code
+                        dangerouslySetInnerHTML={{
+                          __html: hljs.highlight(language, String(children).replace(/\n$/, '')).value
+                        }}
+                      />
+                    </pre>
                   </div>
                 ) : (
                   <code className="inline-code" {...props}>

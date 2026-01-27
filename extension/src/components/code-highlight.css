@@ -1,0 +1,35 @@
+.code-block {
+  background-color: #2d2d2d;
+  color: #ccc;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.code-block .hljs-keyword {
+  color: #cc99cd;
+}
+
+.code-block .hljs-string {
+  color: #7ec699;
+}
+
+.code-block .hljs-comment {
+  color: #999;
+  font-style: italic;
+}
+
+.code-block .hljs-function {
+  color: #f08d49;
+}
+
+.code-block .hljs-number {
+  color: #f08d49;
+}
+
+.code-block .hljs-operator {
+  color: #67cdcc;
+}
