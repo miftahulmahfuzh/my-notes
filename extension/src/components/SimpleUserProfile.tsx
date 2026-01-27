@@ -23,8 +23,15 @@ export const SimpleUserProfile: React.FC<SimpleUserProfileProps> = ({ onLogout }
   }, []);
 
   const handleLogout = async () => {
-    await authService.logout();
-    onLogout();
+    try {
+      await authService.logout();
+    } catch (error) {
+      // Log error but still proceed with logout
+      console.error('Logout failed:', error);
+    } finally {
+      // Always call onLogout, even if authService.logout fails
+      onLogout();
+    }
   };
 
   const handleLogoutClick = () => {

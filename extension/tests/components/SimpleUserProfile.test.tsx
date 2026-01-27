@@ -118,7 +118,7 @@ describe('SimpleUserProfile', () => {
       render(<SimpleUserProfile onLogout={mockOnLogout} />);
 
       await waitFor(() => {
-        const logoutButton = screen.getByRole('button', { name: /sign out/i });
+        const logoutButton = screen.getByRole('button', { name: /logout/i });
         expect(logoutButton).toBeInTheDocument();
         expect(logoutButton).toHaveTextContent('Logout');
       });
@@ -150,7 +150,7 @@ describe('SimpleUserProfile', () => {
       });
 
       // Click logout button
-      const logoutButton = screen.getByRole('button', { name: /sign out/i });
+      const logoutButton = screen.getByRole('button', { name: /logout/i });
       await user.click(logoutButton);
 
       // Verify confirmation dialog appears
@@ -168,7 +168,7 @@ describe('SimpleUserProfile', () => {
       });
 
       // Click logout button
-      const logoutButton = screen.getByRole('button', { name: /sign out/i });
+      const logoutButton = screen.getByRole('button', { name: /logout/i });
       await user.click(logoutButton);
 
       // Verify both buttons are present
@@ -186,7 +186,7 @@ describe('SimpleUserProfile', () => {
       });
 
       // Click logout button
-      const logoutButton = screen.getByRole('button', { name: /sign out/i });
+      const logoutButton = screen.getByRole('button', { name: /logout/i });
       await user.click(logoutButton);
 
       // Verify dialog appears
@@ -210,7 +210,7 @@ describe('SimpleUserProfile', () => {
       });
 
       // Click logout button
-      const logoutButton = screen.getByRole('button', { name: /sign out/i });
+      const logoutButton = screen.getByRole('button', { name: /logout/i });
       await user.click(logoutButton);
 
       // Click cancel
@@ -233,7 +233,7 @@ describe('SimpleUserProfile', () => {
       });
 
       // Click logout button
-      const logoutButton = screen.getByRole('button', { name: /sign out/i });
+      const logoutButton = screen.getByRole('button', { name: /logout/i });
       await user.click(logoutButton);
 
       // Click confirm sign out
@@ -254,7 +254,7 @@ describe('SimpleUserProfile', () => {
       });
 
       // Click logout button
-      const logoutButton = screen.getByRole('button', { name: /sign out/i });
+      const logoutButton = screen.getByRole('button', { name: /logout/i });
       await user.click(logoutButton);
 
       // Click confirm sign out
@@ -281,7 +281,7 @@ describe('SimpleUserProfile', () => {
       });
 
       // Click logout button
-      const logoutButton = screen.getByRole('button', { name: /sign out/i });
+      const logoutButton = screen.getByRole('button', { name: /logout/i });
       await user.click(logoutButton);
 
       // Click confirm sign out
