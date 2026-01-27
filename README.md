@@ -2,85 +2,42 @@
 
 A brutalist Chrome extension for note-taking with hashtag filtering, Google authentication, and persistent backend storage.
 
-## 🚀 Project Overview
+## Overview
 
-**Silence Notes** is a modern note-taking application that brings simplicity and power together. Built with a brutalist design philosophy, it offers:
+**Silence Notes** is a modern note-taking application that combines simplicity with power. Built with a brutalist design philosophy, it offers:
 
 - **Chrome Extension** (Manifest V3) with React + TypeScript
 - **Go REST API** backend with PostgreSQL database
-- **Google OAuth 2.0** authentication
+- **Google OAuth 2.0** authentication via Chrome Identity API
 - **Hashtag-based organization** with powerful filtering
 - **Real-time sync** between extension and backend
-- **Test-Driven Development** with comprehensive test coverage
+- **Offline capability** with automatic conflict resolution
+- **Comprehensive keyboard shortcuts** for power users
 
-## 📋 Features
+## Features
 
 ### Core Functionality
-- ✅ Create, edit, and delete notes
-- ✅ Hashtag extraction and automatic organization
-- ✅ Search notes by content and hashtags
-- ✅ Google authentication with secure token management
-- ✅ Real-time synchronization
-- ✅ Offline capability with local storage
+- Create, edit, and delete notes with rich text support
+- Automatic hashtag extraction and organization
+- Full-text search with tag filtering
+- Google authentication via Chrome Identity API
+- Real-time synchronization with backend
+- Offline capability with local storage
 
 ### User Experience
-- 🎨 **Brutalist Design** - High contrast, bold typography, minimal UI
-- ⌨️ **Keyboard Shortcuts** - Quick access to common actions
-- 🔍 **Powerful Search** - Full-text search with hashtag filtering
-- 📱 **Responsive Design** - Works across different screen sizes
-- 🔄 **Auto-sync** - Seamless background synchronization
+- **Brutalist Design** - High contrast, bold typography, minimal UI
+- **32 Keyboard Shortcuts** - Quick access to all actions
+- **Markdown Support** - Full markdown rendering with syntax highlighting
+- **Virtual Scrolling** - Handle large note lists efficiently
+- **Auto-save** - Never lose your work
 
-## 🏗️ Architecture
-
-### Technology Stack
-- **Frontend**: React + TypeScript (Chrome Extension)
-- **Backend**: Go with standard library
-- **Database**: PostgreSQL with Redis for caching
-- **Authentication**: Google OAuth 2.0 with JWT tokens
-- **UI**: Tailwind CSS with brutalist design principles
-- **Testing**: Jest (frontend), Go testing (backend)
-
-### Project Structure
-```
-my-notes/
-├── backend/                    # Go API server
-│   ├── cmd/server/            # Main application entry point
-│   ├── internal/              # Private application code
-│   │   ├── config/           # Configuration management
-│   │   ├── database/         # Database connections and migrations
-│   │   ├── handlers/         # HTTP request handlers
-│   │   ├── middleware/       # HTTP middleware
-│   │   ├── models/           # Data models and validation
-│   │   └── server/           # HTTP server setup
-│   ├── migrations/           # Database migration files
-│   ├── tests/               # Test files
-│   └── go.mod               # Go module definition
-├── extension/                # Chrome Extension
-│   ├── src/                 # TypeScript source code
-│   │   ├── popup/          # Extension popup interface
-│   │   ├── background/     # Background service worker
-│   │   ├── content/        # Content scripts
-│   │   ├── options/        # Options page
-│   │   ├── components/     # Reusable React components
-│   │   ├── types/          # TypeScript type definitions
-│   │   └── utils/          # Utility functions
-│   ├── public/             # Static assets
-│   ├── tests/             # Test files
-│   └── package.json       # npm dependencies
-├── docs/                  # Documentation
-├── scripts/               # Development and deployment scripts
-├── docker-compose.dev.yml # Development Docker setup
-└── Makefile              # Development commands
-```
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - **Go** 1.21 or higher
 - **Node.js** 18 or higher
-- **PostgreSQL** 13 or higher
-- **Redis** (optional, for caching)
-- **Docker** (optional, for development)
+- **PostgreSQL** 13 or higher (or Docker)
+- **Chrome/Edge browser** (for extension)
 
 ### Development Setup
 
@@ -90,110 +47,410 @@ my-notes/
    cd my-notes
    ```
 
-2. **Run the setup script**
+2. **Install dependencies**
    ```bash
-   make setup
-   # or
-   ./scripts/setup-dev.sh
+   # Frontend dependencies
+   npm install --prefix extension
+
+   # Backend dependencies (go mod download happens automatically)
    ```
 
-3. **Configure environment variables**
+3. **Set up database**
    ```bash
-   cp backend/.env.example backend/.env
-   # Edit backend/.env with your configuration
+   # Using Docker (recommended for development)
+   docker run --name my-notes-postgres \
+     -e POSTGRES_DB=my_notes_test \
+     -e POSTGRES_USER=test_user \
+     -e POSTGRES_PASSWORD=test_password \
+     -p 5432:5432 \
+     -d postgres:15
    ```
 
-4. **Start development environment**
+4. **Configure environment**
    ```bash
-   # Start databases with Docker
-   make docker-up
-
-   # Start backend server
-   make dev-backend
-
-   # Build extension
-   make dev-extension
+   # Backend .env (optional, has defaults)
+   export DB_NAME=my_notes_test
+   export DB_USER=test_user
+   export DB_PASSWORD=test_password
+   export DB_HOST=localhost
+   export DB_PORT=5432
+   export DB_SSLMODE=disable
    ```
 
-5. **Load the extension in Chrome**
-   - Open Chrome and navigate to `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked" and select `extension/dist`
-   - The Silence Notes icon should appear in your toolbar
+5. **Build and run**
+   ```bash
+   # Build backend
+   ./backend_build.sh
 
-### Development Commands
+   # Build frontend
+   ./frontend_build.sh
+
+   # Or deploy backend with database
+   ./deploy_backend.sh
+   ```
+
+6. **Load extension in Chrome**
+   - Navigate to `chrome://extensions/`
+   - Enable **Developer mode** (top-right toggle)
+   - Click **Load unpacked**
+   - Select `extension/dist/` folder
+   - Silence Notes icon appears in toolbar
+
+### Development Workflow
 
 ```bash
-# Setup and dependencies
-make setup              # Run full setup
-make deps              # Install dependencies
+# Build commands
+./frontend_build.sh          # Build extension
+./backend_build.sh           # Build Go backend
 
-# Development
-make dev               # Start both backend and build extension
-make dev-backend       # Start backend with hot reload
-make dev-extension     # Build extension in watch mode
+# Test commands
+./test_frontend.sh           # Run frontend tests
+USE_POSTGRE_DURING_TEST=true ./test_backend.sh  # Run backend tests with PostgreSQL
 
-# Building
-make build             # Build both projects
-make build-backend     # Build backend binary
-make build-extension   # Build extension for production
-
-# Testing
-make test              # Run all tests
-make test-backend      # Run backend tests
-make test-extension    # Run extension tests
-make coverage          # Generate coverage reports
-
-# Quality
-make lint              # Run linting for both projects
-make format            # Format all code
-
-# Docker
-make docker-up         # Start development containers
-make docker-down       # Stop development containers
-make docker-logs       # Show container logs
-
-# Cleanup
-make clean             # Clean build artifacts
+# Deploy
+./deploy_backend.sh          # Start backend with Docker PostgreSQL
 ```
 
-## 🧪 Testing
+## Bash Scripts Reference
 
-### Backend Build
-```bash
-# Build the Go backend
-go build -C /mnt/c/Users/GPD/Downloads/my_github/my-notes/backend ./cmd/server
+All scripts are located in the project root directory.
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `frontend_build.sh` | Build Chrome extension | `./frontend_build.sh` |
+| `test_frontend.sh` | Run frontend tests with coverage | `./test_frontend.sh` |
+| `test_backend.sh` | Run backend tests | `./test_backend.sh` or `USE_POSTGRE_DURING_TEST=true ./test_backend.sh` |
+| `backend_build.sh` | Build Go backend binary | `./backend_build.sh` |
+| `deploy_backend.sh` | Deploy backend with Docker PostgreSQL | `./deploy_backend.sh` |
+
+### Script Details
+
+**frontend_build.sh**
+- Cleans `extension/dist/`
+- Runs `npm run build` in extension directory
+- Outputs to `extension/dist/` (load this in Chrome)
+
+**test_frontend.sh**
+- Installs dependencies if needed
+- Runs `npm run test:coverage`
+- Generates coverage report at `extension/coverage/index.html`
+
+**test_backend.sh**
+- Runs all backend test suites
+- Skips PostgreSQL tests unless `USE_POSTGRE_DURING_TEST=true`
+- Test suites: Notes, Auth, Services, JWT, Middleware, Integration, Migrations
+
+**backend_build.sh**
+- Compiles Go binary to `backend/server`
+- Ready to run with `./backend/server`
+
+**deploy_backend.sh**
+- Starts PostgreSQL in Docker
+- Kills existing process on port 8080
+- Sets environment variables
+- Starts backend server in background
+
+## Architecture
+
+### Technology Stack
+
+**Frontend:**
+- React 18 with TypeScript
+- Chrome Extension Manifest V3
+- Tailwind CSS (brutalist design system)
+- Chrome APIs (Identity, Storage, Runtime)
+
+**Backend:**
+- Go 1.21+ with standard library
+- PostgreSQL for data storage
+- JWT tokens for authentication
+- Gorilla Mux for routing
+
+### Project Structure
+
+```
+my-notes/
+├── extension/                 # Chrome Extension
+│   ├── src/
+│   │   ├── popup/            # Main popup UI
+│   │   ├── background/       # Service worker
+│   │   ├── content/          # Content scripts
+│   │   ├── options/          # Settings page
+│   │   ├── components/       # React components
+│   │   ├── types/            # TypeScript types
+│   │   ├── utils/            # Utilities
+│   │   ├── api.ts            # API service layer
+│   │   └── auth.ts           # Chrome Identity auth
+│   ├── dist/                 # Build output (load this)
+│   └── package.json
+│
+├── backend/                   # Go API Server
+│   ├── cmd/server/           # Entry point
+│   ├── internal/
+│   │   ├── handlers/         # HTTP handlers
+│   │   ├── services/         # Business logic
+│   │   ├── models/           # Data models
+│   │   ├── middleware/       # HTTP middleware
+│   │   ├── database/         # Database layer
+│   │   ├── config/           # Configuration
+│   │   └── auth/             # JWT/auth logic
+│   ├── migrations/           # Database migrations
+│   ├── tests/                # Test suites
+│   └── go.mod
+│
+├── frontend_build.sh         # Build extension
+├── backend_build.sh          # Build backend
+├── test_frontend.sh          # Test frontend
+├── test_backend.sh           # Test backend
+└── deploy_backend.sh         # Deploy backend
 ```
 
-### Backend Run
-```bash
-# Run the Go backend
-./backend/server
+### Frontend Codebase Structure
+
+```
+extension/src/
+├── api.ts                    # API service (all backend communication)
+├── auth.ts                   # Chrome Identity API integration
+├── manifest.json             # Extension manifest
+│
+├── popup/
+│   ├── index.tsx            # Main popup application
+│   ├── popup.css            # Brutalist design styles
+│   └── popup.html           # Popup template
+│
+├── components/
+│   ├── LoginForm.tsx        # Google OAuth login
+│   ├── NoteEditor.tsx       # Note editing interface
+│   ├── NoteView.tsx         # Note viewing interface
+│   ├── MarkdownPreview.tsx  # Markdown renderer
+│   ├── SimpleUserProfile.tsx # User profile display
+│   ├── Settings.tsx         # Settings modal
+│   └── *.css                # Component styles
+│
+├── types/
+│   ├── index.ts             # Core types (Note, User, etc.)
+│   ├── shortcuts.ts         # Keyboard shortcut types
+│   └── storage.ts           # Chrome storage types
+│
+├── utils/
+│   ├── config.ts            # Configuration constants
+│   ├── contentUtils.ts      # Hashtag/content utilities
+│   ├── markdown.ts          # Markdown processing
+│   └── shortcuts.ts         # Keyboard shortcut handlers
+│
+├── background/
+│   └── index.ts             # Background service worker
+│
+├── content/
+│   └── index.ts             # Content scripts
+│
+└── options/
+    ├── index.tsx            # Options page
+    ├── options.css
+    └── options.html
 ```
 
-### Backend Tests
-```bash
-# Run all backend tests (excludes PostgreSQL integration tests by default)
-go clean -testcache && go -C backend test ./tests/... -v
+### Backend Codebase Structure
 
-# Run PostgreSQL integration tests (requires PostgreSQL to be running)
-go clean -testcache && USE_POSTGRE_DURING_TEST=true go -C backend test ./tests/integration/... -v
-
-# Run specific integration test suites
-go clean -testcache && USE_POSTGRE_DURING_TEST=true go -C backend test ./tests/integration/auth_flow_test.go -v
-go clean -testcache && USE_POSTGRE_DURING_TEST=true go -C backend test ./tests/integration/security_test.go -v
+```
+backend/
+├── cmd/server/main.go       # Application entry point
+│
+├── internal/
+│   ├── handlers/
+│   │   ├── chrome_auth.go   # Chrome Identity API handler
+│   │   ├── auth.go          # Standard OAuth handlers
+│   │   ├── notes.go         # Note CRUD endpoints
+│   │   ├── health.go        # Health check
+│   │   └── handlers.go      # Handler registry
+│   │
+│   ├── services/
+│   │   ├── note_service.go  # Note business logic
+│   │   ├── tag_service.go   # Tag management
+│   │   └── user_service.go  # User management
+│   │
+│   ├── models/
+│   │   ├── note.go          # Note model with validation
+│   │   ├── tag.go           # Tag model
+│   │   └── user.go          # User model
+│   │
+│   ├── middleware/
+│   │   ├── auth.go          # JWT validation
+│   │   ├── session.go       # Session management
+│   │   ├── security.go      # Security headers
+│   │   ├── rate_limiting.go # Rate limiting
+│   │   └── middleware.go    # Core middleware
+│   │
+│   ├── database/
+│   │   ├── database.go      # Connection management
+│   │   └── migrate.go       # Migration runner
+│   │
+│   ├── auth/
+│   │   ├── jwt.go           # JWT generation/validation
+│   │   └── google_user.go   # Google auth helper
+│   │
+│   ├── config/
+│   │   ├── config.go        # Configuration
+│   │   └── security.go      # Security config
+│   │
+│   ├── security/
+│   │   └── monitor.go       # Security monitoring
+│   │
+│   └── server/
+│       └── server.go        # HTTP server setup
+│
+├── migrations/              # Database schema migrations
+│   ├── 001_create_users_table.*
+│   ├── 002_create_notes_table.*
+│   ├── 002_create_user_sessions.*
+│   ├── 003_create_tags_table.*
+│   └── 004_create_note_tags_table.*
+│
+├── tests/                   # Test suites
+│   ├── auth/                # Auth tests
+│   ├── handlers/            # Handler tests
+│   ├── integration/         # Integration tests
+│   ├── middleware/          # Middleware tests
+│   └── services/            # Service tests
+│
+└── docs/api/
+    └── openapi.yaml         # API specification
 ```
 
-### Frontend Tests
-```bash
-npm run test --prefix extension
-```
+## Frontend Features and API Endpoints
 
-## 📊 Database Schema
+### Authentication
 
-### Core Tables
+**Components:** `auth.ts`, `LoginForm.tsx`
 
-#### Users
+**Backend Endpoints:**
+- `POST /api/v1/auth/chrome` - Exchange Chrome Identity token for JWT
+- `POST /api/v1/auth/refresh` - Refresh access token
+- `DELETE /api/v1/auth/logout` - Logout and invalidate session
+- `GET /api/v1/health` - Health check
+
+**Flow:**
+1. User clicks "Sign in with Google"
+2. `chrome.identity.getAuthToken()` retrieves OAuth token
+3. Token exchanged with backend for JWT tokens
+4. Tokens stored in Chrome storage
+5. Automatic token refresh before expiry
+
+### Note Management
+
+**Components:** `NoteEditor.tsx`, `NoteView.tsx`, `popup/index.tsx`
+
+**Backend Endpoints:**
+- `GET /api/v1/notes` - List notes with pagination
+- `POST /api/v1/notes` - Create note
+- `GET /api/v1/notes/:id` - Get specific note
+- `PUT /api/v1/notes/:id` - Update note
+- `DELETE /api/v1/notes/:id` - Delete note
+- `GET /api/v1/notes/sync` - Delta synchronization
+- `POST /api/v1/notes/batch` - Batch create
+- `PUT /api/v1/notes/batch` - Batch update
+- `GET /api/v1/notes/stats` - Statistics
+- `GET /api/v1/notes/tags/:tag` - Notes by tag
+
+**Features:**
+- Auto-generated titles from content
+- Character/word count
+- Keyboard shortcuts (Ctrl+S to save, Tab for indent)
+- Auto-save functionality
+- Optimistic UI updates
+- Conflict resolution via version field
+
+### Search and Filtering
+
+**Components:** `popup/index.tsx`, `contentUtils.ts`
+
+**Backend Endpoints:**
+- `GET /api/v1/search/notes` - Full-text search
+- `GET /api/v1/tags` - List all tags
+
+**Features:**
+- Debounced search input
+- Local filtering for immediate feedback
+- Clickable hashtags for filtering
+- Search by content and tags
+
+### Keyboard Shortcuts
+
+**Components:** `utils/shortcuts.ts`, `types/shortcuts.ts`
+
+**32 Built-in Shortcuts:**
+
+**Navigation:**
+- `j` / `k` - Navigate up/down
+- `Enter` - Open selected note
+- `Escape` - Cancel/close
+
+**Note Actions:**
+- `n` - Create new note
+- `e` - Edit current note
+- `d` - Delete current note
+- `Ctrl+S` - Save note
+
+**Search:**
+- `/` - Focus search box
+- `Ctrl+F` - Find in note
+- `#` - Quick tag filter
+
+**View:**
+- `p` - Toggle markdown preview
+- `Ctrl+1/2/3` - Switch view modes
+
+**Text Formatting:**
+- `Ctrl+B` - Bold
+- `Ctrl+I` - Italic
+- `Ctrl+K` - Insert link
+
+**Application:**
+- `Ctrl+/` - Show help
+- `Ctrl+Shift+/` - Show shortcuts reference
+
+### Markdown Rendering
+
+**Components:** `MarkdownPreview.tsx`, `utils/markdown.ts`
+
+**Features:**
+- Full markdown support
+- Syntax highlighting for code blocks
+- Table of contents generation
+- Active section tracking
+- XSS protection
+
+### Offline Capability
+
+**Components:** `types/storage.ts`, Chrome Storage API
+
+**Features:**
+- All notes stored locally
+- Operations work offline
+- Sync queue for background upload
+- Automatic conflict resolution
+
+### User Profile
+
+**Components:** `SimpleUserProfile.tsx`
+
+**Features:**
+- Display user avatar with initials
+- Member since date
+- Logout confirmation
+
+### Settings
+
+**Components:** `Settings.tsx`
+
+**Features:**
+- General settings display
+- Theme options
+- Sync status
+
+## Database Schema
+
+### Users Table
 ```sql
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -206,7 +463,7 @@ CREATE TABLE users (
 );
 ```
 
-#### Notes
+### Notes Table
 ```sql
 CREATE TABLE notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -219,7 +476,7 @@ CREATE TABLE notes (
 );
 ```
 
-#### Tags
+### Tags Table
 ```sql
 CREATE TABLE tags (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -228,7 +485,7 @@ CREATE TABLE tags (
 );
 ```
 
-#### NoteTags (Junction Table)
+### Note Tags Junction Table
 ```sql
 CREATE TABLE note_tags (
     note_id UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
@@ -238,40 +495,58 @@ CREATE TABLE note_tags (
 );
 ```
 
-## 🔌 API Endpoints
+### User Sessions Table
+```sql
+CREATE TABLE user_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    refresh_token_hash TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    last_activity TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
 
-### Health Check
-- `GET /api/v1/health` - Check API health status
+## API Endpoints Reference
 
-### Authentication (Phase 2)
-- `POST /api/v1/auth/google` - Google OAuth login
-- `POST /api/v1/auth/refresh` - Refresh access token
-- `DELETE /api/v1/auth/logout` - Logout user
+### Public Endpoints (no authentication)
+```
+GET  /api/v1/health              # Health check
+POST /api/v1/auth/chrome         # Chrome Identity token exchange
+POST /api/v1/auth/refresh        # Refresh access token
+```
 
-### Notes (Phase 3)
-- `GET /api/v1/notes` - Get user's notes
-- `POST /api/v1/notes` - Create new note
-- `GET /api/v1/notes/{id}` - Get specific note
-- `PUT /api/v1/notes/{id}` - Update note
-- `DELETE /api/v1/notes/{id}` - Delete note
+### Protected Endpoints (require authentication)
+```
+DELETE /api/v1/auth/logout       # Logout
 
-### Tags (Phase 4)
-- `GET /api/v1/tags` - Get user's tags
-- `POST /api/v1/tags` - Create new tag
-- `GET /api/v1/tags/suggestions` - Get tag suggestions
+# Notes
+GET    /api/v1/notes             # List notes
+POST   /api/v1/notes             # Create note
+GET    /api/v1/notes/:id         # Get note
+PUT    /api/v1/notes/:id         # Update note
+DELETE /api/v1/notes/:id         # Delete note
+GET    /api/v1/notes/sync        # Sync notes
+POST   /api/v1/notes/batch       # Batch create
+PUT    /api/v1/notes/batch       # Batch update
+GET    /api/v1/notes/stats       # Statistics
+GET    /api/v1/notes/tags/:tag   # Notes by tag
 
-### Search (Phase 4)
-- `GET /api/v1/search/notes` - Search notes
-- `GET /api/v1/search/tags` - Search tags
+# Search
+GET    /api/v1/search/notes      # Search notes
 
-## 🎨 UI Design
+# Tags
+GET    /api/v1/tags              # List tags
+```
 
-### Brutalist Design Principles
-- **High Contrast**: Bold black and white with orange accents
-- **Bold Typography**: Archivo (headings) + Inter (body)
-- **Minimal UI**: No unnecessary decorations
-- **Sharp Edges**: No rounded corners, thick borders
-- **Functional**: Every element serves a purpose
+## Brutalist Design System
+
+### Design Principles
+- **High Contrast** - Bold black and white with orange accents
+- **Bold Typography** - Archivo (headings) + Inter (body)
+- **Minimal UI** - No unnecessary decorations
+- **Sharp Edges** - No rounded corners, thick borders
+- **Functional** - Every element serves a purpose
 
 ### Color Palette
 ```css
@@ -285,174 +560,121 @@ CREATE TABLE note_tags (
 ```
 
 ### Typography
-- **Headings**: Archivo (900, 700, 400 weights)
-- **Body**: Inter (600, 400 weights)
-- **Dramatic scale**: 36px → 28px → 24px → 18px → 16px → 14px
+- **Headings:** Archivo (900, 700, 400 weights)
+- **Body:** Inter (600, 400 weights)
+- **Scale:** 36px → 28px → 24px → 18px → 16px → 14px
 
-## 🔒 Security
+## Testing
 
-### Authentication & Authorization
-- Google OAuth 2.0 implementation
-- JWT tokens with refresh mechanism
-- Secure token storage in Chrome extension
-- CORS configuration for Chrome extension origins
-
-### Data Protection
-- Input validation and sanitization
-- SQL injection prevention
-- XSS protection in note content
-- HTTPS-only communication
-- Environment-based configuration management
-
-## 📈 Performance
-
-### Response Times
-- API responses < 500ms
-- Search queries < 300ms
-- Extension startup < 1 second
-- Sync completion < 3 seconds
-
-### Optimization Strategies
-- Database query optimization
-- Connection pooling
-- Pagination for large datasets
-- Lazy loading
-- Caching strategies
-
-## 🐳 Docker Development
-
-### Development Environment
+### Frontend Tests
 ```bash
-# Start development containers
-docker-compose -f docker-compose.dev.yml up -d
+./test_frontend.sh
+```
+Runs Jest tests with coverage. Report available at `extension/coverage/index.html`.
 
-# View logs
-docker-compose -f docker-compose.dev.yml logs -f
+### Backend Tests
+```bash
+# Quick tests (no database)
+./test_backend.sh
 
-# Stop containers
-docker-compose -f docker-compose.dev.yml down
+# Full tests with PostgreSQL
+USE_POSTGRE_DURING_TEST=true ./test_backend.sh
 ```
 
-### Container Services
-- **PostgreSQL**: Database server
-- **Redis**: Caching and session storage
-- **Backend**: Go API server with hot reload
+Test suites include:
+- Notes Integration Tests
+- Auth Tests (JWT, refresh, logout)
+- Service Tests (Note, Tag, User)
+- Middleware Tests (Security, Session, Rate Limiting)
+- Integration Tests (Auth flow, Security)
+- Migration Tests
 
-## 📚 Documentation
+## Development
 
-- [**Implementation Plan**](./IMPLEMENTATION_PLAN.md) - 7-week development roadmap
-- [**Phase 1 Plan**](./PHASE_1_PLAN.md) - Detailed breakdown of initial development
-- [**UI Style Guide**](./UI_STYLE_GUIDE.md) - Comprehensive design system
-- [**API Documentation**](./docs/api.md) - API reference
-- [**Development Guide**](./docs/development.md) - Development setup and workflows
+### Reloading Extension After Changes
 
-### 📖 Interactive API Documentation
+1. Go to `chrome://extensions/`
+2. Find Silence Notes card
+3. Click refresh icon (circular arrow)
+4. Reopen popup from toolbar
 
-The project includes interactive API documentation using Swagger UI. To explore the backend API endpoints:
+### Backend Hot Reload
 
-1. **Start the Swagger UI container:**
-   ```bash
-   docker run -p 80:8080 -e SWAGGER_JSON=/openapi.yaml -v $(pwd)/backend/docs/api/openapi.yaml:/openapi.yaml swaggerapi/swagger-ui
-   ```
+The backend does not have hot reload. Rebuild after changes:
+```bash
+./backend_build.sh
+./backend/server
+```
 
-2. **Open in browser:**
-   Navigate to [http://localhost](http://localhost) to access the interactive API documentation.
+### Frontend Watch Mode
 
-3. **Explore the API:**
-   - View all available endpoints
-   - Test API calls directly from the browser
-   - See request/response schemas
-   - Understand authentication requirements
+For development with automatic rebuilds:
+```bash
+cd extension
+npm run dev
+```
 
-**Note:** The OpenAPI specification file is located at `backend/docs/api/openapi.yaml` and is automatically generated from the backend code.
+## Deployment
 
-## 🗺️ Roadmap
+### Production Build
 
-### Phase 1: Foundation ✅
-- [x] Project structure and development environment
-- [x] Database schema with migrations
-- [x] Basic API server with middleware
-- [x] Configuration management
-- [x] Database connection management
-- [x] Testing infrastructure
+```bash
+# Frontend
+cd extension
+npm run build
 
-### Phase 2: Authentication & User Management (Next)
-- [ ] Google OAuth integration
-- [ ] Chrome extension authentication
-- [ ] User profile management
-- [ ] Token management
+# Backend
+cd backend
+go build -o server ./cmd/server/main.go
+```
 
-### Phase 3: Core Note Functionality
-- [ ] Note CRUD operations
-- [ ] Basic frontend interface
-- [ ] Local storage and sync
-- [ ] Offline capability
+### Environment Variables
 
-### Phase 4: Hashtag System & Filtering
-- [ ] Hashtag extraction and storage
-- [ ] Advanced filtering UI
-- [ ] Search functionality
-- [ ] Tag management
+**Backend (.env):**
+```bash
+# Server
+SERVER_PORT=8080
+SERVER_HOST=0.0.0.0
 
-### Phase 5: Enhanced Features & Polish
-- [ ] Rich text with markdown support
-- [ ] Keyboard shortcuts
-- [ ] User experience enhancements
-- [ ] Performance optimization
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=my_notes
+DB_USER=postgres
+DB_PASSWORD=password
+DB_SSLMODE=disable
 
-### Phase 6: Testing & Quality Assurance
-- [ ] Comprehensive testing suite
-- [ ] Security review
-- [ ] Error handling and monitoring
-- [ ] Documentation
+# JWT
+JWT_SECRET=your-secret-key
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
 
-### Phase 7: Deployment & Release
-- [ ] Backend deployment
-- [ ] Chrome extension release
-- [ ] Post-launch support
-- [ ] Analytics and monitoring
+# CORS
+CORS_ALLOWED_ORIGINS=chrome-extension://*
 
-## 🤝 Contributing
+# Rate Limiting
+RATE_LIMIT_REQUESTS=100
+RATE_LIMIT_WINDOW=1m
+```
+
+## Contributing
 
 ### Development Workflow
-1. Create feature branch from main
+1. Create feature branch from `main`
 2. Follow Test-Driven Development (TDD)
-3. Ensure all tests pass (>90% coverage)
+3. Ensure all tests pass
 4. Update documentation
-5. Submit pull request with detailed description
+5. Submit pull request
 
 ### Code Standards
-- Follow Go conventions for backend
-- Use TypeScript strict mode for frontend
-- Write tests before implementation
-- Maintain high code coverage
-- Use conventional commit messages
+- **Go:** Standard conventions, `gofmt` formatting
+- **TypeScript:** Strict mode, ESLint
+- **Tests:** >90% coverage required
+- **Commits:** Conventional commit messages
 
-### Pull Request Process
-1. Fork the repository
-2. Create feature branch
-3. Implement tests and functionality
-4. Ensure quality checks pass
-5. Update documentation
-6. Submit PR with comprehensive description
+## License
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Google Chrome Extension API** for extension capabilities
-- **Gorilla Mux** for HTTP routing
-- **PostgreSQL** for reliable data storage
-- **React** for component-based UI
-- **Tailwind CSS** for utility-first styling
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/your-username/my-notes/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/my-notes/discussions)
-- **Email**: your-email@example.com
+MIT License - see LICENSE file for details.
 
 ---
 
