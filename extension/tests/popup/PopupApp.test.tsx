@@ -1444,6 +1444,39 @@ describe('PopupApp Component', () => {
   });
 
   describe('16. Shows loading state during operations', () => {
+    it('should navigate to create note form when Ctrl+N is pressed in notes list view', async () => {
+      const user = userEvent.setup();
+      mockAuthState = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: createMockUser(),
+        error: null,
+      };
+
+      // @ts-ignore
+      authService.initialize.mockResolvedValue(mockAuthState);
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText(/View All Notes/i));
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/search notes/i)).toBeInTheDocument();
+      });
+
+      // Press Ctrl+N to trigger create note navigation
+      await user.keyboard('{Control>}n{/Control}');
+
+      // Should navigate to create note form
+      await waitFor(() => {
+        expect(screen.getByText(/Create New Note/i)).toBeInTheDocument();
+      });
+    });
+
     it('should show loading state during note creation', async () => {
       const user = userEvent.setup();
       mockAuthState = {
@@ -1652,6 +1685,143 @@ describe('PopupApp Component', () => {
       await waitFor(() => {
         expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       }, { timeout: 1000 });
+    });
+  });
+
+  describe('17. Keyboard shortcuts for navigation', () => {
+    it('should focus search input when Ctrl+F is pressed in notes list view', async () => {
+      const user = userEvent.setup();
+      mockAuthState = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: createMockUser(),
+        error: null,
+      };
+
+      // @ts-ignore
+      authService.initialize.mockResolvedValue(mockAuthState);
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText(/View All Notes/i));
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/search notes/i)).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByPlaceholderText(/search notes/i);
+
+      // Blur the input first to ensure focus changes
+      searchInput.blur();
+      expect(document.activeElement).not.toBe(searchInput);
+
+      // Press Ctrl+F to focus search input
+      await user.keyboard('{Control>}f{/Control}');
+
+      // Search input should be focused
+      await waitFor(() => {
+        expect(searchInput).toHaveFocus();
+      });
+    });
+
+    it('should navigate back to previous state when Ctrl+B is pressed', async () => {
+      const user = userEvent.setup();
+      const mockNotes = [
+        createMockNote({ id: 'note-1', title: 'Todo List', content: 'Buy groceries' }),
+      ];
+
+      mockAuthState = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: createMockUser(),
+        error: null,
+      };
+
+      // @ts-ignore
+      authService.initialize.mockResolvedValue(mockAuthState);
+      // @ts-ignore
+      apiService.getNotes.mockResolvedValue({
+        success: true,
+        data: {
+          notes: mockNotes,
+          total: 1,
+          page: 1,
+          limit: 20,
+          has_more: false,
+        },
+      });
+      // @ts-ignore
+      apiService.getNote.mockResolvedValue({
+        success: true,
+        data: mockNotes[0],
+      });
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText(/View All Notes/i));
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/search notes/i)).toBeInTheDocument();
+      });
+
+      // Type "todo" in search
+      const searchInput = screen.getByPlaceholderText(/search notes/i);
+      await user.type(searchInput, 'todo');
+
+      await waitFor(() => {
+        expect(searchInput).toHaveValue('todo');
+      });
+
+      // Click on a note to navigate to detail view
+      await user.click(screen.getByText('Todo List'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Todo List')).toBeInTheDocument();
+      });
+
+      // Press Ctrl+B to go back
+      await user.keyboard('{Control>}b{/Control}');
+
+      // Should return to notes list with search query preserved
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/search notes/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/search notes/i)).toHaveValue('todo');
+      });
+    });
+
+    it('should do nothing when Ctrl+B is pressed with no history', async () => {
+      const user = userEvent.setup();
+      mockAuthState = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: createMockUser(),
+        error: null,
+      };
+
+      // @ts-ignore
+      authService.initialize.mockResolvedValue(mockAuthState);
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Welcome/i)).toBeInTheDocument();
+      });
+
+      // Press Ctrl+B with no history - should stay on welcome screen
+      await user.keyboard('{Control>}b{/Control}');
+
+      // Should still be on welcome screen
+      await waitFor(() => {
+        expect(screen.getByText(/Welcome/i)).toBeInTheDocument();
+      });
     });
   });
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { authService, AuthState } from '../auth';
 import { apiService, Note, NoteResponse, CreateNoteRequest, UpdateNoteRequest } from '../api';
@@ -12,6 +12,14 @@ import { FileText, BookOpen, LogOut, X } from 'lucide-react';
 
 // Styles
 import './popup.css';
+
+// Navigation history state for Ctrl+B (back) functionality
+interface HistoryState {
+  view: 'notesList' | 'noteDetail' | 'noteEditor' | 'createForm' | 'welcome';
+  searchQuery?: string;
+  noteId?: string;
+  timestamp: number;
+}
 
 interface AppState {
   // Authentication and user state
@@ -41,6 +49,9 @@ interface AppState {
 
   // Copy feedback state
   copiedNoteId: string | null;  // Track which note was last copied for visual feedback
+
+  // Navigation history for Ctrl+B (back) functionality
+  navigationHistory: HistoryState[];
 }
 
 const PopupApp: React.FC = () => {
@@ -76,8 +87,14 @@ const PopupApp: React.FC = () => {
     newNoteContent: '',
 
     // Copy feedback state
-    copiedNoteId: null
+    copiedNoteId: null,
+
+    // Navigation history for Ctrl+B (back) functionality
+    navigationHistory: []
   });
+
+  // Ref for search input (used by Ctrl+F to focus)
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize auth on component mount
   useEffect(() => {
@@ -202,12 +219,22 @@ const PopupApp: React.FC = () => {
   };
 
   const handleCreateNoteClick = () => {
-    setState(prev => ({
-      ...prev,
-      showCreateForm: true,
-      showNotesList: false,
-      error: null
-    }));
+    setState(prev => {
+      // Push current state to history before navigating
+      const newHistoryEntry: HistoryState = {
+        view: prev.showNotesList ? 'notesList' : 'welcome',
+        searchQuery: prev.searchQuery,
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        navigationHistory: [...prev.navigationHistory, newHistoryEntry],
+        showCreateForm: true,
+        showNotesList: false,
+        error: null
+      };
+    });
   };
 
   const handleViewAllNotesClick = async () => {
@@ -279,15 +306,23 @@ const PopupApp: React.FC = () => {
   const handleNoteClick = async (noteId: string): Promise<void> => {
     console.log('handleNoteClick called with noteId:', noteId);
 
-    // Set loading state and navigate to detail view
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-      showNotesList: false,
-      showNoteDetail: true,
-      currentNote: null // Clear previous note while loading
-    }));
+    // Push current state to history before navigating
+    setState(prev => {
+      const newHistoryEntry: HistoryState = {
+        view: prev.showNotesList ? 'notesList' : 'welcome',
+        searchQuery: prev.searchQuery,
+        timestamp: Date.now()
+      };
+      return {
+        ...prev,
+        navigationHistory: [...prev.navigationHistory, newHistoryEntry],
+        isLoading: true,
+        error: null,
+        showNotesList: false,
+        showNoteDetail: true,
+        currentNote: null // Clear previous note while loading
+      };
+    });
 
     try {
       // Fetch note details from API
@@ -348,8 +383,16 @@ const PopupApp: React.FC = () => {
         showNoteEditor: true
       });
 
+      // Push current state to history before navigating
+      const newHistoryEntry: HistoryState = {
+        view: 'noteDetail',
+        noteId: note.id,
+        timestamp: Date.now()
+      };
+
       return {
         ...prev,
+        navigationHistory: [...prev.navigationHistory, newHistoryEntry],
         editingNote: note,
         showNoteDetail: false,
         showNoteEditor: true
@@ -550,6 +593,30 @@ const PopupApp: React.FC = () => {
     setState(prev => ({ ...prev, searchQuery: '' }));
   };
 
+  // Handle Ctrl+B - Navigate back in history
+  const handleBack = (): void => {
+    const history = state.navigationHistory;
+    if (history.length === 0) return;
+
+    // Get the previous state (last item in history)
+    const previousState = history[history.length - 1];
+
+    // Remove it from history
+    const newHistory = history.slice(0, -1);
+
+    // Restore the previous state
+    setState(prev => ({
+      ...prev,
+      navigationHistory: newHistory,
+      searchQuery: previousState.searchQuery || '',
+      showNotesList: previousState.view === 'notesList',
+      showNoteDetail: previousState.view === 'noteDetail',
+      showNoteEditor: previousState.view === 'noteEditor',
+      showCreateForm: previousState.view === 'createForm',
+      currentNote: previousState.noteId ? prev.notes.find(n => n.id === previousState.noteId) || null : null,
+    }));
+  };
+
   // Keyboard shortcut: Ctrl+C to clear search query
   useEffect(() => {
     if (!state.showNotesList) return;
@@ -570,6 +637,40 @@ const PopupApp: React.FC = () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [state.showNotesList, state.searchQuery]);
+
+  // Keyboard shortcuts: Ctrl+N, Ctrl+F, Ctrl+B
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl or Command (Mac) modifier
+      if (!(e.ctrlKey || e.metaKey)) return;
+
+      // Ctrl+N: Navigate to create note form
+      if (e.key === 'n') {
+        e.preventDefault();
+        handleCreateNoteClick();
+        return;
+      }
+
+      // Ctrl+F: Focus search input (only when notes list is visible)
+      if (e.key === 'f' && state.showNotesList) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      // Ctrl+B: Navigate back in history
+      if (e.key === 'b') {
+        e.preventDefault();
+        handleBack();
+        return;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [state.showNotesList, state.showCreateForm, state.showNoteDetail, state.showNoteEditor, state.navigationHistory]);
 
   const handleTagClick = (tag: string): void => {
     // Strip # prefix from tag to get search term
@@ -730,6 +831,7 @@ const PopupApp: React.FC = () => {
                 <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <input
+                ref={searchInputRef}
                 type="text"
                 className="search-input"
                 placeholder="Search notes..."

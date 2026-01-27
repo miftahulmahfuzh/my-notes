@@ -376,7 +376,12 @@ backend/
 
 **Components:** `NoteEditor.tsx`, `popup/index.tsx`
 
-**2 Essential Shortcuts:**
+**Navigation Shortcuts:**
+
+**Global (works from any view):**
+- `Ctrl+N` / `Cmd+N` - Navigate to Create New Note page
+- `Ctrl+F` / `Cmd+F` - Focus search input (when in notes list view)
+- `Ctrl+B` / `Cmd+B` - Navigate back to previous state (preserves search query)
 
 **Note Editor:**
 - `Ctrl+S` / `Cmd+S` - Save note
