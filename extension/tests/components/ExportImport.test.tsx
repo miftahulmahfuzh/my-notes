@@ -15,6 +15,13 @@ const createMockFile = (filename: string, content: string, type: string): File =
   return new File([blob], filename, { type });
 };
 
+// Default export formats for testing
+const defaultExportFormats = [
+  { format: 'json', name: 'JSON', description: 'JavaScript Object Notation', content_type: 'application/json', file_extension: '.json' },
+  { format: 'markdown', name: 'Markdown', description: 'Markdown text format', content_type: 'text/markdown', file_extension: '.md' },
+  { format: 'html', name: 'HTML', description: 'HTML document format', content_type: 'text/html', file_extension: '.html' },
+];
+
 describe('ExportImport Component', () => {
   let mockAuthToken: string;
 
@@ -42,17 +49,29 @@ describe('ExportImport Component', () => {
       return originalCreateElement(tagName);
     });
 
+    // Mock document.body.appendChild and removeChild
+    const originalAppendChild = document.body.appendChild.bind(document.body);
+    const originalRemoveChild = document.body.removeChild.bind(document.body);
+    document.body.appendChild = jest.fn((element) => {
+      if (element === mockLink) {
+        return mockLink as any;
+      }
+      return originalAppendChild(element);
+    });
+    document.body.removeChild = jest.fn((element) => {
+      if (element === mockLink) {
+        return mockLink as any;
+      }
+      return originalRemoveChild(element);
+    });
+
     // Default fetch mock with export formats
     (global.fetch as jest.Mock).mockImplementation((url: string) => {
       if (url === '/api/v1/export/formats') {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            formats: [
-              { format: 'json', name: 'JSON', description: 'JavaScript Object Notation', content_type: 'application/json', file_extension: '.json' },
-              { format: 'markdown', name: 'Markdown', description: 'Markdown text format', content_type: 'text/markdown', file_extension: '.md' },
-              { format: 'html', name: 'HTML', description: 'HTML document format', content_type: 'text/html', file_extension: '.html' },
-            ],
+            formats: defaultExportFormats,
           }),
         });
       }
@@ -82,7 +101,7 @@ describe('ExportImport Component', () => {
       (fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({
-          formats: [],
+          formats: defaultExportFormats,
           supported_formats: ['json', 'zip'],
           requirements: ['Valid JSON or ZIP file'],
           security_notes: ['Files are validated before import'],
@@ -102,7 +121,7 @@ describe('ExportImport Component', () => {
       (fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({
-          formats: [],
+          formats: defaultExportFormats,
           supported_formats: ['json', 'zip'],
           requirements: ['Valid JSON or ZIP file'],
           security_notes: ['Files are validated before import'],
@@ -122,7 +141,7 @@ describe('ExportImport Component', () => {
       (fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({
-          formats: [],
+          formats: defaultExportFormats,
           supported_formats: ['json', 'zip'],
           requirements: ['Valid JSON or ZIP file'],
           security_notes: ['Files are validated before import'],
@@ -228,8 +247,12 @@ describe('ExportImport Component', () => {
     it('should export to JSON format', async () => {
       render(<ExportImport />);
 
+      // Wait for formats to be loaded
       await waitFor(() => {
         expect(screen.getByText('Export Format')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByText(/JSON - Complete data export/)).toBeInTheDocument();
       });
 
       const formatSelect = screen.getByLabelText('Export Format');
@@ -257,8 +280,12 @@ describe('ExportImport Component', () => {
     it('should export to Markdown format', async () => {
       render(<ExportImport />);
 
+      // Wait for formats to be loaded
       await waitFor(() => {
         expect(screen.getByText('Export Format')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByText(/Markdown - Individual files/)).toBeInTheDocument();
       });
 
       const formatSelect = screen.getByLabelText('Export Format');
@@ -283,8 +310,12 @@ describe('ExportImport Component', () => {
     it('should export to HTML format', async () => {
       render(<ExportImport />);
 
+      // Wait for formats to be loaded
       await waitFor(() => {
         expect(screen.getByText('Export Format')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByText(/HTML - Web-friendly format/)).toBeInTheDocument();
       });
 
       const formatSelect = screen.getByLabelText('Export Format');
@@ -309,8 +340,12 @@ describe('ExportImport Component', () => {
     it('should export to ZIP format', async () => {
       render(<ExportImport />);
 
+      // Wait for formats to be loaded
       await waitFor(() => {
         expect(screen.getByText('Export Format')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByText(/ZIP Archive - Multiple formats/)).toBeInTheDocument();
       });
 
       const formatSelect = screen.getByLabelText('Export Format');
@@ -462,7 +497,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -614,7 +649,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -672,7 +707,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -819,7 +854,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -896,7 +931,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -971,7 +1006,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -1048,7 +1083,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -1144,7 +1179,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -1227,7 +1262,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -1300,7 +1335,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -1345,7 +1380,7 @@ describe('ExportImport Component', () => {
       (fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({
-          formats: [],
+          formats: defaultExportFormats,
           supported_formats: ['json', 'zip'],
         }),
       });
@@ -1385,8 +1420,8 @@ describe('ExportImport Component', () => {
     it('should clear file input after successful import', async () => {
       render(<ExportImport />);
 
-      const importTab = screen.getByText('Import Data');
-      await userEvent.click(importTab);
+      const importTab = screen.getAllByText('Import Data').find(el => el.tagName === 'BUTTON' && el.classList.contains('tab-button'));
+      await userEvent.click(importTab!);
 
       await waitFor(() => {
         expect(screen.getByLabelText('Select File')).toBeInTheDocument();
@@ -1405,14 +1440,14 @@ describe('ExportImport Component', () => {
         expect(screen.getByText('✓ File is valid and ready for import')).toBeInTheDocument();
       });
 
-      const importButton = screen.getByText('Import Data');
-      await userEvent.click(importButton);
+      const importButton = screen.getAllByText('Import Data').find(el => el.tagName === 'BUTTON' && el.classList.contains('import-btn'));
+      await userEvent.click(importButton!);
 
       await waitFor(() => {
         expect(screen.getByText('Import successful')).toBeInTheDocument();
       });
 
-      expect(screen.getByText('Import Data')).toBeDisabled();
+      expect(importButton).toBeDisabled();
     });
   });
 
@@ -1422,7 +1457,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -1459,7 +1494,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -1500,7 +1535,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
@@ -1542,7 +1577,7 @@ describe('ExportImport Component', () => {
       (fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({
-          formats: [],
+          formats: defaultExportFormats,
           supported_formats: ['json', 'zip'],
           requirements: ['Valid file'],
           security_notes: ['Files validated'],
@@ -1560,7 +1595,7 @@ describe('ExportImport Component', () => {
       (fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({
-          formats: [],
+          formats: defaultExportFormats,
           supported_formats: ['json', 'zip'],
           requirements: ['Valid file'],
           security_notes: ['Files validated'],
@@ -1580,43 +1615,16 @@ describe('ExportImport Component', () => {
 
   describe('Tab Switching', () => {
     it('should maintain state when switching tabs', async () => {
-      (fetch as jest.Mock).mockImplementation((url: string) => {
-        if (url.includes('/api/v1/export/formats')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({
-              formats: [
-                {
-                  format: 'json',
-                  name: 'JSON',
-                  description: 'Complete data export',
-                  content_type: 'application/json',
-                  file_extension: '.json',
-                },
-              ],
-            }),
-          });
-        }
-        if (url.includes('/api/v1/import/info')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({
-              supported_formats: ['json'],
-              requirements: ['Valid JSON'],
-              security_notes: ['Validated'],
-            }),
-          });
-        }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({}),
-        });
-      });
-
       render(<ExportImport />);
 
+      // Wait for formats to be loaded
       await waitFor(() => {
         expect(screen.getByText('Export Format')).toBeInTheDocument();
+      });
+
+      // Wait for the actual format text to appear (formats are loaded)
+      await waitFor(() => {
+        expect(screen.getByText(/JSON - JavaScript Object Notation/)).toBeInTheDocument();
       });
 
       const formatSelect = screen.getByLabelText('Export Format');
@@ -1660,7 +1668,7 @@ describe('ExportImport Component', () => {
         if (url.includes('/api/v1/export/formats')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ formats: [] }),
+            json: () => Promise.resolve({ formats: defaultExportFormats }),
           });
         }
         if (url.includes('/api/v1/import/info')) {
