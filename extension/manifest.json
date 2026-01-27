@@ -9,13 +9,9 @@
     "activeTab",
     "background",
     "alarms",
-    "notifications",
-    "scripting",
-    "webNavigation"
+    "notifications"
   ],
   "host_permissions": [
-    "http://localhost:*/*",
-    "https://localhost:*/*",
     "https://my-notes-api-7bnrhx3mka-uc.a.run.app/*",
     "https://accounts.google.com/*",
     "https://www.googleapis.com/*",
@@ -41,22 +37,10 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["popup.html"],
-      "matches": ["<all_urls>"]
-    }
-  ],
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ],
   "options_page": "options.html",
   "icons": {
-    "16": "assets/icon16.png",
-    "48": "assets/icon48.png",
-    "128": "assets/icon128.png"
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   }
 }

@@ -9,10 +9,9 @@ const manifestPath = path.join(__dirname, 'dist', 'manifest.json');
 try {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-  // Remove icons section
-  delete manifest.icons;
+  // Keep icons section (required for Chrome Web Store)
 
-  // Remove type: module from background
+  // Remove type: module from background (not supported in Manifest V3 service workers)
   if (manifest.background && manifest.background.type === 'module') {
     delete manifest.background.type;
   }
