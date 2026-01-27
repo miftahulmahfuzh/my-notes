@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { LoginForm } from '../../src/components/LoginForm';
@@ -304,6 +304,7 @@ describe('LoginForm Component', () => {
 
     it('should handle authentication errors gracefully', async () => {
       const user = userEvent.setup();
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       // @ts-ignore
       authService.authenticate.mockRejectedValue(new Error('Network error'));
 
@@ -316,6 +317,8 @@ describe('LoginForm Component', () => {
         expect(authService.authenticate).toHaveBeenCalled();
         expect(mockOnAuthSuccess).not.toHaveBeenCalled();
       });
+
+      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -583,13 +586,15 @@ describe('LoginForm Component', () => {
       // Initial render should show login form
       expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument();
 
-      // Simulate auth state change to loading
+      // Simulate auth state change to loading (wrapped in act)
       if (authStateCallback) {
-        (authStateCallback as (state: any) => void)({
-          isAuthenticated: false,
-          isLoading: true,
-          user: null,
-          error: null,
+        await act(async () => {
+          (authStateCallback as (state: any) => void)({
+            isAuthenticated: false,
+            isLoading: true,
+            user: null,
+            error: null,
+          });
         });
       }
 

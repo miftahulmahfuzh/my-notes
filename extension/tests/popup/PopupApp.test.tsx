@@ -1203,14 +1203,16 @@ describe('PopupApp Component', () => {
       });
 
       // Simulate auth state change
-      if (mockAuthCallback) {
-        mockAuthCallback({
-          isAuthenticated: true,
-          isLoading: false,
-          user: createMockUser(),
-          error: null,
-        });
-      }
+      await act(async () => {
+        if (mockAuthCallback) {
+          mockAuthCallback({
+            isAuthenticated: true,
+            isLoading: false,
+            user: createMockUser(),
+            error: null,
+          });
+        }
+      });
 
       // Should show welcome screen
       await waitFor(() => {
@@ -1237,14 +1239,16 @@ describe('PopupApp Component', () => {
       });
 
       // Simulate logout
-      if (mockAuthCallback) {
-        mockAuthCallback({
-          isAuthenticated: false,
-          isLoading: false,
-          user: null,
-          error: null,
-        });
-      }
+      await act(async () => {
+        if (mockAuthCallback) {
+          mockAuthCallback({
+            isAuthenticated: false,
+            isLoading: false,
+            user: null,
+            error: null,
+          });
+        }
+      });
 
       // Should show login form
       await waitFor(() => {
@@ -1313,14 +1317,16 @@ describe('PopupApp Component', () => {
       await user.click(logoutButton);
 
       // Simulate auth state change after logout
-      if (mockAuthCallback) {
-        mockAuthCallback({
-          isAuthenticated: false,
-          isLoading: false,
-          user: null,
-          error: null,
-        });
-      }
+      await act(async () => {
+        if (mockAuthCallback) {
+          mockAuthCallback({
+            isAuthenticated: false,
+            isLoading: false,
+            user: null,
+            error: null,
+          });
+        }
+      });
 
       // After logout, should show login form
       await waitFor(() => {
