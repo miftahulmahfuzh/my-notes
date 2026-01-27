@@ -1824,4 +1824,155 @@ describe('PopupApp Component', () => {
       });
     });
   });
+
+  describe('18. Help page', () => {
+    it('should display Help button on Welcome screen alongside Create Note and View Notes', async () => {
+      mockAuthState = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: createMockUser(),
+        error: null,
+      };
+
+      // @ts-ignore
+      authService.initialize.mockResolvedValue(mockAuthState);
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Welcome/i)).toBeInTheDocument();
+      });
+
+      // All three buttons should be present
+      expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+      expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+      expect(screen.getByText(/Help/i)).toBeInTheDocument();
+    });
+
+    it('should navigate to Help page when Help button is clicked', async () => {
+      const user = userEvent.setup();
+      mockAuthState = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: createMockUser(),
+        error: null,
+      };
+
+      // @ts-ignore
+      authService.initialize.mockResolvedValue(mockAuthState);
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Help/i)).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText(/Help/i));
+
+      // Should show Help page content
+      await waitFor(() => {
+        expect(screen.getByText(/Keyboard Shortcuts/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should display all keyboard shortcuts on Help page', async () => {
+      const user = userEvent.setup();
+      mockAuthState = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: createMockUser(),
+        error: null,
+      };
+
+      // @ts-ignore
+      authService.initialize.mockResolvedValue(mockAuthState);
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Help/i)).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText(/Help/i));
+
+      // Should show all keyboard shortcuts
+      await waitFor(() => {
+        // Navigation shortcuts
+        expect(screen.getByText(/Navigate to Create New Note page/i)).toBeInTheDocument();
+        expect(screen.getByText(/Focus search input/i)).toBeInTheDocument();
+        expect(screen.getByText(/Navigate back to previous state/i)).toBeInTheDocument();
+
+        // Note Editor shortcuts
+        expect(screen.getByText(/Save note/i)).toBeInTheDocument();
+        expect(screen.getByText(/Insert 2 spaces for indentation/i)).toBeInTheDocument();
+
+        // Notes List shortcuts
+        expect(screen.getByText(/Clear search query/i)).toBeInTheDocument();
+
+        // Tab for indentation
+        expect(screen.getByText(/Tab/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should mention tag clicking functionality on Help page', async () => {
+      const user = userEvent.setup();
+      mockAuthState = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: createMockUser(),
+        error: null,
+      };
+
+      // @ts-ignore
+      authService.initialize.mockResolvedValue(mockAuthState);
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Help/i)).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText(/Help/i));
+
+      // Should mention tag functionality
+      await waitFor(() => {
+        expect(screen.getByText(/clicking a tag/i)).toBeInTheDocument();
+        expect(screen.getByText(/search page/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should have Back button on Help page to return to Welcome', async () => {
+      const user = userEvent.setup();
+      mockAuthState = {
+        isAuthenticated: true,
+        isLoading: false,
+        user: createMockUser(),
+        error: null,
+      };
+
+      // @ts-ignore
+      authService.initialize.mockResolvedValue(mockAuthState);
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Help/i)).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText(/Help/i));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Keyboard Shortcuts/i)).toBeInTheDocument();
+      });
+
+      // Click Back button (use role to target the button specifically)
+      const backButton = screen.getByRole('button', { name: /Back/i });
+      await user.click(backButton);
+
+      // Should return to welcome screen
+      await waitFor(() => {
+        expect(screen.getByText(/Welcome/i)).toBeInTheDocument();
+      });
+    });
+  });
 });

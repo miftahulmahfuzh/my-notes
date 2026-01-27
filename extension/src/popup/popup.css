@@ -2549,3 +2549,52 @@ body {
 }
 
 /* =========================================== */
+/* Help Page Styles */
+
+.help-section {
+  margin-bottom: var(--space-6);
+}
+
+.help-section .text-h3 {
+  margin-bottom: var(--space-3);
+  color: var(--neutral-900);
+}
+
+.shortcut-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 2px solid var(--neutral-300);
+  background: var(--neutral-50);
+}
+
+.shortcut-item kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  padding: var(--space-1) var(--space-2);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--neutral-900);
+  background: var(--white);
+  border: 2px solid var(--neutral-400);
+  border-radius: 4px;
+  box-shadow: 0 2px 0 var(--neutral-400);
+}
+
+.shortcut-item span {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--neutral-700);
+}
+
+/* =========================================== */
