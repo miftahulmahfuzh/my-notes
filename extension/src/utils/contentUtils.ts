@@ -15,5 +15,9 @@ const HASHTAG_REGEX = /#\s*\w+/g;
  * @returns Content with hashtags removed
  */
 export function stripHashtags(content: string): string {
-  return content.replace(HASHTAG_REGEX, '').trim();
+  // Remove hashtags, then clean up trailing spaces left by hashtag removal
+  let result = content.replace(HASHTAG_REGEX, '');
+  // Remove spaces before newlines and end of string (left after hashtag removal)
+  result = result.replace(/ +(\n|$)/g, '$1');
+  return result.trim();
 }

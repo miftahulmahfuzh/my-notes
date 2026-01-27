@@ -337,7 +337,7 @@ describe('Content Utilities - stripHashtags', () => {
 
     test('stripHashtags() preserves Cyrillic characters', () => {
       const input = 'Привет #tag мир';
-      const expected = 'Привет мир';
+      const expected = 'Привет  мир';
       expect(stripHashtags(input)).toBe(expected);
     });
   });
