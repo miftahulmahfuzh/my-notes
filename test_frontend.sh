@@ -22,18 +22,17 @@ if [ ! -d "$EXTENSION_DIR" ]; then
     exit 1
 fi
 
-# Change to extension directory
-cd "$EXTENSION_DIR"
-
-# Check if node_modules exists
-if [ ! -d "node_modules" ]; then
+# Check if node_modules exists in extension directory
+if [ ! -d "$EXTENSION_DIR/node_modules" ]; then
     echo -e "${YELLOW}Installing dependencies...${NC}"
+    cd "$EXTENSION_DIR"
     npm install
+    cd "$PROJECT_ROOT"
 fi
 
-# Run tests with coverage
+# Run tests with coverage from project root
 echo -e "${YELLOW}Running tests with coverage...${NC}"
-if npm run test:coverage; then
+if npx jest --config="$EXTENSION_DIR/jest.config.js" --coverage; then
     echo ""
     echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}  All Tests Passed!${NC}"
@@ -43,7 +42,7 @@ if npm run test:coverage; then
     echo -e "  ${YELLOW}file://$EXTENSION_DIR/coverage/index.html${NC}"
     echo ""
     echo -e "${BLUE}Coverage summary:${NC}"
-    cat coverage/coverage-summary.json | grep -o '"total"[^}]*' | head -1
+    cat "$EXTENSION_DIR/coverage/coverage-summary.json" | grep -o '"total"[^}]*' | head -1
     exit 0
 else
     echo ""

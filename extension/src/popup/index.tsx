@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { authService, AuthState } from '../auth';
 import { apiService, Note, NoteResponse, CreateNoteRequest, UpdateNoteRequest } from '../api';
@@ -6,9 +6,16 @@ import { CONFIG } from '../utils/config';
 import { stripHashtags } from '../utils/contentUtils';
 import { LoginForm } from '../components/LoginForm';
 import { SimpleUserProfile } from '../components/SimpleUserProfile';
-import NoteView from '../components/NoteView';
-import NoteEditor from '../components/NoteEditor';
-import { FileText, BookOpen, LogOut, X, HelpCircle, ArrowLeft } from 'lucide-react';
+
+// Lazy load heavy components
+const NoteView = lazy(() => import('../components/NoteView'));
+const NoteEditor = lazy(() => import('../components/NoteEditor'));
+import FileText from 'lucide-react/dist/esm/icons/file-text';
+import BookOpen from 'lucide-react/dist/esm/icons/book-open';
+import LogOut from 'lucide-react/dist/esm/icons/log-out';
+import X from 'lucide-react/dist/esm/icons/x';
+import HelpCircle from 'lucide-react/dist/esm/icons/help-circle';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
 
 // Styles
 import './popup.css';
@@ -1027,13 +1034,20 @@ const PopupApp: React.FC = () => {
 
       return (
         <div className="note-detail-view">
-          <NoteView
-            note={state.currentNote}
-            onEdit={() => handleEditNote(state.currentNote!)}
-            onDelete={() => handleDeleteNote(state.currentNote!.id)}
-            onClose={handleBackToNotes}
-            onTagClick={handleTagClick}
-          />
+          <Suspense fallback={
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p className="loading-text">Loading note...</p>
+            </div>
+          }>
+            <NoteView
+              note={state.currentNote}
+              onEdit={() => handleEditNote(state.currentNote!)}
+              onDelete={() => handleDeleteNote(state.currentNote!.id)}
+              onClose={handleBackToNotes}
+              onTagClick={handleTagClick}
+            />
+          </Suspense>
         </div>
       );
     }
@@ -1052,14 +1066,21 @@ const PopupApp: React.FC = () => {
 
       return (
         <div className="note-editor-view">
-          <NoteEditor
-            note={state.editingNote}
-            onSave={updateNote}
-            onCancel={handleBackToNotes}
-            loading={state.isLoading}
-            autoFocus={true}
-            placeholder="Start editing your note..."
-          />
+          <Suspense fallback={
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p className="loading-text">Loading editor...</p>
+            </div>
+          }>
+            <NoteEditor
+              note={state.editingNote}
+              onSave={updateNote}
+              onCancel={handleBackToNotes}
+              loading={state.isLoading}
+              autoFocus={true}
+              placeholder="Start editing your note..."
+            />
+          </Suspense>
         </div>
       );
     }
