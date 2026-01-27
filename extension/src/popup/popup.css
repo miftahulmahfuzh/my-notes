@@ -2411,7 +2411,7 @@ body {
   width: 100%;
   padding: var(--space-4) var(--space-6);
   background: var(--primary);
-  border: 2px solid var(--neutral-950);
+  border: none;
   border-radius: 0;
   font-family: 'Inter', sans-serif;
   font-weight: 600;

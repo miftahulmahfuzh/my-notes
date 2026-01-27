@@ -66,7 +66,7 @@ tmp/
 
 */migrate
 /backend/server
-*_code_analyzer.md
+*code_analyzer.md
 consolidate_auth.md
 
 .workflows/plan/
