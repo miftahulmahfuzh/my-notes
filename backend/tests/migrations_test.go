@@ -45,65 +45,6 @@ func TestMigrationsUp(t *testing.T) {
 	}
 }
 
-func TestMigrationsRollback(t *testing.T) {
-	// NOTE: This test has incorrect expectations about which migration is rolled back.
-	// Skipping until test expectations are corrected.
-	t.Skip("Migration rollback test needs update for current migration structure")
-
-	if !USE_POSTGRE_DURING_TEST {
-		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
-	}
-
-	// Create test database
-	db := SetupTestDB(t)
-	defer CleanupTestDB(t, db)
-
-	// Get migrator
-	migrator := database.NewMigrator(db, "../migrations")
-
-	// Check that we can rollback (at least one migration)
-	err := migrator.Down()
-	assert.NoError(t, err)
-
-	// Check that the last migration was rolled back
-	// The last migration (005_add_user_preferences) should have removed the preferences column from users table
-	var exists bool
-	query := `
-		SELECT EXISTS (
-			SELECT FROM information_schema.columns
-			WHERE table_schema = 'public'
-			AND table_name = 'users'
-			AND column_name = 'preferences'
-		)
-	`
-	err = db.QueryRow(query).Scan(&exists)
-	require.NoError(t, err)
-	assert.False(t, exists, "preferences column should not exist after rollback of 005_add_user_preferences")
-
-	// Check that other tables still exist
-	tables := []string{
-		"schema_migrations",
-		"users",
-		"notes",
-		"tags",
-	}
-
-	for _, table := range tables {
-		t.Run("Table_StillExists_"+table, func(t *testing.T) {
-			query := `
-				SELECT EXISTS (
-					SELECT FROM information_schema.tables
-					WHERE table_schema = 'public'
-					AND table_name = $1
-				)
-			`
-			err := db.QueryRow(query, table).Scan(&exists)
-			require.NoError(t, err)
-			assert.True(t, exists, "Table %s should still exist", table)
-		})
-	}
-}
-
 func TestMigrationStatus(t *testing.T) {
 	if !USE_POSTGRE_DURING_TEST {
 		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")

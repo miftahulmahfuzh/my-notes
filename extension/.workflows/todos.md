@@ -4,7 +4,7 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2026-01-23T16:35:00Z
+**Last Updated**: 2026-01-27T10:50:00Z
 
 **Total Active Tasks**: 2
 
@@ -15,9 +15,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 17
-- Completed This Week: 17
-- Completed This Month: 17
+- Completed Today: 1
+- Completed This Week: 18
+- Completed This Month: 18
 
 ---
 
@@ -33,6 +33,35 @@
   - **Impact**: Users cannot edit notes from the list view, requiring workarounds to access note editor
 
 ### [P2] Medium
+- [x] **P2-CN-A018** Purge unused keyboard shortcuts infrastructure
+  - **Completed**: 2026-01-27 10:50:00
+  - **Difficulty**: EASY
+  - **Type**: Refactor
+  - **Context**: Remove ~5,600 lines of unused keyboard shortcuts infrastructure (types, utilities, CSS, tests). Keep only 2 working shortcuts implemented inline: Ctrl+S to save note (NoteEditor.tsx) and Ctrl+C to clear search (popup/index.tsx).
+  - **Files Deleted**:
+    - extension/src/types/shortcuts.ts (367 lines)
+    - extension/src/utils/shortcuts.ts (438 lines)
+    - extension/src/components/shortcuts.css (704 lines)
+    - extension/tests/utils/shortcuts.test.ts (2299 lines)
+    - extension/src/components/__tests__/NoteEditor.test.tsx.skip (1149 lines)
+    - extension/src/components/__tests__/NoteList.test.tsx.skip (385 lines)
+  - **Files Preserved**:
+    - extension/src/components/NoteEditor.tsx - Ctrl+S implementation (lines 84-90)
+    - extension/src/popup/index.tsx - Ctrl+C implementation (lines 553-572)
+    - extension/tests/components/NoteEditor.test.tsx - Tests for inline shortcuts
+  - **Validation**:
+    - ✅ Extension builds successfully with webpack (no compilation errors)
+    - ✅ No broken imports or references to deleted files
+    - ✅ Ctrl+S shortcut preserved in NoteEditor component
+    - ✅ Ctrl+C shortcut preserved in popup/index.tsx
+  - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 25120 ms`
+  - **Production Impact**: Removed ~5,600 lines of unused code, simplifying the codebase significantly while preserving 2 working shortcuts
+  - **Difficulty**: EASY
+  - **Type**: Refactor
+  - **Context**: Remove ~5,600 lines of unused keyboard shortcuts infrastructure (types, utilities, CSS, tests). Keep only 2 working shortcuts implemented inline: Ctrl+S to save note (NoteEditor.tsx) and Ctrl+C to clear search (popup/index.tsx).
+  - **Status**: in_progress
+  - **Plan**: `.workflows/plan/P2-CN-A018.md`
+
 - [x] **P2-CN-A016** Add real-time search bar to notes list view
   - **Completed**: 2026-01-23 16:55:00
   - **Difficulty**: NORMAL
@@ -109,6 +138,30 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P2-CN-A018** Purge unused keyboard shortcuts infrastructure
+  - **Completed**: 2026-01-27 10:50:00
+  - **Difficulty**: EASY
+  - **Type**: Refactor
+  - **Context**: Remove ~5,600 lines of unused keyboard shortcuts infrastructure (types, utilities, CSS, tests). Keep only 2 working shortcuts implemented inline: Ctrl+S to save note (NoteEditor.tsx) and Ctrl+C to clear search (popup/index.tsx).
+  - **Files Deleted**:
+    - extension/src/types/shortcuts.ts (367 lines)
+    - extension/src/utils/shortcuts.ts (438 lines)
+    - extension/src/components/shortcuts.css (704 lines)
+    - extension/tests/utils/shortcuts.test.ts (2299 lines)
+    - extension/src/components/__tests__/NoteEditor.test.tsx.skip (1149 lines)
+    - extension/src/components/__tests__/NoteList.test.tsx.skip (385 lines)
+  - **Files Preserved**:
+    - extension/src/components/NoteEditor.tsx - Ctrl+S implementation (lines 84-90)
+    - extension/src/popup/index.tsx - Ctrl+C implementation (lines 553-572)
+    - extension/tests/components/NoteEditor.test.tsx - Tests for inline shortcuts
+  - **Validation**:
+    - ✅ Extension builds successfully with webpack (no compilation errors)
+    - ✅ No broken imports or references to deleted files
+    - ✅ Ctrl+S shortcut preserved in NoteEditor component
+    - ✅ Ctrl+C shortcut preserved in popup/index.tsx
+  - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 25120 ms`
+  - **Production Impact**: Removed ~5,600 lines of unused code, simplifying the codebase significantly while preserving 2 working shortcuts
+
 - [x] **P2-CN-A017** Make tags clickable in note detail view for search filtering
   - **Completed**: 2026-01-23 17:46:00
   - **Difficulty**: EASY

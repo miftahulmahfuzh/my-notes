@@ -199,14 +199,6 @@ func TestTokenWithInvalidAudience(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid token audience")
 }
 
-func TestIsTokenExpired(t *testing.T) {
-	t.Skip("IsTokenExpired method not implemented on TokenService - use ValidateToken instead")
-}
-
-func TestGetTokenExpiration(t *testing.T) {
-	t.Skip("GetTokenExpiration method not implemented on TokenService")
-}
-
 func TestRefreshTokenRequestValidation(t *testing.T) {
 	tests := []struct {
 		name        string

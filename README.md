@@ -12,7 +12,7 @@ A brutalist Chrome extension for note-taking with hashtag filtering, Google auth
 - **Hashtag-based organization** with powerful filtering
 - **Real-time sync** between extension and backend
 - **Offline capability** with automatic conflict resolution
-- **Comprehensive keyboard shortcuts** for power users
+- **Essential keyboard shortcuts** for quick note management
 
 ## Features
 
@@ -26,7 +26,7 @@ A brutalist Chrome extension for note-taking with hashtag filtering, Google auth
 
 ### User Experience
 - **Brutalist Design** - High contrast, bold typography, minimal UI
-- **32 Keyboard Shortcuts** - Quick access to all actions
+- **Essential Shortcuts** - Ctrl+S to save, Ctrl+C to clear search
 - **Markdown Support** - Full markdown rendering with syntax highlighting
 - **Virtual Scrolling** - Handle large note lists efficiently
 - **Auto-save** - Never lose your work
@@ -229,14 +229,12 @@ extension/src/
 │
 ├── types/
 │   ├── index.ts             # Core types (Note, User, etc.)
-│   ├── shortcuts.ts         # Keyboard shortcut types
 │   └── storage.ts           # Chrome storage types
 │
 ├── utils/
 │   ├── config.ts            # Configuration constants
 │   ├── contentUtils.ts      # Hashtag/content utilities
-│   ├── markdown.ts          # Markdown processing
-│   └── shortcuts.ts         # Keyboard shortcut handlers
+│   └── markdown.ts          # Markdown processing
 │
 ├── background/
 │   └── index.ts             # Background service worker
@@ -376,38 +374,18 @@ backend/
 
 ### Keyboard Shortcuts
 
-**Components:** `utils/shortcuts.ts`, `types/shortcuts.ts`
+**Components:** `NoteEditor.tsx`, `popup/index.tsx`
 
-**32 Built-in Shortcuts:**
+**2 Essential Shortcuts:**
 
-**Navigation:**
-- `j` / `k` - Navigate up/down
-- `Enter` - Open selected note
-- `Escape` - Cancel/close
+**Note Editor:**
+- `Ctrl+S` / `Cmd+S` - Save note
 
-**Note Actions:**
-- `n` - Create new note
-- `e` - Edit current note
-- `d` - Delete current note
-- `Ctrl+S` - Save note
+**Notes List:**
+- `Ctrl+C` / `Cmd+C` - Clear search query (when search is active)
 
-**Search:**
-- `/` - Focus search box
-- `Ctrl+F` - Find in note
-- `#` - Quick tag filter
-
-**View:**
-- `p` - Toggle markdown preview
-- `Ctrl+1/2/3` - Switch view modes
-
-**Text Formatting:**
-- `Ctrl+B` - Bold
-- `Ctrl+I` - Italic
-- `Ctrl+K` - Insert link
-
-**Application:**
-- `Ctrl+/` - Show help
-- `Ctrl+Shift+/` - Show shortcuts reference
+**Tab for Indentation:**
+- `Tab` - Insert 2 spaces in note editor textarea
 
 ### Markdown Rendering
 
