@@ -21,9 +21,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onAuthSuccess }) => {
   }, []);
 
   const handleLogin = async () => {
-    const success = await authService.authenticate();
-    if (success) {
-      onAuthSuccess();
+    try {
+      const success = await authService.authenticate();
+      if (success) {
+        onAuthSuccess();
+      }
+    } catch (error) {
+      // Error is handled by auth state subscription
+      console.error('Authentication failed:', error);
     }
   };
 

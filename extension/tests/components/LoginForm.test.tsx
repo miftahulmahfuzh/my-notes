@@ -172,7 +172,7 @@ describe('LoginForm Component', () => {
       render(<LoginForm onAuthSuccess={mockOnAuthSuccess} />);
 
       await waitFor(() => {
-        expect(screen.getByText(/authentication failed/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /authentication failed/i })).toBeInTheDocument();
         expect(screen.getByText(errorMessage)).toBeInTheDocument();
       });
     });
@@ -401,7 +401,7 @@ describe('LoginForm Component', () => {
 
       // Wait for error state
       await waitFor(() => {
-        expect(screen.getByText(/authentication failed/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /authentication failed/i })).toBeInTheDocument();
       });
 
       // Click dismiss
