@@ -4,20 +4,20 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2026-01-27T10:50:00Z
+**Last Updated**: 2026-01-27T15:20:00Z
 
-**Total Active Tasks**: 2
+**Total Active Tasks**: 1
 
 ## Quick Stats
 - P0 Critical: 0
 - P1 High: 1
-- P2 Medium: 1
+- P2 Medium: 0
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 1
-- Completed This Week: 18
-- Completed This Month: 18
+- Completed Today: 3
+- Completed This Week: 20
+- Completed This Month: 20
 
 ---
 
@@ -138,6 +138,65 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P2-CN-A020** Help page UI improvements: smaller fonts, reduced spacing, icon Back button, keyboard shortcuts
+  - **Completed**: 2026-01-27 15:45:00
+  - **Difficulty**: NORMAL
+  - **Type**: Feature
+  - **Context**: Reduce Help page font sizes (h2: 48px→smaller, h3: 24px→smaller), reduce line spacing (gap: 12px→smaller, line-height: 1.4→smaller), move Back button to header as icon, enable Ctrl+N/Ctrl+B shortcuts on Help page, add history tracking for Help navigation.
+  - **Files Modified**:
+    - extension/src/popup/index.tsx (added ArrowLeft import, updated handleHelpClick with history tracking, updated handleBackFromHelp to use history, removed early return for Help page shortcuts, updated Help view JSX with header layout)
+    - extension/src/popup/popup.css (added .btn-back-icon, .header-title, .content-section--help scoped styles)
+  - **Key Implementation**:
+    - Added ArrowLeft icon to lucide-react imports
+    - Updated `handleHelpClick` to push current state to navigationHistory before showing Help
+    - Updated `handleBackFromHelp` to use history system instead of simple toggle
+    - Removed early return (`if (state.showHelpView) return;`) from keyboard shortcuts useEffect
+    - Added conditional logic: Ctrl+B calls `handleBackFromHelp()` when on Help page, `handleBack()` otherwise
+    - Replaced Help view header with: Back icon (left), title (center), Logout icon (right)
+    - Removed "Back" button from bottom of content
+    - Removed user profile section from Help page header
+    - Added `content-section--help` class to content section
+    - Added scoped CSS: h2 reduced to 1.75rem (28px), h3 reduced to 1rem (16px)
+    - Reduced line-height from 1.4 to 1.3 for Help page
+    - Reduced gaps: help-section margin-bottom to var(--space-4), shortcut-list gap to var(--space-2), shortcut-item gap/padding to var(--space-2)/var(--space-3)
+    - Added `.btn-back-icon` style matching logout icon button
+    - Added `.header-title` style for centered title between buttons
+  - **Validation**:
+    - Extension builds successfully with webpack
+    - Ctrl+N now works on Help page to navigate to create note form
+    - Ctrl+B now works on Help page to navigate back to previous state
+    - History tracking enables proper back navigation from Help page
+    - Back button is now an icon in the header (top-left)
+    - Help page typography is smaller and more compact
+    - Spacing between items is reduced for better readability
+  - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 28074 ms`
+
+- [x] **P2-CN-A019** Welcome page action buttons: icon-only single row layout
+  - **Completed**: 2026-01-27 15:20:00
+  - **Difficulty**: EASY
+  - **Type**: Feature
+  - **Context**: Remove text labels from welcome page action buttons, reduce icon size from 28px to 20px, and arrange all three buttons in a single horizontal row (currently 2-column grid).
+  - **Files Modified**:
+    - extension/src/popup/index.tsx (removed action-title divs, added role/aria-label attributes, reduced icon size from 28 to 20)
+    - extension/src/popup/popup.css (changed grid-template-columns from 1fr 1fr to repeat(3, 1fr), reduced action-icon container from 48px to 40px, removed action-title styles)
+    - extension/tests/popup/PopupApp.test.tsx (updated all getByText queries to getByRole with aria-label, fixed variable names from plural to singular)
+  - **Key Implementation**:
+    - Removed `<div className="action-title">Create Note</div>` (and similar) from JSX
+    - Added `role="button"`, `tabIndex={0}`, and `aria-label="Create Note"` (etc.) to each action card for accessibility
+    - Changed icon `size` prop from 28 to 20 for FileText, BookOpen, and HelpCircle icons
+    - Updated `.action-grid` CSS from `grid-template-columns: 1fr 1fr` to `grid-template-columns: repeat(3, 1fr)` for single row layout
+    - Reduced `.action-icon` width/height from 48px to 40px to match smaller icon size
+    - Removed `.action-title` CSS styles (comment: "icons only now")
+    - Updated all tests to use `getByRole('button', { name: /Create Note/i })` instead of `getByText(/Create Note/i)`
+    - Fixed variable names from `createNoteButtons` to `createNoteButton` since there's only one button per aria-label
+  - **Validation**:
+    - ✅ Extension builds successfully with webpack (webpack 5.102.1 compiled with 3 warnings in 24405 ms)
+    - ✅ All 50 tests pass (PASS tests/popup/PopupApp.test.tsx)
+    - ✅ Tests now find buttons via aria-label instead of visible text content
+    - ✅ Icon-only layout maintains accessibility through aria-label attributes
+    - ✅ Single row layout (3 columns) displays all buttons horizontally
+  - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 24405 ms`, `Test Suites: 1 passed, 1 total; Tests: 50 passed, 50 total`
+
 - [x] **P2-CN-A018** Purge unused keyboard shortcuts infrastructure
   - **Completed**: 2026-01-27 10:50:00
   - **Difficulty**: EASY

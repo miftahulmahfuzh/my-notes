@@ -181,7 +181,7 @@ describe('PopupApp Component', () => {
 
       await waitFor(() => {
         expect(screen.queryByText(/Welcome/i)).not.toBeInTheDocument();
-        expect(screen.queryByText(/Create Note/i)).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Create Note/i })).not.toBeInTheDocument();
       });
     });
   });
@@ -222,8 +222,8 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
     });
 
@@ -264,12 +264,12 @@ describe('PopupApp Component', () => {
 
       // Wait for welcome screen
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
       // Click Create Note action card
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       // Should show create note form
       await waitFor(() => {
@@ -294,11 +294,11 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       await waitFor(() => {
         const titleInput = screen.getByLabelText(/note title/i);
@@ -326,11 +326,11 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /save note/i })).toBeInTheDocument();
@@ -371,10 +371,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(apiService.getNotes).toHaveBeenCalled();
@@ -396,10 +396,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/search notes/i)).toBeInTheDocument();
@@ -432,10 +432,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/no notes yet/i)).toBeInTheDocument();
@@ -478,10 +478,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByText(mockNote.title || 'Untitled Note')).toBeInTheDocument();
@@ -525,10 +525,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByText(mockNote.title || 'Untitled Note')).toBeInTheDocument();
@@ -590,10 +590,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/search notes/i)).toBeInTheDocument();
@@ -622,10 +622,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       const searchInput = screen.getByPlaceholderText(/search notes/i);
       await user.type(searchInput, 'test');
@@ -670,10 +670,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Shopping List')).toBeInTheDocument();
@@ -722,10 +722,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       const searchInput = screen.getByPlaceholderText(/search notes/i);
       await user.type(searchInput, 'nonexistent');
@@ -766,10 +766,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       const searchInput = screen.getByPlaceholderText(/search notes/i);
       await user.type(searchInput, 'test');
@@ -859,11 +859,11 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       await waitFor(() => {
         expect(screen.getByLabelText(/content/i)).toBeInTheDocument();
@@ -919,11 +919,11 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       const contentTextarea = screen.getByLabelText(/content/i);
       await user.type(contentTextarea, 'New note content');
@@ -951,11 +951,11 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       // Save button should be disabled when content is empty
       const saveButton = screen.getByRole('button', { name: /save note/i });
@@ -1099,10 +1099,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Note to Delete')).toBeInTheDocument();
@@ -1171,10 +1171,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Note to Delete')).toBeInTheDocument();
@@ -1350,11 +1350,11 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       const contentTextarea = screen.getByLabelText(/content/i);
       await user.type(contentTextarea, 'Test content');
@@ -1391,7 +1391,7 @@ describe('PopupApp Component', () => {
 
       // Trigger notes load by clicking View All Notes
       const user = userEvent.setup();
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/failed to load notes/i)).toBeInTheDocument();
@@ -1418,11 +1418,11 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       const contentTextarea = screen.getByLabelText(/content/i);
       await user.type(contentTextarea, 'Test content');
@@ -1459,10 +1459,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/search notes/i)).toBeInTheDocument();
@@ -1524,11 +1524,11 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       const contentTextarea = screen.getByLabelText(/content/i);
       await user.type(contentTextarea, 'Test content');
@@ -1594,10 +1594,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Note to Delete')).toBeInTheDocument();
@@ -1664,11 +1664,11 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
       });
 
-      const createNoteButtons = screen.getAllByText(/Create Note/i);
-      await user.click(createNoteButtons[0]);
+      const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
+      await user.click(createNoteButton);
 
       const contentTextarea = screen.getByLabelText(/content/i);
       await user.type(contentTextarea, 'Test content');
@@ -1704,10 +1704,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/search notes/i)).toBeInTheDocument();
@@ -1763,10 +1763,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/View All Notes/i));
+      await user.click(screen.getByRole('button', { name: /View All Notes/i }));
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/search notes/i)).toBeInTheDocument();
@@ -1844,9 +1844,9 @@ describe('PopupApp Component', () => {
       });
 
       // All three buttons should be present
-      expect(screen.getByText(/Create Note/i)).toBeInTheDocument();
-      expect(screen.getByText(/View All Notes/i)).toBeInTheDocument();
-      expect(screen.getByText(/Help/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Create Note/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /View All Notes/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Help/i })).toBeInTheDocument();
     });
 
     it('should navigate to Help page when Help button is clicked', async () => {
@@ -1864,10 +1864,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Help/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Help/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/Help/i));
+      await user.click(screen.getByRole('button', { name: /Help/i }));
 
       // Should show Help page content
       await waitFor(() => {
@@ -1890,10 +1890,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Help/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Help/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/Help/i));
+      await user.click(screen.getByRole('button', { name: /Help/i }));
 
       // Should show all keyboard shortcuts
       await waitFor(() => {
@@ -1929,10 +1929,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Help/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Help/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/Help/i));
+      await user.click(screen.getByRole('button', { name: /Help/i }));
 
       // Should mention tag functionality
       await waitFor(() => {
@@ -1956,10 +1956,10 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Help/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Help/i })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText(/Help/i));
+      await user.click(screen.getByRole('button', { name: /Help/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/Keyboard Shortcuts/i)).toBeInTheDocument();

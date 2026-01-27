@@ -8,7 +8,7 @@ import { LoginForm } from '../components/LoginForm';
 import { SimpleUserProfile } from '../components/SimpleUserProfile';
 import NoteView from '../components/NoteView';
 import NoteEditor from '../components/NoteEditor';
-import { FileText, BookOpen, LogOut, X, HelpCircle } from 'lucide-react';
+import { FileText, BookOpen, LogOut, X, HelpCircle, ArrowLeft } from 'lucide-react';
 
 // Styles
 import './popup.css';
@@ -244,16 +244,47 @@ const PopupApp: React.FC = () => {
   };
 
   const handleHelpClick = () => {
-    setState(prev => ({
-      ...prev,
-      showHelpView: true,
-    }));
+    setState(prev => {
+      // Push current state to history before navigating to Help
+      const newHistoryEntry: HistoryState = {
+        view: prev.showNotesList ? 'notesList' : 'welcome',
+        searchQuery: prev.searchQuery,
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        navigationHistory: [...prev.navigationHistory, newHistoryEntry],
+        showHelpView: true,
+      };
+    });
   };
 
   const handleBackFromHelp = () => {
+    const history = state.navigationHistory;
+    if (history.length === 0) {
+      // If no history, just go back to welcome
+      setState(prev => ({
+        ...prev,
+        showHelpView: false,
+        showNotesList: false,
+      }));
+      return;
+    }
+
+    // Get the previous state from history
+    const previousState = history[history.length - 1];
+
+    // Remove it from history
+    const newHistory = history.slice(0, -1);
+
+    // Restore the previous state
     setState(prev => ({
       ...prev,
+      navigationHistory: newHistory,
       showHelpView: false,
+      showNotesList: previousState.view === 'notesList',
+      searchQuery: previousState.searchQuery || '',
     }));
   };
 
@@ -654,16 +685,13 @@ const PopupApp: React.FC = () => {
     };
   }, [state.showNotesList, state.searchQuery]);
 
-  // Keyboard shortcuts: Ctrl+N, Ctrl+F, Ctrl+B
+  // Keyboard shortcuts: Ctrl+N, Ctrl+F, Ctrl+B (work on all pages including Help)
   useEffect(() => {
-    // Don't enable shortcuts on Help page
-    if (state.showHelpView) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check for Ctrl or Command (Mac) modifier
       if (!(e.ctrlKey || e.metaKey)) return;
 
-      // Ctrl+N: Navigate to create note form
+      // Ctrl+N: Navigate to create note form (works everywhere including Help)
       if (e.key === 'n') {
         e.preventDefault();
         handleCreateNoteClick();
@@ -680,7 +708,11 @@ const PopupApp: React.FC = () => {
       // Ctrl+B: Navigate back in history
       if (e.key === 'b') {
         e.preventDefault();
-        handleBack();
+        if (state.showHelpView) {
+          handleBackFromHelp();
+        } else {
+          handleBack();
+        }
         return;
       }
     };
@@ -1022,24 +1054,17 @@ const PopupApp: React.FC = () => {
         <div className="main">
           <div className="header">
             <div className="header-content">
-              <div className="user-profile">
-                <div className="user-avatar">
-                  {getUserInitials(state.authState.user?.email || '', state.authState.user?.email || '')}
-                </div>
-                <div className="user-info">
-                  <div className="user-email">{state.authState.user?.email}</div>
-                  <div className="user-name">Help</div>
-                </div>
-              </div>
+              <button className="btn-back-icon" onClick={handleBackFromHelp} aria-label="Back">
+                <ArrowLeft size={20} strokeWidth={2} />
+              </button>
+              <div className="header-title">Keyboard Shortcuts</div>
               <button className="btn-logout-icon" onClick={handleLogout} aria-label="Logout">
                 <LogOut size={18} strokeWidth={2} />
               </button>
             </div>
           </div>
 
-          <div className="content-section">
-            <h2 className="text-h2 font-display">Keyboard Shortcuts</h2>
-
+          <div className="content-section content-section--help">
             <div className="help-section">
               <h3 className="text-h3">Navigation Shortcuts (Global)</h3>
               <div className="shortcut-list">
@@ -1088,12 +1113,6 @@ const PopupApp: React.FC = () => {
                 Clicking a tag in a note detail view will redirect you to the search page with that tag as the search query.
               </p>
             </div>
-
-            <div className="section section-with-top-margin">
-              <button onClick={handleBackFromHelp} className="btn-secondary flex-1">
-                Back
-              </button>
-            </div>
           </div>
         </div>
       );
@@ -1130,23 +1149,20 @@ const PopupApp: React.FC = () => {
         </div>
 
         <div className="action-grid">
-          <div className="action-card" onClick={handleCreateNoteClick}>
+          <div className="action-card" onClick={handleCreateNoteClick} role="button" tabIndex={0} aria-label="Create Note">
             <div className="action-icon">
-              <FileText size={28} strokeWidth={2} />
+              <FileText size={20} strokeWidth={2} />
             </div>
-            <div className="action-title">Create Note</div>
           </div>
-          <div className="action-card" onClick={handleViewAllNotesClick}>
+          <div className="action-card" onClick={handleViewAllNotesClick} role="button" tabIndex={0} aria-label="View All Notes">
             <div className="action-icon">
-              <BookOpen size={28} strokeWidth={2} />
+              <BookOpen size={20} strokeWidth={2} />
             </div>
-            <div className="action-title">View All Notes</div>
           </div>
-          <div className="action-card" onClick={handleHelpClick}>
+          <div className="action-card" onClick={handleHelpClick} role="button" tabIndex={0} aria-label="Help">
             <div className="action-icon">
-              <HelpCircle size={28} strokeWidth={2} />
+              <HelpCircle size={20} strokeWidth={2} />
             </div>
-            <div className="action-title">Help</div>
           </div>
         </div>
       </div>
