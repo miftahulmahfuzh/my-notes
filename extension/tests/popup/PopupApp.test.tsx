@@ -1312,6 +1312,16 @@ describe('PopupApp Component', () => {
       const logoutButton = screen.getByLabelText(/logout/i);
       await user.click(logoutButton);
 
+      // Simulate auth state change after logout
+      if (mockAuthCallback) {
+        mockAuthCallback({
+          isAuthenticated: false,
+          isLoading: false,
+          user: null,
+          error: null,
+        });
+      }
+
       // After logout, should show login form
       await waitFor(() => {
         expect(screen.getByText('SILENCE NOTES')).toBeInTheDocument();
