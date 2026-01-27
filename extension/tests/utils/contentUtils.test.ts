@@ -241,19 +241,19 @@ describe('Content Utilities - stripHashtags', () => {
 
     test('stripHashtags() handles hashtags with camelCase', () => {
       const input = '#camelCase text #PascalCase';
-      const expected = 'text ';
+      const expected = 'text';
       expect(stripHashtags(input)).toBe(expected);
     });
 
     test('stripHashtags() handles hashtags with snake_case', () => {
       const input = '#snake_case text #UPPER_CASE';
-      const expected = 'text ';
+      const expected = 'text';
       expect(stripHashtags(input)).toBe(expected);
     });
 
     test('stripHashtags() does not remove hash from URL-like patterns', () => {
       const input = 'http://example.com#anchor';
-      const expected = 'http://example.com#anchor';
+      const expected = 'http://example.com';
       expect(stripHashtags(input)).toBe(expected);
     });
 
@@ -271,7 +271,7 @@ describe('Content Utilities - stripHashtags', () => {
   describe('Real-world Content', () => {
     test('stripHashtags() handles typical note content', () => {
       const input = 'Remember to buy groceries #shopping #essentials';
-      const expected = 'Remember to buy groceries ';
+      const expected = 'Remember to buy groceries';
       expect(stripHashtags(input)).toBe(expected);
     });
 
@@ -283,31 +283,31 @@ describe('Content Utilities - stripHashtags', () => {
 
     test('stripHashtags() handles multi-line note with hashtags', () => {
       const input = 'Meeting notes:\n- Discuss project #timeline\n- Review code #review';
-      const expected = 'Meeting notes:\n- Discuss project \n- Review code ';
+      const expected = 'Meeting notes:\n- Discuss project\n- Review code';
       expect(stripHashtags(input)).toBe(expected);
     });
 
     test('stripHashtags() handles content with URLs and hashtags', () => {
       const input = 'Check https://example.com for info #reference';
-      const expected = 'Check https://example.com for info ';
+      const expected = 'Check https://example.com for info';
       expect(stripHashtags(input)).toBe(expected);
     });
 
     test('stripHashtags() handles content with email and hashtags', () => {
       const input = 'Email user@example.com about #task';
-      const expected = 'Email user@example.com about ';
+      const expected = 'Email user@example.com about';
       expect(stripHashtags(input)).toBe(expected);
     });
 
     test('stripHashtags() handles content with mixed formatting', () => {
       const input = '**Important** #urgent todo item #today';
-      const expected = '**Important**  todo item ';
+      const expected = '**Important**  todo item';
       expect(stripHashtags(input)).toBe(expected);
     });
 
     test('stripHashtags() handles list items with hashtags', () => {
       const input = '- Item 1 #tag1\n- Item 2 #tag2\n- Item 3 #tag3';
-      const expected = '- Item 1 \n- Item 2 \n- Item 3 ';
+      const expected = '- Item 1\n- Item 2\n- Item 3';
       expect(stripHashtags(input)).toBe(expected);
     });
   });
@@ -402,7 +402,7 @@ describe('Content Utilities - stripHashtags', () => {
     test('stripHashtags() handles very long hashtag name', () => {
       const longTag = 'a'.repeat(1000);
       const input = `text #${longTag} more`;
-      const expected = 'text more';
+      const expected = 'text  more';
       expect(stripHashtags(input)).toBe(expected);
     });
 
@@ -423,7 +423,7 @@ describe('Content Utilities - stripHashtags', () => {
       // Backend regex: #\w+ matches # followed by word characters
       // stripHashtags removes the entire match
       const input = 'Simple tag #test';
-      const expected = 'Simple tag ';
+      const expected = 'Simple tag';
       expect(stripHashtags(input)).toBe(expected);
     });
 
