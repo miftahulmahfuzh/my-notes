@@ -1,5 +1,6 @@
 // Mock Chrome API for testing
 import { Note } from '../src/types';
+import '@testing-library/jest-dom';
 
 type MockedFn = ReturnType<typeof jest.fn> & {
   mockResolvedValue: (value: any) => any;

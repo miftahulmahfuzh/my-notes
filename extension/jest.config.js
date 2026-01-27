@@ -10,7 +10,7 @@ module.exports = {
     '^.+\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-markdown|remark-gfm|react-syntax-highlighter|hast-util-to-jsx-runtime|vfile|unist|is-plain-obj|bail|extend|repeat-string|unified|micromark|devlop|decode-named-character-reference|character-entities|character-entities-legacy|property-information|trim-lines|trough|mdast-util-to-hast|remark-parse|remark-rehype|unist-util-visit|html-url-attributes)/)',
+    'node_modules/(?!(lucide-react|react-markdown|remark-gfm|react-syntax-highlighter|hast-util-to-jsx-runtime|vfile|unist|is-plain-obj|bail|extend|repeat-string|unified|micromark|devlop|decode-named-character-reference|character-entities|character-entities-legacy|property-information|trim-lines|trough|mdast-util-to-hast|remark-parse|remark-rehype|unist-util-visit|html-url-attributes)/)',
   ],
   transform: {
     '^.+\\.tsx?$': [
