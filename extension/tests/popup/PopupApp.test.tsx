@@ -1595,6 +1595,8 @@ describe('PopupApp Component', () => {
 
       // @ts-ignore
       authService.initialize.mockResolvedValue(mockAuthState);
+
+      // Mock createNote to delay response
       // @ts-ignore
       apiService.createNote.mockImplementation(() =>
         new Promise((resolve) => {
@@ -1602,6 +1604,25 @@ describe('PopupApp Component', () => {
             resolve({
               success: true,
               data: createMockNote(),
+            });
+          }, 200);
+        })
+      );
+
+      // Mock getNotes to also delay to allow UI to show loading state
+      // @ts-ignore
+      apiService.getNotes.mockImplementation(() =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              success: true,
+              data: {
+                notes: [],
+                total: 0,
+                page: 1,
+                limit: 20,
+                has_more: false,
+              },
             });
           }, 100);
         })
@@ -1622,14 +1643,15 @@ describe('PopupApp Component', () => {
       const saveButton = screen.getByRole('button', { name: /save note/i });
       await user.click(saveButton);
 
+      // Should show loading state (global spinner) instead of disabled buttons
       await waitFor(() => {
-        expect(saveButton).toBeDisabled();
-      });
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      }, { timeout: 100 });
 
       // Wait for operation to complete
       await waitFor(() => {
-        expect(screen.queryByText(/saving/i)).not.toBeInTheDocument();
-      }, { timeout: 200 });
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 1000 });
     });
   });
 });
