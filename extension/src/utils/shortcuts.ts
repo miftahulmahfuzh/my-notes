@@ -23,6 +23,7 @@ export const parseShortcut = (shortcut: string): {
         result.ctrl = true;
         break;
       case 'alt':
+      case 'option':  // Mac option key
         result.alt = true;
         break;
       case 'shift':
@@ -46,17 +47,34 @@ export const formatShortcut = (shortcut: string, platform: 'mac' | 'windows' | '
   const parsed = parseShortcut(shortcut);
   const parts: string[] = [];
 
-  if (parsed.ctrl) {
-    parts.push(platform === 'mac' ? '⌃' : 'Ctrl');
-  }
-  if (parsed.alt) {
-    parts.push(platform === 'mac' ? '⌥' : 'Alt');
-  }
-  if (parsed.shift) {
-    parts.push(platform === 'mac' ? '⇧' : 'Shift');
-  }
-  if (parsed.meta) {
-    parts.push(platform === 'mac' ? '⌘' : 'Ctrl');
+  // On Mac, Cmd (⌘) comes first, then Ctrl, Option, Shift
+  // On Windows/Linux, order is Ctrl, Shift, Alt
+  if (platform === 'mac') {
+    if (parsed.meta) {
+      parts.push('⌘');
+    }
+    if (parsed.ctrl) {
+      parts.push('⌃');
+    }
+    if (parsed.alt) {
+      parts.push('⌥');
+    }
+    if (parsed.shift) {
+      parts.push('⇧');
+    }
+  } else {
+    if (parsed.ctrl) {
+      parts.push('Ctrl');
+    }
+    if (parsed.shift) {
+      parts.push('Shift');
+    }
+    if (parsed.alt) {
+      parts.push('Alt');
+    }
+    if (parsed.meta) {
+      parts.push('Ctrl');
+    }
   }
 
   // Format main key
@@ -129,20 +147,23 @@ export const normalizeShortcut = (shortcut: string): string => {
   const parsed = parseShortcut(shortcut);
 
   // On Mac, convert Ctrl to Cmd for most shortcuts (except a few exceptions)
+  // Exceptions: space, tab, enter, escape keys, and when alt/option is also present
   if (platform === 'mac' && parsed.ctrl && !parsed.meta) {
     const exceptions = ['space', 'tab', 'enter', 'escape'];
-    if (!exceptions.includes(parsed.key.toLowerCase())) {
+    // Don't convert ctrl to meta when alt is also present (Ctrl+Alt combinations)
+    if (!exceptions.includes(parsed.key.toLowerCase()) && !parsed.alt) {
       parsed.ctrl = false;
       parsed.meta = true;
     }
   }
 
-  // Rebuild shortcut string
+  // Rebuild shortcut string with proper modifier order
+  // Meta/Cmd comes first on Mac, then Ctrl, Alt, Shift
   const parts: string[] = [];
+  if (parsed.meta) parts.push('meta');
   if (parsed.ctrl) parts.push('ctrl');
   if (parsed.alt) parts.push('alt');
   if (parsed.shift) parts.push('shift');
-  if (parsed.meta) parts.push('meta');
   parts.push(parsed.key);
 
   return parts.join('+');
@@ -221,7 +242,35 @@ export const isBrowserReserved = (shortcut: string): boolean => {
     'f12', // Developer tools
   ];
 
-  return reserved.includes(normalized);
+  // Mac-specific browser shortcuts (using cmd instead of ctrl)
+  const macReserved = [
+    'meta+r', // Refresh
+    'meta+shift+r', // Hard refresh
+    'meta+w', // Close tab
+    'meta+t', // New tab
+    'meta+n', // New window
+    'meta+shift+t', // Reopen closed tab
+    'meta+tab', // Switch tabs
+    'meta+shift+tab', // Switch tabs backwards
+    'meta+f', // Find
+    'meta+shift+f', // Find in all tabs
+    'meta+g', // Find next
+    'meta+shift+g', // Find previous
+    'meta+l', // Focus address bar
+    'meta+shift+j', // Developer tools
+    'meta+shift+i', // Developer tools
+    'meta+u', // View source
+    'meta+s', // Save
+    'meta+p', // Print
+    'meta+c', // Copy
+    'meta+v', // Paste
+    'meta+x', // Cut
+    'meta+a', // Select all
+    'meta+z', // Undo
+    'meta+shift+z', // Redo
+  ];
+
+  return reserved.includes(normalized) || macReserved.includes(normalized);
 };
 
 // Check if shortcut conflicts with system shortcuts
@@ -231,33 +280,33 @@ export const isSystemReserved = (shortcut: string): boolean => {
 
   if (platform === 'mac') {
     const macReserved = [
-      'cmd+q', // Quit
-      'cmd+w', // Close window
-      'cmd+m', // Minimize
-      'cmd+option+m', // Minimize all
-      'cmd+h', // Hide
-      'cmd+option+h', // Hide others
-      'cmd+space', // Spotlight
-      'cmd+tab', // App switcher
-      'cmd+shift+tab', // App switcher backwards
-      'cmd+option+esc', // Force quit
-      'cmd+ctrl+q', // Log out
-      'cmd+shift+3', // Screenshot
-      'cmd+shift+4', // Screenshot selection
-      'cmd+shift+5', // Screenshot options
-      'cmd+c', // Copy
-      'cmd+v', // Paste
-      'cmd+x', // Cut
-      'cmd+z', // Undo
-      'cmd+shift+z', // Redo
-      'cmd+a', // Select all
-      'cmd+f', // Find
-      'cmd+g', // Find next
-      'cmd+shift+g', // Find previous
-      'cmd+s', // Save
-      'cmd+o', // Open
-      'cmd+n', // New
-      'cmd+p', // Print
+      'meta+q', // Quit
+      'meta+w', // Close window
+      'meta+m', // Minimize
+      'meta+alt+m', // Minimize all
+      'meta+h', // Hide
+      'meta+alt+h', // Hide others
+      'meta+space', // Spotlight
+      'meta+tab', // App switcher
+      'meta+shift+tab', // App switcher backwards
+      'meta+alt+escape', // Force quit
+      'meta+ctrl+q', // Log out
+      'meta+shift+3', // Screenshot
+      'meta+shift+4', // Screenshot selection
+      'meta+shift+5', // Screenshot options
+      'meta+c', // Copy
+      'meta+v', // Paste
+      'meta+x', // Cut
+      'meta+z', // Undo
+      'meta+shift+z', // Redo
+      'meta+a', // Select all
+      'meta+f', // Find
+      'meta+g', // Find next
+      'meta+shift+g', // Find previous
+      'meta+s', // Save
+      'meta+o', // Open
+      'meta+n', // New
+      'meta+p', // Print
     ];
     return macReserved.includes(normalized);
   }

@@ -1300,6 +1300,25 @@ describe('createCommandPaletteItems', () => {
 describe('saveShortcutConfig', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Ensure chrome mock is available (might be deleted by previous tests)
+    if (!(global as any).chrome?.storage) {
+      (global as any).chrome = {
+        storage: {
+          local: {
+            get: jest.fn().mockResolvedValue({}),
+            set: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+            clear: jest.fn().mockResolvedValue(undefined),
+          },
+          sync: {
+            get: jest.fn().mockResolvedValue({}),
+            set: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+            clear: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+      };
+    }
   });
 
   it('should save to chrome.storage.local when available', async () => {
@@ -1394,6 +1413,25 @@ describe('saveShortcutConfig', () => {
 describe('loadShortcutConfig', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Ensure chrome mock is available (might be deleted by previous tests)
+    if (!(global as any).chrome?.storage) {
+      (global as any).chrome = {
+        storage: {
+          local: {
+            get: jest.fn().mockResolvedValue({}),
+            set: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+            clear: jest.fn().mockResolvedValue(undefined),
+          },
+          sync: {
+            get: jest.fn().mockResolvedValue({}),
+            set: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+            clear: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+      };
+    }
   });
 
   it('should load from chrome.storage.local when available', async () => {
@@ -2127,6 +2165,25 @@ describe('importShortcutConfig', () => {
 describe('resetShortcuts', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Ensure chrome mock is available (might be deleted by previous tests)
+    if (!(global as any).chrome?.storage) {
+      (global as any).chrome = {
+        storage: {
+          local: {
+            get: jest.fn().mockResolvedValue({}),
+            set: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+            clear: jest.fn().mockResolvedValue(undefined),
+          },
+          sync: {
+            get: jest.fn().mockResolvedValue({}),
+            set: jest.fn().mockResolvedValue(undefined),
+            remove: jest.fn().mockResolvedValue(undefined),
+            clear: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+      };
+    }
   });
 
   it('should reset to default config', async () => {

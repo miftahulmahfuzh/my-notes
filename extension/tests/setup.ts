@@ -96,6 +96,9 @@ const mockChrome = {
 
 global.chrome = mockChrome as any;
 
+// Export mockChrome for tests that need to restore it after deleting it
+export { mockChrome };
+
 // Mock navigator.storage.estimate
 Object.defineProperty(navigator, 'storage', {
   value: {
