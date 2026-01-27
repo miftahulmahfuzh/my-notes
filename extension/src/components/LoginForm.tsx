@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { authService, AuthState } from '../auth';
-import { Lock, FileText, RefreshCw, Hash, ShieldCheck, AlertTriangle } from 'lucide-react';
+import Lock from 'lucide-react/dist/esm/icons/lock';
+import FileText from 'lucide-react/dist/esm/icons/file-text';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
+import Hash from 'lucide-react/dist/esm/icons/hash';
+import ShieldCheck from 'lucide-react/dist/esm/icons/shield-check';
+import AlertTriangle from 'lucide-react/dist/esm/icons/alert-triangle';
 
 interface LoginFormProps {
   onAuthSuccess: () => void;

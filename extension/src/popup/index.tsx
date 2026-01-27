@@ -8,7 +8,12 @@ import { LoginForm } from '../components/LoginForm';
 import { SimpleUserProfile } from '../components/SimpleUserProfile';
 import NoteView from '../components/NoteView';
 import NoteEditor from '../components/NoteEditor';
-import { FileText, BookOpen, LogOut, X, HelpCircle, ArrowLeft } from 'lucide-react';
+import FileText from 'lucide-react/dist/esm/icons/file-text';
+import BookOpen from 'lucide-react/dist/esm/icons/book-open';
+import LogOut from 'lucide-react/dist/esm/icons/log-out';
+import X from 'lucide-react/dist/esm/icons/x';
+import HelpCircle from 'lucide-react/dist/esm/icons/help-circle';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
 
 // Styles
 import './popup.css';
