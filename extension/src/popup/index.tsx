@@ -241,6 +241,20 @@ const PopupApp: React.FC = () => {
   };
 
   const handleViewAllNotesClick = async () => {
+    // Push current state to history before navigating to notes list
+    setState(prev => {
+      const newHistoryEntry: HistoryState = {
+        view: prev.showHelpView ? 'help' : (prev.showNotesList ? 'notesList' : 'welcome'),
+        searchQuery: prev.searchQuery,
+        timestamp: Date.now()
+      };
+
+      return {
+        ...prev,
+        navigationHistory: [...prev.navigationHistory, newHistoryEntry],
+      };
+    });
+
     await loadNotes();
   };
 
@@ -1151,17 +1165,17 @@ const PopupApp: React.FC = () => {
         </div>
 
         <div className="action-grid">
-          <div className="action-card" onClick={handleCreateNoteClick} role="button" tabIndex={0} aria-label="Create Note">
+          <div className="action-card" onClick={handleCreateNoteClick} role="button" tabIndex={0} aria-label="Create Note" title="New Note">
             <div className="action-icon">
               <FileText size={20} strokeWidth={2} />
             </div>
           </div>
-          <div className="action-card" onClick={handleViewAllNotesClick} role="button" tabIndex={0} aria-label="View All Notes">
+          <div className="action-card" onClick={handleViewAllNotesClick} role="button" tabIndex={0} aria-label="View All Notes" title="Show Notes">
             <div className="action-icon">
               <BookOpen size={20} strokeWidth={2} />
             </div>
           </div>
-          <div className="action-card" onClick={handleHelpClick} role="button" tabIndex={0} aria-label="Help">
+          <div className="action-card" onClick={handleHelpClick} role="button" tabIndex={0} aria-label="Help" title="Help">
             <div className="action-icon">
               <HelpCircle size={20} strokeWidth={2} />
             </div>
