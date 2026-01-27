@@ -3,8 +3,8 @@
  */
 
 export const CONFIG = {
-  // API Configuration - Chrome extensions always use development URLs
-  API_BASE_URL: 'http://localhost:8080/api/v1',
+  // API Configuration - Production URL on Cloud Run
+  API_BASE_URL: 'https://my-notes-api-7bnrhx3mka-uc.a.run.app/api/v1',
 
   // Google OAuth Configuration
   GOOGLE_OAUTH: {

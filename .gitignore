@@ -25,8 +25,12 @@ build/
 # Environment variables
 .env
 .env.local
-.env.production
 .env.test
+backend/.env.production
+
+# Deployment scripts (keep templates only)
+deploy_gcp.sh
+backend/deploy_gcp_app.sh
 
 # IDE files
 .vscode/
@@ -75,3 +79,6 @@ extension/.workflows/plan
 docs/plans/
 
 IMPLEMENTATION_PLAN_REMOVE_USERNAME.md
+
+deploy_gcp.sh
+backend/deploy_gcp_app.sh

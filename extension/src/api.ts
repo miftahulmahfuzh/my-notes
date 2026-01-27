@@ -51,7 +51,7 @@ class ApiService {
   constructor(config: Partial<ApiConfig> = {}) {
     // Default configuration
     const defaultConfig: ApiConfig = {
-      baseUrl: 'http://localhost:8080',
+      baseUrl: 'https://my-notes-api-7bnrhx3mka-uc.a.run.app',
       timeout: 10000, // 10 seconds
       retryAttempts: 3,
       retryDelay: 1000 // 1 second

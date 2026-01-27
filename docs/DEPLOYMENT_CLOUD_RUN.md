@@ -1,303 +1,779 @@
-# GCP Deployment Guide - Cloud Run + Cloud SQL
+# GCP Deployment Guide - Complete Tutorial
 
-Complete guide to deploy Silence Notes backend to Google Cloud Platform using Cloud Run and Cloud SQL.
+**Deploy Silence Notes Backend to Google Cloud Platform (Cloud Run + Cloud SQL)**
+
+This guide walks you through deploying the Silence Notes backend to Google Cloud Platform. No prior GCP experience is required.
+
+---
+
+## Table of Contents
+
+1. [What You're Deploying](#what-youre-deploying)
+2. [Prerequisites](#prerequisites)
+3. [Understanding Google Cloud Platform](#understanding-google-cloud-platform)
+4. [Step-by-Step Deployment](#step-by-step-deployment)
+5. [Updating Your Extension](#updating-your-extension)
+6. [Testing the Deployment](#testing-the-deployment)
+7. [Managing Your Deployment](#managing-your-deployment)
+8. [Troubleshooting](#troubleshooting)
+9. [Cost Management](#cost-management)
+10. [Security Best Practices](#security-best-practices)
+
+---
+
+## What You're Deploying
+
+You will deploy:
+
+| Component | What It Does | Technology |
+|-----------|--------------|------------|
+| **Backend API** | REST API for notes, auth, search | Go on Cloud Run |
+| **Database** | Stores notes, users, tags | PostgreSQL on Cloud SQL |
+
+**Architecture:**
+```
+Chrome Extension --> Cloud Run (Backend) --> Cloud SQL (Database)
+                       ↓
+                    Artifact Registry
+                       (Docker images)
+```
+
+---
 
 ## Prerequisites
 
-- Google Cloud account with billing enabled
-- [gcloud CLI](https://cloud.google.com/sdk/docs/install) installed
-- Docker installed (for local testing)
+Before you start, make sure you have:
 
-## Cost Estimate
+### Required Accounts
+- [x] **Google Account** (gmail.com or any Google account)
+- [x] **Credit Card** (required for GCP, but you get free credits)
 
-| Service | Tier | Monthly Cost |
-|---------|------|--------------|
-| Cloud Run | Pay-per-use | $0-3 (free tier covers 2M requests) |
-| Cloud SQL | db-f1-micro | ~$8-10 |
-| **Total** | | **~$8-13/month** |
+### Required Software
+- [x] **gcloud CLI** - Google's command-line tool
+- [x] **Git** - For cloning the repository
+- [x] **Code Editor** - VS Code, Sublime, etc.
+
+### Time Commitment
+- **First deployment**: ~30 minutes (mostly waiting for Cloud SQL to create)
+- **Future updates**: ~5 minutes
 
 ---
 
-## Part 1: Initial Setup
+## Understanding Google Cloud Platform
 
-### 1.1 Install and Initialize gcloud CLI
+### What is GCP?
+
+Google Cloud Platform (GCP) is Google's cloud computing services. Think of it as:
+- **Computers you can rent** (Cloud Run, Compute Engine)
+- **Databases you can rent** (Cloud SQL, Firestore)
+- **Storage you can rent** (Cloud Storage)
+
+### Key Concepts
+
+| Term | Simple Explanation |
+|------|-------------------|
+| **Project** | Like a folder containing all your GCP resources |
+| **Region** | Where your servers are located (e.g., us-central1 = Iowa, USA) |
+| **Service** | A specific GCP product (Cloud Run, Cloud SQL, etc.) |
+| **Instance** | One running copy of something (like one database) |
+
+### Services You'll Use
+
+1. **Cloud Run** - Runs your backend code without managing servers
+2. **Cloud SQL** - Managed PostgreSQL database
+3. **Cloud Build** - Builds your Docker container
+4. **Artifact Registry** - Stores your Docker images
+
+---
+
+## Step-by-Step Deployment
+
+### Step 1: Create a Google Cloud Project
+
+#### 1.1 Go to Google Cloud Console
+
+Open your browser and go to: https://console.cloud.google.com/
+
+#### 1.2 Create a New Project
+
+1. Click the project dropdown at the top (next to "Google Cloud Platform")
+2. Click **"NEW PROJECT"**
+3. Fill in:
+   - **Project name**: `Silence Notes` (or any name you like)
+   - **Organization**: Leave blank (or select your organization)
+4. Click **"CREATE"**
+
+**Note:** Project creation takes ~30 seconds. Wait for the notification banner.
+
+#### 1.3 Note Your Project ID
+
+Once created, you'll see a Project ID (like `silence-notes-123456`).
+
+**Copy this somewhere safe** - you'll need it later!
+
+---
+
+### Step 2: Enable Billing
+
+#### 2.1 Go to Billing
+
+1. In the left sidebar, click **"Billing"**
+2. If prompted, click **"Link a billing account"**
+3. Click **"Create account"**
+
+#### 2.2 Add Payment Details
+
+Fill in your credit card information. Google requires this for verification.
+
+**Good News:**
+- New accounts get **$300 in free credits** (12 months)
+- Our deployment costs **~$8-13/month** after credits
+- You won't be charged immediately
+
+#### 2.3 Verify Billing is Enabled
+
+You should see a green checkmark next to "Billing" in the sidebar.
+
+---
+
+### Step 3: Install and Setup gcloud CLI
+
+The `gcloud` command-line tool lets you control GCP from your terminal.
+
+#### 3.1 Install gcloud CLI
+
+**On macOS:**
+```bash
+brew install google-cloud-sdk
+brew install --cask google-cloud-sdk
+# Or download from: https://cloud.google.com/sdk/docs/install
+```
+
+**On Linux:**
+```bash
+curl https://sdk.cloud.google.com | bash
+exec -l $SHELL
+gcloud init
+```
+
+**On Windows:**
+Download the installer from: https://cloud.google.com/sdk/docs/install
+
+#### 3.2 Verify Installation
 
 ```bash
-# Install gcloud CLI (if not already installed)
-# macOS
-brew install google-cloud-sdk
+gcloud version
+```
 
-# Linux
-curl https://sdk.cloud.google.com | bash
+You should see version information.
 
-# Initialize and login
-gcloud init
+#### 3.3 Login to Google Cloud
 
-# Login to your Google account
+```bash
 gcloud auth login
 ```
 
-### 1.2 Set Your Project and Region
+This opens a browser window. Sign in with your Google account and allow access.
+
+#### 3.4 Set Your Default Project
 
 ```bash
-# Set your project (replace with your project ID)
-export PROJECT_ID="your-project-id"
-gcloud config set project $PROJECT_ID
+# Replace YOUR_PROJECT_ID with your actual project ID
+gcloud config set project YOUR_PROJECT_ID
 
-# Set your region (choose one close to your users)
-export REGION="us-central1"
-gcloud config set run/region $REGION
-gcloud config set compute/region $REGION
+# Verify
+gcloud config list project
 ```
 
-### 1.3 Enable Required APIs
+---
+
+### Step 4: Prepare Deployment Script
+
+#### 4.1 Copy the Template
+
+The repository has a template file. Copy it and customize:
+
+```bash
+# Navigate to your project directory
+cd /path/to/my-notes
+
+# Copy the template
+cp deploy_gcp.sh.template deploy_gcp.sh
+
+# Make it executable
+chmod +x deploy_gcp.sh
+```
+
+#### 4.2 Edit the Deployment Script
+
+Open `deploy_gcp.sh` in your editor and fill in the required values:
+
+```bash
+# Edit with your code editor
+code deploy_gcp.sh
+# or
+nano deploy_gcp.sh
+# or
+vim deploy_gcp.sh
+```
+
+**Fill in these values:**
+
+| Variable | What to Enter | Example |
+|----------|---------------|---------|
+| `PROJECT_ID` | Your GCP Project ID from Step 1.3 | `silence-notes-123456` |
+| `REGION` | Closest region to your users | `us-central1` |
+| `DB_PASSWORD` | Strong password for database | Generate with: `openssl rand -base64 24` |
+| `JWT_SECRET` | Secret for JWT tokens (optional) | Generate with: `openssl rand -base64 42` |
+
+**Example configuration:**
+```bash
+PROJECT_ID="silence-notes-123456"
+REGION="us-central1"
+DB_PASSWORD="xK9$mP2@nL5#qR8&wT4!zY7%"
+JWT_SECRET=""  # Leave empty to auto-generate
+```
+
+**Available Regions:**
+| Region | Location |
+|--------|----------|
+| `us-central1` | Iowa, USA |
+| `us-east1` | South Carolina, USA |
+| `us-west1` | Oregon, USA |
+| `europe-west1` | Belgium |
+| `asia-southeast1` | Singapore |
+
+Choose a region **closest to your users** for best performance.
+
+#### 4.3 Save and Close
+
+Save the file and exit your editor.
+
+---
+
+### Step 5: Run the Deployment
+
+#### 5.1 Execute the Deployment Script
+
+```bash
+./deploy_gcp.sh
+```
+
+#### 5.2 What Happens During Deployment
+
+The script will:
+
+| Step | Action | Time Required |
+|------|--------|---------------|
+| 1 | Validates your configuration | 10 seconds |
+| 2 | Checks prerequisites (gcloud, auth) | 10 seconds |
+| 3 | Enables required APIs | 30 seconds |
+| 4 | Creates Cloud SQL database | **5-10 minutes** |
+| 5 | Sets database password | 10 seconds |
+| 6 | Creates the database | 5 seconds |
+| 7 | Builds Docker image | 2-3 minutes |
+| 8 | Pushes to Artifact Registry | 1 minute |
+| 9 | Deploys to Cloud Run | 1-2 minutes |
+| 10 | Runs health check | 5 seconds |
+
+**Total time:** ~15-20 minutes (mostly waiting for database creation)
+
+#### 5.3 Expected Output
+
+You'll see progress messages like:
+
+```
+═══════════════════════════════════════════════════════════════
+  Silence Notes - GCP Deployment
+═══════════════════════════════════════════════════════════════
+
+▶ Validating configuration...
+✓ Configuration validated
+
+▶ Checking prerequisites...
+✓ gcloud CLI found
+✓ Authenticated to gcloud
+
+▶ Setting up Google Cloud project...
+✓ Project set to: silence-notes-123456
+✓ APIs enabled
+
+▶ Setting up Cloud SQL database...
+▶ Creating new Cloud SQL instance (this takes 5-10 minutes)...
+✓ Cloud SQL instance created
+✓ Password set
+✓ Database created
+
+═══════════════════════════════════════════════════════════════
+  Building and Deploying
+═══════════════════════════════════════════════════════════════
+
+▶ Creating production environment file...
+✓ Environment file created
+
+▶ Setting up Artifact Registry...
+✓ Artifact Registry ready
+
+▶ Building Docker image (this takes 2-3 minutes)...
+✓ Docker image built and pushed
+
+▶ Deploying to Cloud Run...
+✓ Deployed to Cloud Run
+
+═══════════════════════════════════════════════════════════════
+  Verifying Deployment
+═══════════════════════════════════════════════════════════════
+
+▶ Testing health endpoint...
+✓ Health check passed!
+
+═══════════════════════════════════════════════════════════════
+  Deployment Complete!
+═══════════════════════════════════════════════════════════════
+
+✓ Backend deployed successfully!
+
+Service Details:
+  URL:          https://my-notes-api-xxxxx-xx.a.run.app
+  Region:       us-central1
+  Database:     silence-notes-123456:us-central1:my-notes-db
+
+⚠ IMPORTANT: Save these credentials securely!
+  Database Password: your-password-here
+  JWT Secret:         your-jwt-secret-here
+```
+
+#### 5.4 Save Your Credentials
+
+**Copy and save these securely:**
+- Service URL
+- Database password
+- JWT secret
+
+You'll need them if you ever need to redeploy or troubleshoot.
+
+---
+
+### Step 6: Verify the Deployment
+
+#### 6.1 Test the Health Endpoint
+
+```bash
+# Replace with your actual service URL
+curl https://my-notes-api-xxxxx-xx.a.run.app/api/v1/health
+```
+
+**Expected response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-27T12:00:00Z",
+  "version": "1.0.0",
+  "uptime": "5.234s"
+}
+```
+
+#### 6.2 View Live Logs
+
+```bash
+# Replace with your service name
+gcloud run services logs tail my-notes-api --follow
+```
+
+Press `Ctrl+C` to stop watching logs.
+
+#### 6.3 Check the Service in Console
+
+1. Go to: https://console.cloud.google.com/run
+2. Click on your service (`my-notes-api`)
+3. You'll see:
+   - Service URL
+   - Revisions
+   - Metrics
+   - Logs
+
+---
+
+## Updating Your Extension
+
+Now that your backend is deployed, update your Chrome extension to use it.
+
+### Files to Update
+
+You need to update **2 files** in your extension:
+
+#### File 1: `extension/src/utils/config.ts`
+
+**Find this line:**
+```typescript
+API_BASE_URL: 'http://localhost:8080/api/v1',
+```
+
+**Replace with your deployed URL:**
+```typescript
+API_BASE_URL: 'https://my-notes-api-xxxxx-xx.a.run.app/api/v1',
+```
+
+**Full context:**
+```typescript
+export const CONFIG = {
+  // API Configuration - Production URL on Cloud Run
+  API_BASE_URL: 'https://my-notes-api-xxxxx-xx.a.run.app/api/v1',
+
+  // Google OAuth Configuration
+  GOOGLE_OAUTH: {
+    // ... rest of config
+  }
+};
+```
+
+#### File 2: `extension/src/api.ts`
+
+**Find this section:**
+```typescript
+const defaultConfig: ApiConfig = {
+  baseUrl: 'http://localhost:8080',
+  timeout: 10000,
+  retryAttempts: 3,
+  retryDelay: 1000
+};
+```
+
+**Replace with:**
+```typescript
+const defaultConfig: ApiConfig = {
+  baseUrl: 'https://my-notes-api-xxxxx-xx.a.run.app',
+  timeout: 10000,
+  retryAttempts: 3,
+  retryDelay: 1000
+};
+```
+
+### Rebuild the Extension
+
+After updating the files:
+
+```bash
+# From the project root
+./frontend_build.sh
+```
+
+### Load the Updated Extension
+
+1. Open Chrome and go to `chrome://extensions/`
+2. Find "Silence Notes" in the list
+3. Click the **refresh icon** (circular arrow) on the extension card
+
+**OR** if loading for the first time:
+1. Click **"Load unpacked"**
+2. Select the `extension/dist` folder
+
+---
+
+## Testing the Deployment
+
+### Test 1: Health Check (Already Done)
+
+You verified this in Step 6.1.
+
+### Test 2: Authentication Flow
+
+1. Click the Silence Notes extension icon
+2. Click **"Sign in with Google"**
+3. Authorize the extension
+4. You should be redirected back and see your profile
+
+**If this fails:**
+- Check the Cloud Run logs
+- Verify your Google OAuth credentials in GCP Console
+
+### Test 3: Create a Note
+
+1. Click the **"New Note"** button
+2. Type some content
+3. Click **"Save"**
+4. The note should appear in your list
+
+### Test 4: Check Database
+
+Verify the note was saved to the database:
+
+1. Go to: https://console.cloud.google.com/sql
+2. Click on your database instance
+3. Click **"Databases"** tab
+4. Click **"Web preview"** (eye icon)
+5. Run: `SELECT * FROM notes LIMIT 5;`
+
+---
+
+## Managing Your Deployment
+
+### Viewing Logs
+
+**Real-time logs:**
+```bash
+gcloud run services logs tail my-notes-api --follow
+```
+
+**Recent logs:**
+```bash
+gcloud run services logs tail my-notes-api --limit=50
+```
+
+**In Console:**
+1. Go to: https://console.cloud.google.com/run
+2. Click your service
+3. Click **"Logs"** tab
+
+### Updating Your Code
+
+When you make changes to the backend:
+
+1. Make your code changes
+2. Run the deployment script again:
+   ```bash
+   ./deploy_gcp.sh
+   ```
+
+The script will:
+- Rebuild the Docker image
+- Push the new image
+- Deploy to Cloud Run
+- Create a new revision
+- Gradually shift traffic to the new version
+
+### Rolling Back
+
+If something goes wrong:
+
+```bash
+# List revisions
+gcloud run revisions list --service=my-notes-api
+
+# Rollback to a specific revision
+gcloud run services update-traffic my-notes-api \
+  --to-revisions=REVISION_NAME=100
+```
+
+### Scaling
+
+Cloud Run automatically scales, but you can set limits:
+
+```bash
+# Set minimum instances (keeps service warm)
+gcloud run services update my-notes-api --min-instances=1
+
+# Set maximum instances (limit cost)
+gcloud run services update my-notes-api --max-instances=10
+
+# Set memory per instance
+gcloud run services update my-notes-api --memory=512Mi
+```
+
+---
+
+## Troubleshooting
+
+### Problem: "gcloud: command not found"
+
+**Solution:** gcloud CLI is not installed or not in PATH.
+
+1. Verify installation: `which gcloud`
+2. Reinstall: https://cloud.google.com/sdk/docs/install
+3. Restart your terminal
+
+### Problem: "Permission denied"
+
+**Solution:** Make the script executable.
+
+```bash
+chmod +x deploy_gcp.sh
+```
+
+### Problem: "API not enabled"
+
+**Solution:** Enable the required APIs manually.
 
 ```bash
 gcloud services enable \
-  run.googleapis.com \
-  sqladmin.googleapis.com \
-  artifactregistry.googleapis.com \
-  cloudbuild.googleapis.com
+    run.googleapis.com \
+    sqladmin.googleapis.com \
+    artifactregistry.googleapis.com \
+    cloudbuild.googleapis.com
 ```
 
----
+### Problem: "Database connection failed"
 
-## Part 2: Create Cloud SQL Database
+**Possible causes:**
 
-### 2.1 Create PostgreSQL Instance
+1. **Wrong password** - Check your `DB_PASSWORD` in the script
+2. **Database still creating** - Wait a few more minutes
+3. **Wrong connection name** - Verify in GCP Console
+
+**Solution:**
 
 ```bash
-# Create a Cloud SQL instance (this takes 5-10 minutes)
-gcloud sql instances create my-notes-db \
-  --tier=db-f1-micro \
-  --database-version=POSTGRES_15 \
-  --region=$REGION \
-  --storage-auto-increase \
-  --storage-size=10GB \
-  --cpu=1 \
-  --memory=384MiB \
-  --database-flags=cloudsql.iam_authentication=off
-```
+# Check database status
+gcloud sql instances describe my-notes-db
 
-**Expected output:**
-```
-Creating Cloud SQL instance...done.
-Created [https://console.cloud.google.com/sql/instances/...].
-```
-
-### 2.2 Set Root Password
-
-```bash
-# Set a strong password (store this securely!)
+# Reset password
 gcloud sql users set-password postgres \
   --instance=my-notes-db \
-  --password="YOUR_STRONG_PASSWORD_HERE"
+  --password="YOUR_PASSWORD"
 ```
 
-### 2.3 Create the Application Database
+### Problem: "Container failed to start"
+
+**Check logs:**
+```bash
+gcloud run services logs tail my-notes-api --limit=100
+```
+
+**Common causes:**
+1. Missing environment variables
+2. Database not reachable
+3. Port not set correctly (must be 8080)
+
+### Problem: "Health check failing"
+
+**Debug:**
 
 ```bash
-# Create the database
-gcloud sql databases create notes_prod --instance=my-notes-db
+# Check if service is running
+gcloud run services describe my-notes-api
 
-# Verify database was created
-gcloud sql databases list --instance=my-notes-db
+# Get service URL
+SERVICE_URL=$(gcloud run services describe my-notes-api --format="value(status.url)")
+
+# Test manually
+curl $SERVICE_URL/api/v1/health
 ```
 
-### 2.4 Get Database Connection Info
+### Problem: "High latency"
 
-```bash
-# Get the instance connection name (needed for Cloud Run)
-gcloud sql instances describe my-notes-db --format="value(connectionName)"
+**Solutions:**
 
-# Save this to a variable
-export CLOUDSQL_CONNECTION_NAME=$(gcloud sql instances describe my-notes-db --format="value(connectionName)")
-echo "Connection name: $CLOUDSQL_CONNECTION_NAME"
-```
+1. **Enable min instances** (prevents cold starts):
+   ```bash
+   gcloud run services update my-notes-api --min-instances=1
+   ```
+
+2. **Choose a closer region** (redeploy)
+
+3. **Use connection pooling** (advanced)
 
 ---
 
-## Part 3: Configure IAM Authentication
+## Cost Management
 
-### 3.1 Get Your Project Number
+### Understanding Your Costs
 
+| Service | Tier | Monthly Cost |
+|---------|------|--------------|
+| Cloud Run | Free tier covers 2M requests | $0-3 |
+| Cloud SQL | db-f1-micro | ~$8-10 |
+| Storage | Artifact Registry (~50MB) | ~$0.10 |
+| **Total** | | **~$8-13/month** |
+
+### Setting Up Budget Alerts
+
+1. Go to: https://console.cloud.google.com/billing
+2. Click your billing account
+3. Click **"Budgets & alerts"**
+4. Click **"Create Budget"**
+5. Set:
+   - **Budget amount**: $20 (or your preference)
+   - **Alert threshold**: 50%, 80%, 100%
+6. Click **"Create"**
+
+You'll get email alerts when approaching your budget.
+
+### Cost Optimization Tips
+
+**To reduce costs:**
+
+1. **Set min instances to 0** (scales to zero when unused):
+   ```bash
+   gcloud run services update my-notes-api --min-instances=0
+   ```
+
+2. **Limit max instances** (prevent runaway costs):
+   ```bash
+   gcloud run services update my-notes-api --max-instances=10
+   ```
+
+3. **Use smaller database tier** (if low traffic):
+   ```bash
+   # Not recommended unless usage is very low
+   # db-f1-micro is already the smallest
+   ```
+
+### Monitoring Costs
+
+**Check current spending:**
 ```bash
-export PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
-echo "Project number: $PROJECT_NUMBER"
+gcloud billing accounts describe
 ```
 
-### 3.2 Create Cloud SQL Client Service Account (Optional)
-
-For better security, you can use Cloud SQL's Cloud SQL Connector which handles authentication automatically.
-
-```bash
-# The Cloud SQL Auth Proxy connector will be used instead
-# No additional service account needed
-```
+**View cost breakdown:**
+1. Go to: https://console.cloud.google.com/billing
+2. Click **"Reports"**
+3. View by service, region, or time
 
 ---
 
-## Part 4: Build and Deploy to Cloud Run
+## Security Best Practices
 
-### 4.1 Navigate to Backend Directory
+### 1. Don't Commit Secrets
 
+The `.gitignore` file already excludes:
+- `deploy_gcp.sh` (your actual script)
+- `backend/.env.production` (production env vars)
+
+**Always use the template files (`*.template`) for Git.**
+
+### 2. Use Strong Passwords
+
+Generate strong passwords:
 ```bash
-cd /path/to/my-notes/backend
-```
+# Database password
+openssl rand -base64 24
 
-### 4.2 Test Docker Build Locally (Optional)
-
-```bash
-# Build the Docker image
-docker build -t my-notes-api:test .
-
-# Test locally (requires local PostgreSQL)
-docker run -p 8080:8080 \
-  -e DB_HOST=localhost \
-  -e DB_PASSWORD=test \
-  -e DB_NAME=notes_dev \
-  -e JWT_SECRET=test-secret-key-for-development-only \
-  my-notes-api:test
-```
-
-### 4.3 Deploy to Cloud Run
-
-```bash
-# Deploy directly from source (Cloud Build will build and push)
-gcloud run deploy my-notes-api \
-  --source=. \
-  --platform=managed \
-  --region=$REGION \
-  --allow-unauthenticated \
-  --set-cloudsql-instances=$CLOUDSQL_CONNECTION_NAME \
-  --set-env-vars="DB_HOST=cloudsql,$CLOUDSQL_CONNECTION_NAME" \
-  --set-env-vars="DB_PORT=5432" \
-  --set-env-vars="DB_NAME=notes_prod" \
-  --set-env-vars="DB_USER=postgres" \
-  --set-env-vars="DB_PASSWORD=YOUR_STRONG_PASSWORD_HERE" \
-  --set-env-vars="JWT_SECRET=GENERATE_A_STRONG_RANDOM_SECRET_HERE" \
-  --set-env-vars="APP_ENV=production" \
-  --set-env-vars="APP_DEBUG=false" \
-  --set-env-vars="SERVER_PORT=8080"
-```
-
-**Expected output:**
-```
-Building and deploying...
-Service [my-notes-api] revision [my-notes-api-xxx] has been deployed and is serving 100 percent of traffic.
-Service URL: https://my-notes-api-xxxxx-xx.a.run.app
-```
-
----
-
-## Part 5: Configure Environment Variables
-
-### 5.1 Generate a Secure JWT Secret
-
-```bash
-# Generate a 32+ character random string
+# JWT secret
 openssl rand -base64 42
 ```
 
-### 5.2 Update Environment Variables (if needed)
+### 3. Enable HTTPS Only
+
+Cloud Run automatically:
+- Issues SSL certificates
+- Redirects HTTP to HTTPS
+- Handles certificate renewal
+
+**Never** use HTTP endpoints.
+
+### 4. Restrict API Access (Optional)
+
+By default, your API is public. To restrict:
 
 ```bash
-# Update the service with new env vars
+# Remove public access
 gcloud run services update my-notes-api \
-  --update-env-vars="JWT_SECRET=YOUR_GENERATED_SECRET"
+  --no-allow-unauthenticated
+
+# Add specific users/service accounts
+gcloud run services add-iam-policy-binding my-notes-api \
+  --member=user:example@gmail.com \
+  --role=roles/run.invoker
 ```
 
----
+### 5. Regular Security Updates
 
-## Part 6: Verify Deployment
+- Keep dependencies updated
+- Monitor security bulletins
+- Review GCP Security recommendations
 
-### 6.1 Get Service URL
-
-```bash
-# Get the service URL
-export SERVICE_URL=$(gcloud run services describe my-notes-api --format="value(status.url)")
-echo "Service URL: $SERVICE_URL"
-```
-
-### 6.2 Test Health Endpoint
-
-```bash
-# Test the health check
-curl $SERVICE_URL/api/v1/health
-
-# Expected response: {"status":"ok"}
-```
-
-### 6.3 View Logs
-
-```bash
-# View recent logs
-gcloud run services logs tail my-notes-api --follow
-
-# Or view in console
-gcloud logging tail "resource.type=cloud_run_revision AND resource.labels.service_name=my-notes-api"
-```
-
----
-
-## Part 7: Set Up Custom Domain (Optional)
-
-### 7.1 Verify Domain Ownership
-
-```bash
-# Map a custom domain (e.g., api.yourdomain.com)
-gcloud run domain-mappings create \
-  --service=my-notes-api \
-  --domain=api.yourdomain.com
-```
-
-### 7.2 Update DNS
-
-Follow the instructions in the output to add DNS records.
-
----
-
-## Part 8: Update Chrome Extension
-
-### 8.1 Update Extension Configuration
-
-In `extension/src/auth.ts` or your environment config:
-
-```typescript
-const API_BASE_URL = 'https://your-service-url.a.run.app';
-// Or with custom domain:
-const API_BASE_URL = 'https://api.yourdomain.com';
-```
-
-### 8.2 Rebuild Extension
-
-```bash
-cd extension
-npm run build
-```
-
----
-
-## Part 9: Monitoring and Maintenance
-
-### 9.1 View Cloud Run Metrics
-
-```bash
-# View service details
-gcloud run services describe my-notes-api
-
-# Check revisions
-gcloud run revisions list --service=my-notes-api
-```
-
-### 9.2 Set Up Alerting (Optional)
-
-Navigate to Cloud Monitoring in the GCP Console to set up alerts for:
-- Error rate > 1%
-- Latency > 1s
-- Cloud SQL CPU > 80%
-
-### 9.3 Database Backups
+### 6. Backup Your Database
 
 Cloud SQL automatically backs up daily. To restore:
 
@@ -306,126 +782,98 @@ Cloud SQL automatically backs up daily. To restore:
 gcloud sql backups list --instance=my-notes-db
 
 # Restore from backup
-gcloud sql backups restore BACKUP_ID --instance=my-notes-db --restore-instance=my-notes-db-restore
+gcloud sql backups restore BACKUP_ID \
+  --instance=my-notes-db \
+  --restore-instance=my-notes-db-restore
 ```
 
 ---
 
-## Part 10: CI/CD (Optional)
+## Quick Reference
 
-### 10.1 Create cloudbuild.yaml
-
-Create `backend/cloudbuild.yaml`:
-
-```yaml
-steps:
-  # Build the container image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/my-notes-repo/api:$COMMIT_SHA', '.']
-
-  # Push to Artifact Registry
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/my-notes-repo/api:$COMMIT_SHA']
-
-  # Deploy to Cloud Run
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args:
-      - 'run'
-      - 'deploy'
-      - 'my-notes-api'
-      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/my-notes-repo/api:$COMMIT_SHA'
-      - '--platform=managed'
-      - '--region=us-central1'
-      - '--allow-unauthenticated'
-```
-
-### 10.2 Enable Auto-Deploy on Git Push
+### Essential Commands
 
 ```bash
-# Create a trigger
-gcloud builds triggers create github \
-  --name=my-notes-deploy \
-  --repo-url=https://github.com/YOUR_USERNAME/my-notes \
-  --branch-pattern=main \
-  --build-config=backend/cloudbuild.yaml
-```
+# Deploy
+./deploy_gcp.sh
 
----
+# View logs
+gcloud run services logs tail my-notes-api --follow
 
-## Troubleshooting
+# Get service URL
+gcloud run services describe my-notes-api --format="value(status.url)"
 
-### Issue: Database Connection Failed
-
-**Solution:**
-```bash
-# Verify Cloud SQL instance is running
+# Check database
 gcloud sql instances describe my-notes-db
 
-# Check the connection name
-gcloud run services describe my-notes-api --format="value(spec.template.spec.containers[0].env)")
+# List revisions
+gcloud run revisions list --service=my-notes-api
+
+# Set scaling
+gcloud run services update my-notes-api --min-instances=0 --max-instances=10
 ```
 
-### Issue: 502 Bad Gateway
+### Important Links
 
-**Solution:** Check that your app is listening on the PORT env var (not hardcoded 8080).
+| What | Link |
+|------|------|
+| Cloud Console | https://console.cloud.google.com |
+| Cloud Run | https://console.cloud.google.com/run |
+| Cloud SQL | https://console.cloud.google.com/sql |
+| Artifact Registry | https://console.cloud.google.com/artifacts |
+| Billing | https://console.cloud.google.com/billing |
 
-### Issue: High Latency
+### File Locations
 
-**Solution:**
-- Use Cloud SQL Auth Proxy or Unix socket connection
-- Enable connection pooling (PgBouncer)
-
----
-
-## Security Checklist
-
-- [ ] Change default PostgreSQL password
-- [ ] Use strong JWT secret (32+ chars)
-- [ ] Enable Cloud SQL automatic backups
-- [ ] Set up Cloud Armor for DDoS protection
-- [ ] Use HTTPS only (enabled by default on Cloud Run)
-- [ ] Restrict API access if needed (remove `--allow-unauthenticated`)
-- [ ] Rotate secrets regularly
-- [ ] Enable audit logging
+| File | Purpose |
+|------|---------|
+| `deploy_gcp.sh.template` | Deployment script template |
+| `backend/.env.production.template` | Environment variables template |
+| `extension/src/utils/config.ts` | Extension API config |
+| `extension/src/api.ts` | Extension API service |
+| `backend/Dockerfile` | Backend container definition |
 
 ---
 
-## Cost Optimization Tips
+## Getting Help
 
-1. **Use Cloud Run free tier** - 2M requests/month free
-2. **Set min instances to 0** - scales to zero when not in use
-3. **Use db-f1-micro** - smallest Cloud SQL tier
-4. **Monitor usage** - set budget alerts
+### Documentation
 
-```bash
-# Set min instances to 0 (cold starts on)
-gcloud run services update my-notes-api --min-instances=0
+- [Cloud Run Documentation](https://cloud.google.com/run/docs)
+- [Cloud SQL Documentation](https://cloud.google.com/sql/docs)
+- [gcloud CLI Reference](https://cloud.google.com/sdk/gcloud)
 
-# Set max instances to limit cost
-gcloud run services update my-notes-api --max-instances=10
-```
+### Community
 
----
+- [Stack Overflow - Google Cloud](https://stackoverflow.com/questions/tagged/google-cloud-platform)
+- [Google Cloud Community](https://cloud.google.com/community)
 
-## Cleanup (if needed)
+### Support
 
-```bash
-# Delete Cloud Run service
-gcloud run services delete my-notes-api
-
-# Delete Cloud SQL instance (WARNING: this deletes all data!)
-gcloud sql instances delete my-notes-db
-
-# Delete images from Artifact Registry
-gcloud artifacts images delete us-central1-docker.pkg.dev/$PROJECT_ID/my-notes-repo/api:* --delete-all-versions
-```
+- [GCP Support](https://cloud.google.com/support)
+- [Contact Us](https://cloud.google.com/contact)
 
 ---
 
-## Next Steps
+## Checklist
 
-1. Set up monitoring and alerting
-2. Configure custom domain
-3. Set up CI/CD pipeline
-4. Add integration tests
-5. Document API endpoints for consumers
+Before deploying, ensure you've:
+
+- [ ] Created a GCP project
+- [ ] Enabled billing
+- [ ] Installed gcloud CLI
+- [ ] Logged in with `gcloud auth login`
+- [ ] Copied and customized `deploy_gcp.sh`
+- [ ] Set strong passwords
+- [ ] Run the deployment script
+- [ ] Tested the health endpoint
+- [ ] Updated extension configuration files
+- [ ] Rebuilt the extension
+- [ ] Loaded the extension in Chrome
+- [ ] Tested authentication
+- [ ] Created a test note
+- [ ] Set up budget alerts
+
+---
+
+**Congratulations!** You've successfully deployed Silence Notes to Google Cloud Platform. 🎉
