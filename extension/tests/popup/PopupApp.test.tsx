@@ -936,7 +936,7 @@ describe('PopupApp Component', () => {
       });
     });
 
-    it('should show error when creating note with empty content', async () => {
+    it('should disable save button when content is empty', async () => {
       const user = userEvent.setup();
       mockAuthState = {
         isAuthenticated: true,
@@ -957,13 +957,9 @@ describe('PopupApp Component', () => {
       const createNoteButtons = screen.getAllByText(/Create Note/i);
       await user.click(createNoteButtons[0]);
 
-      // Try to save without content
+      // Save button should be disabled when content is empty
       const saveButton = screen.getByRole('button', { name: /save note/i });
-      await user.click(saveButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/note content cannot be empty/i)).toBeInTheDocument();
-      });
+      expect(saveButton).toBeDisabled();
     });
   });
 
