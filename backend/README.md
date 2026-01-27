@@ -593,7 +593,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Version 1.2 (Planned)
 - 🔄 Real-time notifications
-- 🔄 Data export/import
 - 🔄 Advanced analytics
 - 🔄 Multi-tenant support
 

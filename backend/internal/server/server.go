@@ -152,11 +152,6 @@ func (s *Server) initializeServices() {
 	// Initialize notes handler
 	s.handlers.SetNotesHandler(notesHandler)
 
-	// Initialize export/import service and handler
-	exportImportService := services.NewExportImportService(s.db)
-	exportImportHandler := handlers.NewExportImportHandler(exportImportService)
-	s.handlers.SetExportImportHandler(exportImportHandler)
-
 	log.Printf("✅ Security services initialized")
 	log.Printf("🔒 Security mode: %s", s.config.App.Environment)
 	log.Printf("🚦 Rate limiting: %.0f req/sec global, %d req/min per user",
@@ -256,15 +251,6 @@ func (s *Server) setupRoutes() {
 	// protected.HandleFunc("/tags", s.handlers.Tags.GetTags).Methods("GET")
 	// protected.HandleFunc("/tags", s.handlers.Tags.CreateTag).Methods("POST")
 	// protected.HandleFunc("/tags/suggestions", s.handlers.Tags.GetSuggestions).Methods("GET")
-
-	// Export/Import routes
-	if s.handlers.ExportImport != nil {
-		protected.HandleFunc("/export", s.handlers.ExportImport.ExportData).Methods("GET")
-		protected.HandleFunc("/import", s.handlers.ExportImport.ImportData).Methods("POST")
-		protected.HandleFunc("/export/formats", s.handlers.ExportImport.GetExportFormats).Methods("GET")
-		protected.HandleFunc("/import/info", s.handlers.ExportImport.GetImportInfo).Methods("GET")
-		protected.HandleFunc("/import/validate", s.handlers.ExportImport.ValidateImportFile).Methods("POST")
-	}
 
 	// Search routes are now handled by the notes handler
 

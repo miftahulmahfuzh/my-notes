@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
-import ExportImport from './ExportImport';
+import React from 'react';
 
 interface SettingsProps {
   onClose: () => void;
 }
 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
-  const [activeSection, setActiveSection] = useState<'general' | 'export-import'>('general');
 
   return (
     <div className="settings-overlay">
@@ -26,49 +24,28 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
         </div>
 
         <div className="settings-content">
-          <div className="settings-navigation">
-            <button
-              className={`nav-button ${activeSection === 'general' ? 'active' : ''}`}
-              onClick={() => setActiveSection('general')}
-            >
-              General
-            </button>
-            <button
-              className={`nav-button ${activeSection === 'export-import' ? 'active' : ''}`}
-              onClick={() => setActiveSection('export-import')}
-            >
-              Export & Import
-            </button>
-          </div>
-
           <div className="settings-section">
-            {activeSection === 'general' && (
-              <div className="general-settings">
-                <h4>General Settings</h4>
-                <div className="setting-item">
-                  <label>Auto-save</label>
-                  <div className="setting-description">
-                    Notes are automatically saved every 2 seconds
-                  </div>
-                </div>
-                <div className="setting-item">
-                  <label>Theme</label>
-                  <div className="setting-description">
-                    Uses system preference (light/dark mode)
-                  </div>
-                </div>
-                <div className="setting-item">
-                  <label>Sync Status</label>
-                  <div className="setting-description">
-                    Notes are synced with the server automatically
-                  </div>
+            <div className="general-settings">
+              <h4>General Settings</h4>
+              <div className="setting-item">
+                <label>Auto-save</label>
+                <div className="setting-description">
+                  Notes are automatically saved every 2 seconds
                 </div>
               </div>
-            )}
-
-            {activeSection === 'export-import' && (
-              <ExportImport />
-            )}
+              <div className="setting-item">
+                <label>Theme</label>
+                <div className="setting-description">
+                  Uses system preference (light/dark mode)
+                </div>
+              </div>
+              <div className="setting-item">
+                <label>Sync Status</label>
+                <div className="setting-description">
+                  Notes are synced with the server automatically
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

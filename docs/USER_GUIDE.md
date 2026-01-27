@@ -11,7 +11,7 @@ Silence Notes is a powerful Chrome extension for note-taking that helps you capt
 3. [Managing Notes](#managing-notes)
 4. [Hashtag Organization](#hashtag-organization)
 5. [Search and Discovery](#search-and-discovery)
-6. [Sync and Backup](#sync-and-backup)
+6. [Sync](#sync-and-backup)
 7. [Keyboard Shortcuts](#keyboard-shortcuts)
 8. [Offline Usage](#offline-usage)
 9. [Troubleshooting](#troubleshooting)
@@ -255,24 +255,6 @@ Silence Notes is a powerful Chrome extension for note-taking that helps you capt
 3. **Storage Management**
    - Local storage quota monitoring
    - Automatic cleanup of old local data
-   - Export options for backup
-
-### Backup and Export
-
-1. **Automatic Backups**
-   - Daily automatic backups to cloud
-   - Version history maintained
-   - Recovery options available
-
-2. **Manual Export**
-   - Export all notes as JSON
-   - Export specific date ranges
-   - Include or exclude attachments
-
-3. **Import Functionality**
-   - Import from other note apps
-   - Restore from backup files
-   - Merge duplicate notes
 
 ## Keyboard Shortcuts
 
@@ -324,7 +306,6 @@ Silence Notes is a powerful Chrome extension for note-taking that helps you capt
 3. **Limitations Offline**
    - No new tag creation (uses existing tags only)
    - Limited search functionality
-   - No backup or export
 
 ### Sync When Back Online
 
@@ -341,7 +322,6 @@ Silence Notes is a powerful Chrome extension for note-taking that helps you capt
 3. **Conflict Handling**
    - Automatic resolution for most conflicts
    - Manual options for complex conflicts
-   - Always keep a local backup
 
 ## Troubleshooting
 
@@ -359,7 +339,7 @@ Silence Notes is a powerful Chrome extension for note-taking that helps you capt
    - **Issue**: "Storage quota exceeded" error
    - **Solution**:
      - Delete old or unnecessary notes
-     - Export and delete large attachments
+     - Clear browser cache
      - Upgrade to premium for more storage
 
 3. **Extension Not Loading**
@@ -414,16 +394,14 @@ Silence Notes is a powerful Chrome extension for note-taking that helps you capt
 1. **Debug Mode**
    - Enable debug logging in settings
    - Check browser console for errors
-   - Export debug logs for support
+   - Share debug logs for support
 
 2. **Reset Options**
    - **Soft Reset**: Clear local cache and settings
-   - **Hard Reset**: Complete data reset (backup first!)
+   - **Hard Reset**: Complete data reset
    - **Sync Reset**: Clear sync queue and restart
 
 3. **Data Recovery**
-   - Check automatic backups
-   - Use data export functionality
    - Contact support for recovery assistance
 
 ## Tips and Best Practices
@@ -438,7 +416,6 @@ Silence Notes is a powerful Chrome extension for note-taking that helps you capt
 2. **Regular Maintenance**
    - Review and delete old notes monthly
    - Consolidate similar tags
-   - Backup important data regularly
 
 3. **Productivity Workflows**
    - Use Quick Capture for fleeting thoughts
