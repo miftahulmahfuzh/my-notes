@@ -57,6 +57,36 @@ module.exports = (env, argv) => {
     watch: !isProduction,
     watchOptions: {
       ignored: /node_modules/
+    },
+    optimization: {
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: 10
+          },
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+            name: 'react',
+            priority: 20
+          },
+          markdown: {
+            test: /[\\/]node_modules[\\/](react-markdown|react-syntax-highlighter|remark-gfm|refractor|hastscript|mdast-util-)[\\/]/,
+            name: 'markdown',
+            priority: 15,
+            enforce: true
+          }
+        }
+      },
+      usedExports: true,
+      sideEffects: false
+    },
+    performance: {
+      maxEntrypointSize: 244000,
+      maxAssetSize: 244000,
+      hints: 'warning'
     }
   };
 };
