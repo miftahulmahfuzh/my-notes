@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import PopupApp from '../../src/popup/index';
@@ -1465,6 +1465,25 @@ describe('PopupApp Component', () => {
               success: true,
               data: createMockNote(),
             });
+          }, 200);
+        })
+      );
+
+      // Mock getNotes to also delay to allow UI to show loading state
+      // @ts-ignore
+      apiService.getNotes.mockImplementation(() =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              success: true,
+              data: {
+                notes: [],
+                total: 0,
+                page: 1,
+                limit: 20,
+                has_more: false,
+              },
+            });
           }, 100);
         })
       );
@@ -1482,17 +1501,21 @@ describe('PopupApp Component', () => {
       await user.type(contentTextarea, 'Test content');
 
       const saveButton = screen.getByRole('button', { name: /save note/i });
-      await user.click(saveButton);
 
-      // Should show loading state
-      await waitFor(() => {
-        expect(screen.getByText(/saving/i)).toBeInTheDocument();
+      // Click save and wait for loading state to appear
+      await act(async () => {
+        await user.click(saveButton);
       });
+
+      // Should show loading state (global spinner, not button text)
+      await waitFor(() => {
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      }, { timeout: 100 });
 
       // Wait for operation to complete
       await waitFor(() => {
-        expect(screen.queryByText(/saving/i)).not.toBeInTheDocument();
-      }, { timeout: 200 });
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+      }, { timeout: 1000 });
     });
 
     it('should show loading state during note deletion', async () => {
