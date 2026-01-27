@@ -3,7 +3,6 @@
 *.exe~
 *.dll
 *.so
-docker container stop my-notes-postgres
 *.dylib
 
 # Test binary, built with `go test -c`
@@ -23,10 +22,11 @@ dist/
 build/
 
 # Environment variables
-.env
+# Local overrides are never committed
 .env.local
-.env.test
+.env.*.local
 backend/.env.production
+backend/.env.production.local
 
 # Deployment scripts (keep templates only)
 deploy_gcp.sh
@@ -73,12 +73,13 @@ tmp/
 *code_analyzer.md
 consolidate_auth.md
 
+# Workflows plans
 .workflows/plan/
 backend/internal/handlers/.workflows/plan
 extension/.workflows/plan
 docs/plans/
 
 IMPLEMENTATION_PLAN_REMOVE_USERNAME.md
-
-deploy_gcp.sh
-backend/deploy_gcp_app.sh
+backend/.env
+extension/.env
+extension/.env.production

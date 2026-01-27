@@ -1,10 +1,25 @@
 /**
  * Configuration constants for Silence Notes Chrome Extension
+ *
+ * Environment variables are injected at build time by webpack DefinePlugin:
+ * - __CONFIG__.NODE_ENV: 'development' | 'production'
+ * - __CONFIG__.API_BASE_URL: API base URL
  */
 
+// Type declaration for webpack-injected global
+declare global {
+  const __CONFIG__: {
+    NODE_ENV: string;
+    API_BASE_URL: string;
+  };
+}
+
 export const CONFIG = {
-  // API Configuration - Production URL on Cloud Run
-  API_BASE_URL: 'https://my-notes-api-7bnrhx3mka-uc.a.run.app/api/v1',
+  // API Configuration - Injected at build time
+  API_BASE_URL: typeof __CONFIG__ !== 'undefined' ? __CONFIG__.API_BASE_URL : 'http://localhost:8080/api/v1',
+
+  // Environment
+  NODE_ENV: typeof __CONFIG__ !== 'undefined' ? __CONFIG__.NODE_ENV : 'development',
 
   // Google OAuth Configuration
   GOOGLE_OAUTH: {
@@ -41,6 +56,9 @@ export const CONFIG = {
     API_REQUEST: 10 * 1000 // 10 seconds
   }
 } as const;
+
+// Helper to check if production
+export const isProduction = () => CONFIG.NODE_ENV === 'production';
 
 // Default user preferences
 export const DEFAULT_USER_PREFERENCES = {

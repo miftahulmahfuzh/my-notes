@@ -48,15 +48,13 @@ func main() {
 	}
 	log.Println("✅ Database connection established")
 
-	// Run migrations if in development or test mode
-	if cfg.IsDevelopment() || cfg.IsTest() {
-		log.Println("🔄 Running database migrations...")
-		migrator := database.NewMigrator(db, "backend/migrations")
-		if err := migrator.Up(); err != nil {
-			log.Fatalf("❌ Failed to run migrations: %v", err)
-		}
-		log.Println("✅ Database migrations completed")
+	// Run database migrations (all environments)
+	log.Println("🔄 Running database migrations...")
+	migrator := database.NewMigrator(db, "migrations")
+	if err := migrator.Up(); err != nil {
+		log.Fatalf("❌ Failed to run migrations: %v", err)
 	}
+	log.Println("✅ Database migrations completed")
 
 	// Initialize handlers
 	log.Println("🎯 Initializing handlers...")

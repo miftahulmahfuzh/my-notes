@@ -1,9 +1,44 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
+const dotenv = require('dotenv');
+const dotenvExpand = require('dotenv-expand');
+
+// Provide process polyfill
+const { ProvidePlugin } = webpack;
+
+// Load environment variables from .env files
+// Priority: .env.{mode}.local > .env.{mode} > .env.local > .env
+const loadEnv = (mode) => {
+  const envFiles = [
+    `.env.${mode}.local`,
+    `.env.${mode}`,
+    '.env.local',
+    '.env'
+  ];
+
+  const envVars = {};
+  envFiles.forEach(file => {
+    try {
+      const filePath = path.resolve(__dirname, file);
+      const result = dotenv.config({ path: filePath });
+      if (result.parsed) {
+        dotenvExpand({ parsed: result.parsed });
+        Object.assign(envVars, result.parsed);
+      }
+    } catch (e) {
+      // File doesn't exist, skip
+    }
+  });
+
+  return envVars;
+};
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
+  const mode = env && env.mode ? env.mode : (isProduction ? 'production' : 'development');
+  const envVars = loadEnv(mode);
 
   return {
     entry: {
@@ -31,9 +66,26 @@ module.exports = (env, argv) => {
       ]
     },
     resolve: {
-      extensions: ['.tsx', '.ts', '.js']
+      extensions: ['.tsx', '.ts', '.js'],
+      fallback: {
+        'process': require.resolve('process/browser'),
+      }
     },
     plugins: [
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+      }),
+      new webpack.DefinePlugin({
+        'process.env.NODE_ENV': JSON.stringify(mode),
+        'process.browser': JSON.stringify(true),
+        __CONFIG__: JSON.stringify({
+          NODE_ENV: mode,
+          API_BASE_URL: envVars.VITE_API_BASE_URL || (isProduction
+            ? 'https://my-notes-api-7bnrhx3mka-uc.a.run.app'
+            : 'http://localhost:8080'
+          ),
+        }),
+      }),
       new HtmlWebpackPlugin({
         template: './src/popup/popup.html',
         filename: 'popup.html',
@@ -51,7 +103,7 @@ module.exports = (env, argv) => {
           { from: 'src/options/options.css', to: 'options.css' },
           { from: 'assets', to: 'assets', noErrorOnMissing: true }
         ]
-      })
+      }),
     ],
     devtool: isProduction ? false : 'source-map',
     watch: !isProduction,

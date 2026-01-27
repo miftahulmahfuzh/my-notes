@@ -271,10 +271,11 @@ The script will:
 | 4 | Creates Cloud SQL database | **5-10 minutes** |
 | 5 | Sets database password | 10 seconds |
 | 6 | Creates the database | 5 seconds |
-| 7 | Builds Docker image | 2-3 minutes |
-| 8 | Pushes to Artifact Registry | 1 minute |
-| 9 | Deploys to Cloud Run | 1-2 minutes |
-| 10 | Runs health check | 5 seconds |
+| 7 | Runs database migrations | 30 seconds |
+| 8 | Builds Docker image | 2-3 minutes |
+| 9 | Pushes to Artifact Registry | 1 minute |
+| 10 | Deploys to Cloud Run | 1-2 minutes |
+| 11 | Runs health check | 5 seconds |
 
 **Total time:** ~15-20 minutes (mostly waiting for database creation)
 
@@ -310,6 +311,11 @@ You'll see progress messages like:
 
 ▶ Creating production environment file...
 ✓ Environment file created
+
+▶ Running database migrations on Cloud SQL...
+▶ Connecting to database at xxx.xxx.xxx.xxx...
+✓ Database schema created successfully
+✓ Migrations completed
 
 ▶ Setting up Artifact Registry...
 ✓ Artifact Registry ready
@@ -508,6 +514,33 @@ Verify the note was saved to the database:
 
 ## Managing Your Deployment
 
+### Running Database Migrations
+
+The deployment script automatically runs migrations during initial deployment. However, if you need to run migrations manually:
+
+#### Using gcloud sql connect
+
+```bash
+# Connect to your database
+gcloud sql connect my-notes-db --user=postgres --region=us-central1
+
+# You'll be in a psql session. Run migration SQL:
+# (See backend/migrations/ directory for SQL files)
+```
+
+#### After Schema Changes
+
+If you modify the database schema (add new migrations):
+
+```bash
+# Re-run the deployment script
+./deploy_gcp.sh
+
+# The script will automatically apply pending migrations
+```
+
+**Important:** The deployment script tracks applied migrations in the `schema_migrations` table. Only new migrations will be applied.
+
 ### Viewing Logs
 
 **Real-time logs:**
@@ -647,6 +680,29 @@ SERVICE_URL=$(gcloud run services describe my-notes-api --format="value(status.u
 
 # Test manually
 curl $SERVICE_URL/api/v1/health
+```
+
+### Problem: "relation \"users\" does not exist"
+
+**Solution:** Database migrations haven't been run.
+
+```bash
+# Option 1: Re-run deployment script (recommended)
+./deploy_gcp.sh
+
+# Option 2: Run migrations manually
+gcloud sql connect my-notes-db --user=postgres --region=us-central1
+
+# In the psql session, run:
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    google_id VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    avatar_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- (repeat for other tables - see backend/migrations/)
 ```
 
 ### Problem: "High latency"
@@ -865,7 +921,8 @@ Before deploying, ensure you've:
 - [ ] Logged in with `gcloud auth login`
 - [ ] Copied and customized `deploy_gcp.sh`
 - [ ] Set strong passwords
-- [ ] Run the deployment script
+- [ ] Run the deployment script (includes migrations)
+- [ ] Verified database migrations completed
 - [ ] Tested the health endpoint
 - [ ] Updated extension configuration files
 - [ ] Rebuilt the extension

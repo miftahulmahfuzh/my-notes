@@ -3,6 +3,8 @@
  * Handles Google OAuth using Chrome Identity API and token management
  */
 
+import { CONFIG } from './utils/config';
+
 // Authentication Types
 export interface User {
   id: string;
@@ -237,35 +239,68 @@ export class AuthService {
    * Exchange Google OAuth token for backend auth tokens
    */
   private async exchangeTokenForAuth(googleToken: string): Promise<AuthResponse | null> {
-    try {
-      // First, we need to get a one-time authorization code from Google
-      // For Chrome extensions, we use the token directly in some cases,
-      // but let's try to use the standard OAuth flow first
+    const authUrl = `${CONFIG.API_BASE_URL}/api/v1/auth/chrome`;
+    console.log('[Auth] === Starting token exchange ===');
+    console.log('[Auth] CONFIG.API_BASE_URL:', CONFIG.API_BASE_URL);
+    console.log('[Auth] Full URL:', authUrl);
+    console.log('[Auth] Has google token:', !!googleToken);
 
-      const response = await fetch('http://localhost:8080/api/v1/auth/chrome', {
+    try {
+      const requestBody = {
+        token: googleToken
+      };
+      console.log('[Auth] Request body keys:', Object.keys(requestBody));
+
+      const response = await fetch(authUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          token: googleToken // Chrome Identity API token
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('[Auth] Response status:', response.status);
+      console.log('[Auth] Response ok:', response.ok);
+      console.log('[Auth] Response statusText:', response.statusText);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        let errorText = '';
+        let errorJson = null;
+        try {
+          errorText = await response.text();
+          console.log('[Auth] Error response body (raw):', errorText);
+          try {
+            errorJson = JSON.parse(errorText);
+            console.log('[Auth] Error response (parsed):', JSON.stringify(errorJson, null, 2));
+          } catch {
+            // Not JSON, use raw text
+          }
+        } catch (e) {
+          console.log('[Auth] Could not read error response body');
+        }
+
+        const errorMessage = errorJson?.error?.message || errorJson?.error || errorText || `HTTP ${response.status}`;
+        throw new Error(`Auth failed: ${errorMessage}`);
       }
 
-      const data = await response.json();
-      console.log('[Auth] Backend response (raw):', JSON.stringify(data, null, 2));
+      const responseText = await response.text();
+      console.log('[Auth] Success response body (raw):', responseText);
+
+      const data = JSON.parse(responseText);
+      console.log('[Auth] Parsed response keys:', Object.keys(data));
 
       // The backend wraps responses in APIResponse format: { success: true, data: {...} }
       const responseData = data.success ? data.data : data;
 
+      console.log('[Auth] Response data keys:', Object.keys(responseData));
+
       // Validate required fields exist in response
       if (!responseData.user || !responseData.access_token || !responseData.refresh_token) {
-        console.error('[Auth] Invalid response: missing required fields');
+        console.error('[Auth] Invalid response - missing fields:', {
+          hasUser: !!responseData.user,
+          hasAccessToken: !!responseData.access_token,
+          hasRefreshToken: !!responseData.refresh_token
+        });
         return null;
       }
 
@@ -278,17 +313,19 @@ export class AuthService {
         sessionId: responseData.session_id
       };
 
-      console.log('[Auth] Parsed auth response:');
-      console.log('[Auth] - User exists:', !!authResponse.user);
-      console.log('[Auth] - Access token exists:', !!authResponse.accessToken);
-      console.log('[Auth] - Refresh token exists:', !!authResponse.refreshToken);
-      console.log('[Auth] - Token type:', authResponse.tokenType);
-      console.log('[Auth] - Expires in:', authResponse.expiresIn);
-      console.log('[Auth] - Session ID exists:', !!authResponse.sessionId);
+      console.log('[Auth] === Token exchange successful ===');
+      console.log('[Auth] User email:', authResponse.user?.email);
+      console.log('[Auth] Session ID:', authResponse.sessionId);
 
       return authResponse;
     } catch (error) {
-      console.error('Token exchange failed:', error);
+      console.log('[Auth] === Token exchange FAILED ===');
+      console.log('[Auth] Error type:', error?.constructor?.name || typeof error);
+      console.log('[Auth] Error name:', (error as Error)?.name);
+      console.log('[Auth] Error message:', (error as Error)?.message);
+      console.log('[Auth] Error toString():', String(error));
+      console.log('[Auth] Error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+
       return null;
     }
   }
@@ -304,7 +341,7 @@ export class AuthService {
         return false;
       }
 
-      const response = await fetch('http://localhost:8080/api/v1/auth/refresh', {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/api/v1/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -351,7 +388,7 @@ export class AuthService {
       }
 
       // Call backend logout if possible
-      await fetch('http://localhost:8080/api/v1/auth/logout', {
+      await fetch(`${CONFIG.API_BASE_URL}/api/v1/auth/logout`, {
         method: 'DELETE'
       }).catch(() => {
         // Ignore logout errors

@@ -29,6 +29,8 @@ import {
   ApiResponse
 } from './types';
 
+import { CONFIG } from './utils/config';
+
 /**
  * Configuration for API service
  */
@@ -51,7 +53,7 @@ class ApiService {
   constructor(config: Partial<ApiConfig> = {}) {
     // Default configuration
     const defaultConfig: ApiConfig = {
-      baseUrl: 'https://my-notes-api-7bnrhx3mka-uc.a.run.app',
+      baseUrl: CONFIG.API_BASE_URL,
       timeout: 10000, // 10 seconds
       retryAttempts: 3,
       retryDelay: 1000 // 1 second

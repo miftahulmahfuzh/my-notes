@@ -16,8 +16,11 @@
   "host_permissions": [
     "http://localhost:*/*",
     "https://localhost:*/*",
+    "https://my-notes-api-7bnrhx3mka-uc.a.run.app/*",
     "https://accounts.google.com/*",
-    "https://www.googleapis.com/*"
+    "https://www.googleapis.com/*",
+    "https://oauth2.googleapis.com/*",
+    "https://*.googleapis.com/*"
   ],
   "oauth2": {
     "client_id": "1019738114244-ml2i0sqpfauqpaq2568qgbhqmd4t881j.apps.googleusercontent.com",
