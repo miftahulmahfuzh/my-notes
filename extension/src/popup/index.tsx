@@ -224,7 +224,7 @@ const PopupApp: React.FC = () => {
     setState(prev => {
       // Push current state to history before navigating
       const newHistoryEntry: HistoryState = {
-        view: prev.showNotesList ? 'notesList' : 'welcome',
+        view: prev.showHelpView ? 'help' : (prev.showNotesList ? 'notesList' : 'welcome'),
         searchQuery: prev.searchQuery,
         timestamp: Date.now()
       };
@@ -234,6 +234,7 @@ const PopupApp: React.FC = () => {
         navigationHistory: [...prev.navigationHistory, newHistoryEntry],
         showCreateForm: true,
         showNotesList: false,
+        showHelpView: false,
         error: null
       };
     });
@@ -660,6 +661,7 @@ const PopupApp: React.FC = () => {
       showNoteDetail: previousState.view === 'noteDetail',
       showNoteEditor: previousState.view === 'noteEditor',
       showCreateForm: previousState.view === 'createForm',
+      showHelpView: previousState.view === 'help',
       currentNote: previousState.noteId ? prev.notes.find(n => n.id === previousState.noteId) || null : null,
     }));
   };

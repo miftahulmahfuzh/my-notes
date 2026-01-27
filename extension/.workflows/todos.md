@@ -167,6 +167,11 @@
     - Ctrl+B now works on Help page to navigate back to previous state
     - History tracking enables proper back navigation from Help page
     - Back button is now an icon in the header (top-left)
+  - **Bug Fix** (2026-01-27):
+    - Issue: Pressing Ctrl+N from Help page navigates to create note, but Ctrl+B doesn't return to Help page
+    - Root cause: `handleCreateNoteClick` didn't track Help page state (only checked showNotesList/showWelcome), and `handleBack` didn't restore showHelpView
+    - Fix: Updated `handleCreateNoteClick` to include `prev.showHelpView ? 'help'` in history entry, and added `showHelpView: previousState.view === 'help'` to `handleBack`
+    - Files modified: extension/src/popup/index.tsx (lines 223-240, 645-666)
     - Help page typography is smaller and more compact
     - Spacing between items is reduced for better readability
   - **Evidence**: `webpack 5.102.1 compiled with 3 warnings in 28074 ms`
