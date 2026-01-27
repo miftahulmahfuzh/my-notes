@@ -17,6 +17,7 @@ module.exports = {
       'ts-jest',
       {
         tsconfig: '<rootDir>/tsconfig.test.json',
+        isolatedModules: false,
       },
     ],
     '^.+\\.js$': 'babel-jest',
@@ -45,9 +46,4 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  globals: {
-    'ts-jest': {
-      isolatedModules: false,
-    },
-  },
 };
