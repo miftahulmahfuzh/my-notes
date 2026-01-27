@@ -1077,6 +1077,7 @@ describe('PopupApp Component', () => {
 
       // @ts-ignore
       authService.initialize.mockResolvedValue(mockAuthState);
+
       // @ts-ignore
       apiService.getNotes.mockResolvedValue({
         success: true,
@@ -1088,21 +1089,11 @@ describe('PopupApp Component', () => {
           has_more: false,
         },
       });
+
       // @ts-ignore
       apiService.deleteNote.mockResolvedValue({
         success: true,
         data: { message: 'Note deleted' },
-      });
-      // @ts-ignore
-      apiService.getNotes.mockResolvedValue({
-        success: true,
-        data: {
-          notes: [],
-          total: 0,
-          page: 1,
-          limit: 20,
-          has_more: false,
-        },
       });
 
       render(<PopupApp />);
