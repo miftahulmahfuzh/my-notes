@@ -41,6 +41,36 @@ describe('ExportImport Component', () => {
       }
       return originalCreateElement(tagName);
     });
+
+    // Default fetch mock with export formats
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url === '/api/v1/export/formats') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            formats: [
+              { format: 'json', name: 'JSON', description: 'JavaScript Object Notation', content_type: 'application/json', file_extension: '.json' },
+              { format: 'markdown', name: 'Markdown', description: 'Markdown text format', content_type: 'text/markdown', file_extension: '.md' },
+              { format: 'html', name: 'HTML', description: 'HTML document format', content_type: 'text/html', file_extension: '.html' },
+            ],
+          }),
+        });
+      }
+      if (url === '/api/v1/import/info') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            supported_formats: ['json', 'zip'],
+            requirements: ['Valid JSON or ZIP file'],
+            security_notes: ['Files are validated before import'],
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      });
+    });
   });
 
   afterEach(() => {
