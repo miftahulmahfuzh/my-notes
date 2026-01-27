@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Note } from '../types';
-import MarkdownPreview from './MarkdownPreview';
+import MarkdownPreview from './MarkdownPreviewLazy';
 import { extractTOC, extractMetadata } from '../utils/markdown';
 import { stripHashtags } from '../utils/contentUtils';
 
