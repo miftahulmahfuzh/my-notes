@@ -1,0 +1,40 @@
+# GCloud ignore file for Cloud Run deployment
+# Similar to .gitignore but for gcloud deployments
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+LICENSE
+CHANGELOG
+
+# Tests
+tests/
+*_test.go
+go.test.sum
+
+# Development files
+Dockerfile.dev
+.air.toml
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Coverage
+coverage/
+*.out
