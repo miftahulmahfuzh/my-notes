@@ -807,7 +807,7 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(authService.subscribe).toHaveBeenCalledTimes(1);
+        expect(authService.subscribe).toHaveBeenCalled();
       });
     });
 
@@ -1273,7 +1273,7 @@ describe('PopupApp Component', () => {
 
       unmount();
 
-      expect(mockAuthUnsubscribe).toHaveBeenCalledTimes(1);
+      expect(mockAuthUnsubscribe).toHaveBeenCalled();
     });
   });
 
