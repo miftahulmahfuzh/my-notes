@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "webpack --watch --mode development --env mode=development",
     "build": "webpack --mode production --env mode=production && node fix-manifest.js",
-    "build:dev": "webpack --mode development --env mode=development && node fix-manifest.js",
+    "build:dev": "webpack --mode development --env mode=development --no-watch && node fix-manifest.js",
     "build:prod": "npm run build && npm run zip",
     "test": "jest",
     "test:watch": "jest --watch",

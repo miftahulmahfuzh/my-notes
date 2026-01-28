@@ -23,6 +23,7 @@ build/
 
 # Environment variables
 # Local overrides are never committed
+.env
 .env.local
 .env.*.local
 backend/.env.production

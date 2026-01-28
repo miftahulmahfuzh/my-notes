@@ -28,9 +28,10 @@ npm run --prefix extension clean 2>/dev/null || rm -rf "$EXTENSION_DIR/dist"
 echo -e "${GREEN}Clean complete${NC}"
 echo ""
 
-# Run build
-echo -e "${YELLOW}Building extension...${NC}"
-if npm run --prefix extension build; then
+# Run build (default to dev mode for local development)
+echo -e "${YELLOW}Building extension (dev mode)...${NC}"
+echo -e "${YELLOW}Use 'npm run --prefix extension build' for production build${NC}"
+if npm run --prefix extension build:dev; then
     echo ""
     echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}  Build Completed Successfully!${NC}"

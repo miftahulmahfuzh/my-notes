@@ -12,7 +12,7 @@
     "notifications"
   ],
   "host_permissions": [
-    "https://my-notes-api-7bnrhx3mka-uc.a.run.app/*",
+    "http://localhost:8080/*",
     "https://accounts.google.com/*",
     "https://www.googleapis.com/*",
     "https://oauth2.googleapis.com/*",
