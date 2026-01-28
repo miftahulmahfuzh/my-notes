@@ -860,9 +860,18 @@ const PopupApp: React.FC = () => {
         return;
       }
 
-      // Ctrl+F: Focus search input (only when notes list is visible)
+      // Ctrl+Shift+F: Enable semantic search, focus input (only when notes list is visible)
+      if (e.shiftKey && e.key === 'F' && state.showNotesList) {
+        e.preventDefault();
+        enableSemanticSearch();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      // Ctrl+F: Enable keyword search, focus input (only when notes list is visible)
       if (e.key === 'f' && state.showNotesList) {
         e.preventDefault();
+        enableKeywordSearch();
         searchInputRef.current?.focus();
         return;
       }
