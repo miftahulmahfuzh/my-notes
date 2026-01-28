@@ -65,14 +65,14 @@ body {
   background-color: var(--neutral-100);
   color: var(--neutral-900);
   line-height: 1.75;
-  width: 800px;
+  width: 760px;
   min-height: 700px;
   font-size: 1rem; /* 16px - Body text size */
 }
 
 /* ===== POPUP CONTAINER ===== */
 .popup-container {
-  width: 800px;
+  width: 760px;
   min-height: 700px;
   background: var(--white);
   border: 2px solid var(--neutral-950);
@@ -869,7 +869,7 @@ body {
 .h-full { height: 100%; }
 
 /* Responsive considerations for popup */
-@media (max-width: 800px) {
+@media (max-width: 760px) {
   body, .popup-container {
     width: 100vw;
   }
@@ -2585,7 +2585,7 @@ body {
 /* Help Page Styles */
 
 .help-section {
-  margin-bottom: var(--space-4); /* 16px - reduced from 24px */
+  margin-bottom: var(--space-2); /* 8px - consistent spacing across all lines */
 }
 
 .help-section .text-h3 {
@@ -2608,9 +2608,14 @@ body {
   background: var(--neutral-50);
 }
 
-/* Ensure all Help page text uses consistent colors */
+/* Ensure all Help page text uses consistent colors and spacing */
 .content-section--help .text-sm {
   color: var(--neutral-700); /* Consistent body text color */
+  margin-bottom: var(--space-2); /* 8px - consistent spacing between all lines */
+}
+
+.content-section--help .text-sm:last-child {
+  margin-bottom: 0; /* No extra space after last line */
 }
 
 .content-section--help .text-h3 {
@@ -2663,7 +2668,7 @@ body {
 
 /* Reduce help section spacing */
 .content-section--help .help-section {
-  margin-bottom: var(--space-4); /* 16px - reduced from var(--space-6)/24px */
+  margin-bottom: var(--space-2); /* 8px - consistent spacing across all lines */
 }
 
 /* Reduce shortcut list item spacing */

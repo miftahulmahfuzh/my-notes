@@ -401,6 +401,10 @@ const PopupApp: React.FC = () => {
         ...prev,
         navigationHistory: [...prev.navigationHistory, newHistoryEntry],
         showHelpView: true,
+        showNotesList: false,
+        showNoteEditor: false,
+        showNoteDetail: false,
+        showCreateForm: false,
       };
     });
   };
@@ -1308,81 +1312,18 @@ const PopupApp: React.FC = () => {
           </div>
 
           <div className="content-section content-section--help">
-            <div className="help-section">
-              <h3 className="text-h3">Navigation (Global)</h3>
-              <div className="shortcut-list">
-                <div className="shortcut-item">
-                  <kbd>Ctrl</kbd> + <kbd>N</kbd>
-                  <span>New note</span>
-                </div>
-                <div className="shortcut-item">
-                  <kbd>Ctrl</kbd> + <kbd>H</kbd>
-                  <span>Help</span>
-                </div>
-                <div className="shortcut-item">
-                  <kbd>Ctrl</kbd> + <kbd>F</kbd>
-                  <span>Keyword search</span>
-                </div>
-                <div className="shortcut-item">
-                  <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>
-                  <span>Semantic search</span>
-                </div>
-                <div className="shortcut-item">
-                  <kbd>Ctrl</kbd> + <kbd>B</kbd>
-                  <span>Back</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="help-section">
-              <h3 className="text-h3">Search Modes</h3>
-              <p className="text-sm">
-                <strong>Keyword:</strong> Text matching in titles/content<br/>
-                <strong>Semantic:</strong> LLM-powered understanding (rainbow border)
-              </p>
-              <p className="text-sm">
-                Toggle via Brain icon or Ctrl+F / Ctrl+Shift+F
-              </p>
-            </div>
-
-            <div className="help-section">
-              <h3 className="text-h3">Editor</h3>
-              <div className="shortcut-list">
-                <div className="shortcut-item">
-                  <kbd>Ctrl</kbd> + <kbd>S</kbd>
-                  <span>Save note</span>
-                </div>
-                <div className="shortcut-item">
-                  <kbd>Tab</kbd>
-                  <span>Indent (2 spaces)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="help-section">
-              <h3 className="text-h3">Notes List</h3>
-              <div className="shortcut-list">
-                <div className="shortcut-item">
-                  <kbd>Ctrl</kbd> + <kbd>C</kbd>
-                  <span>Clear search</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="help-section">
-              <h3 className="text-h3">Note Detail</h3>
-              <div className="shortcut-list">
-                <div className="shortcut-item">
-                  <kbd>Ctrl</kbd> + <kbd>C</kbd>
-                  <span>Copy content</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="help-section">
-              <h3 className="text-h3">Tags</h3>
-              <p className="text-sm">Click tag to filter notes</p>
-            </div>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>N</strong> New note</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>H</strong> Help</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>F</strong> Keyword search</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>Shift</strong> + <strong>F</strong> Semantic search</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>B</strong> Back</p>
+            <p className="text-sm"><strong>Keyword:</strong> Text matching in titles/content<br/><strong>Semantic:</strong> LLM-powered understanding (rainbow border)</p>
+            <p className="text-sm">Toggle via Brain icon or Ctrl+F / Ctrl+Shift+F</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>S</strong> Save note</p>
+            <p className="text-sm"><strong>Tab</strong> Indent (2 spaces)</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Clear search</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Copy content</p>
+            <p className="text-sm">Click tag to filter notes</p>
           </div>
         </div>
       );

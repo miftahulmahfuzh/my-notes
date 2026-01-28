@@ -4,9 +4,9 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2026-01-28T12:35:00Z
+**Last Updated**: 2026-01-28T14:40:00Z
 
-**Total Active Tasks**: 2
+**Total Active Tasks**: 3
 
 **Total Archived Tasks**: 14
 
@@ -26,6 +26,12 @@
 ## Active Tasks
 
 ### [P1] High
+- [x] **P1-CN-A027** Fix horizontal scrollbar in Chrome extension popup
+  - **Completed**: 2026-01-28
+  - **Method**: /implement from code analyzer
+  - **Files Modified**: extension/src/popup/popup.css
+  - **Impact**: Width reduced from 800px to 760px, providing 40px buffer for browser chrome/scrollbars. Horizontal scrollbar eliminated.
+  - **Plan**: `.workflows/plan/P1-CN-A027.md`
 - [x] **P1-CN-A026** Fix tag autocomplete missing in new note page (Ctrl+N)
   - **Completed**: 2026-01-28
   - **Method**: /implement from code analyzer
@@ -208,6 +214,7 @@
 - P3-CN-A000: Purge dead code from frontend extension
 
 ### 2026-01
+- P1-CN-A027: Fix horizontal scrollbar in Chrome extension popup
 - P1-CN-A026: Fix tag autocomplete missing in new note page (Ctrl+N)
 - P2-CN-A016: Add real-time search bar to notes list view
 - P2-CN-A017: Make tags clickable in note detail view for search filtering
