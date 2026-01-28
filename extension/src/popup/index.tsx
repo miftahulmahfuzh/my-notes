@@ -1262,13 +1262,31 @@ const PopupApp: React.FC = () => {
                 </div>
                 <div className="shortcut-item">
                   <kbd>Ctrl</kbd> + <kbd>F</kbd>
-                  <span>Focus search input (when in notes list view)</span>
+                  <span>Focus search with keyword mode (when in notes list view)</span>
+                </div>
+                <div className="shortcut-item">
+                  <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>
+                  <span>Focus search with semantic mode enabled (when in notes list view)</span>
                 </div>
                 <div className="shortcut-item">
                   <kbd>Ctrl</kbd> + <kbd>B</kbd>
                   <span>Navigate back to previous state (preserves search query)</span>
                 </div>
               </div>
+            </div>
+
+            <div className="help-section">
+              <h3 className="text-h3">Search Modes</h3>
+              <p className="text-sm">
+                The extension supports two search modes:
+              </p>
+              <ul className="text-sm">
+                <li><strong>Keyword Search:</strong> Fast client-side matching of text in titles and content</li>
+                <li><strong>Semantic Search:</strong> LLM-powered understanding of search intent and meaning (indicated by animated rainbow border)</li>
+              </ul>
+              <p className="text-sm">
+                Click the Brain icon to toggle between modes, or use Ctrl+F (keyword) / Ctrl+Shift+F (semantic).
+              </p>
             </div>
 
             <div className="help-section">
