@@ -149,23 +149,31 @@ func (s *Server) initializeServices() {
 	var semanticSearchService *services.SemanticSearchService
 	var prettifyService *services.PrettifyService
 
+	log.Printf("🔍 Checking LLM configuration...")
+	log.Printf("   LLM Type: %s", s.config.LLM.Type)
+	log.Printf("   API Key configured: %t", s.config.LLM.DeepseekTencentAPIKey != "")
+
 	if s.config.LLM.DeepseekTencentAPIKey != "" {
 		var err error
+		log.Printf("🔧 Creating tokenizer...")
 		tokenizer, err = llm.NewTokenizer()
 		if err != nil {
 			log.Printf("⚠️  Failed to create tokenizer: %v - semantic search disabled", err)
 		} else {
+			log.Printf("🔧 Creating LLM client...")
 			resilientLLM, err = llm.NewResilientLLM(context.Background(), s.config, nil)
 			if err != nil {
 				log.Printf("⚠️  Failed to create LLM client: %v - semantic search disabled", err)
 			} else {
 				noteService := services.NewNoteService(s.db, tagService)
+				log.Printf("🔧 Initializing semantic search service...")
 				semanticSearchService = services.NewSemanticSearchService(
 					resilientLLM,
 					tokenizer,
 					noteService,
 					s.config.LLM.MaxSearchTokenLength,
 				)
+				log.Printf("🔧 Initializing prettify service...")
 				prettifyService = services.NewPrettifyService(
 					resilientLLM,
 					noteService,
@@ -179,6 +187,7 @@ func (s *Server) initializeServices() {
 	} else {
 		log.Println("ℹ️  No LLM API key configured - semantic search disabled")
 		log.Println("ℹ️  Prettify service disabled")
+		log.Println("   Set LLM_DEEPSEEK_TENCENT_API_KEY environment variable to enable")
 	}
 
 	// Initialize note service and handler

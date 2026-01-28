@@ -642,31 +642,41 @@ func (h *NotesHandler) getConflictStatus(note models.Note, conflicts []models.No
 
 // PrettifyNote handles POST /api/notes/{id}/prettify
 func (h *NotesHandler) PrettifyNote(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[PrettifyNote] Starting prettify request")
+
 	// Get user from context (set by auth middleware)
 	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
+		log.Printf("[PrettifyNote] ERROR: User not authenticated")
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	log.Printf("[PrettifyNote] User authenticated: %s", user.Email)
 
 	// Get note ID from URL
 	vars := mux.Vars(r)
 	noteID := vars["id"]
 	if noteID == "" {
+		log.Printf("[PrettifyNote] ERROR: Note ID is required")
 		respondWithError(w, http.StatusBadRequest, "Note ID is required")
 		return
 	}
+	log.Printf("[PrettifyNote] Note ID: %s", noteID)
 
 	// Check if prettify service is available
 	if h.prettifyService == nil {
-		respondWithError(w, http.StatusServiceUnavailable, "Prettify service not available")
+		log.Printf("[PrettifyNote] ERROR: Prettify service is not available (nil)")
+		respondWithError(w, http.StatusServiceUnavailable, "Prettify service not available - LLM may not be configured")
 		return
 	}
+	log.Printf("[PrettifyNote] Prettify service is available")
 
 	// Prettify the note
 	ctx := r.Context()
+	log.Printf("[PrettifyNote] Calling prettify service...")
 	result, err := h.prettifyService.PrettifyNote(ctx, user.ID.String(), noteID)
 	if err != nil {
+		log.Printf("[PrettifyNote] ERROR: Prettify failed: %v", err)
 		if strings.Contains(err.Error(), "too short") {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 		} else {
@@ -675,5 +685,6 @@ func (h *NotesHandler) PrettifyNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("[PrettifyNote] SUCCESS: Note prettified, changes: %v", result.ChangesMade)
 	respondWithJSON(w, http.StatusOK, result)
 }

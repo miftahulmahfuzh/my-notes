@@ -225,6 +225,7 @@ vim deploy_gcp.sh
 | `REGION` | Closest region to your users | `us-central1` |
 | `DB_PASSWORD` | Strong password for database | Generate with: `openssl rand -base64 24` |
 | `JWT_SECRET` | Secret for JWT tokens (optional) | Generate with: `openssl rand -base64 42` |
+| `LLM_DEEPSEEK_TENCENT_API_KEY` | API key for AI features (optional) | From your LLM provider |
 
 **Example configuration:**
 ```bash
@@ -232,7 +233,17 @@ PROJECT_ID="silence-notes-123456"
 REGION="us-central1"
 DB_PASSWORD="xK9$mP2@nL5#qR8&wT4!zY7%"
 JWT_SECRET=""  # Leave empty to auto-generate
+
+# LLM Configuration (Optional - for AI features)
+# Leave empty to disable semantic search and note prettification
+LLM_DEEPSEEK_TENCENT_API_KEY="sk-your-api-key-here"
+LLM_DEEPSEEK_TENCENT_BASE_URL="https://api.lkeap.tencentcloud.com/v1"
 ```
+
+**Note on LLM Configuration:**
+- The `LLM_*` variables are **optional**
+- If left empty, semantic search and prettify features will be disabled
+- To enable AI features, fill in all `LLM_*` variables with your provider's credentials
 
 **Available Regions:**
 | Region | Location |
@@ -381,12 +392,36 @@ curl https://my-notes-api-xxxxx-xx.a.run.app/api/v1/health
 
 #### 6.2 View Live Logs
 
+**Option 1: Using log-streaming component (Recommended)**
+
+First, install the log-streaming component for real-time log streaming:
+
 ```bash
-# Replace with your service name
-gcloud run services logs tail my-notes-api --follow
+# On Debian/Ubuntu
+sudo apt-get install -y google-cloud-cli-log-streaming
+
+# On macOS
+gcloud components install log-streaming
+```
+
+Then stream logs from your local terminal:
+
+```bash
+# Stream logs in real-time (press Ctrl+C to stop)
+gcloud alpha run services logs tail my-notes-api --region=us-central1
 ```
 
 Press `Ctrl+C` to stop watching logs.
+
+**Option 2: Using logging API (for recent logs)**
+
+```bash
+# Read recent logs via logging API
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=my-notes-api" \
+  --limit=30 \
+  --format="value(timestamp,textPayload)" \
+  --project=YOUR_PROJECT_ID
+```
 
 #### 6.3 Check the Service in Console
 
@@ -543,14 +578,22 @@ If you modify the database schema (add new migrations):
 
 ### Viewing Logs
 
-**Real-time logs:**
+**Real-time logs (requires log-streaming component):**
 ```bash
-gcloud run services logs tail my-notes-api --follow
+# Install log-streaming first (one-time setup)
+sudo apt-get install -y google-cloud-cli-log-streaming  # Linux
+gcloud components install log-streaming                  # macOS
+
+# Stream logs from your local terminal (Ctrl+C to stop)
+gcloud alpha run services logs tail my-notes-api --region=us-central1
 ```
 
 **Recent logs:**
 ```bash
-gcloud run services logs tail my-notes-api --limit=50
+# Via logging API (no component needed)
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=my-notes-api" \
+  --limit=50 \
+  --format="value(timestamp,textPayload)"
 ```
 
 **In Console:**
@@ -853,8 +896,8 @@ gcloud sql backups restore BACKUP_ID \
 # Deploy
 ./deploy_gcp.sh
 
-# View logs
-gcloud run services logs tail my-notes-api --follow
+# View logs (requires log-streaming component)
+gcloud alpha run services logs tail my-notes-api --region=us-central1
 
 # Get service URL
 gcloud run services describe my-notes-api --format="value(status.url)"

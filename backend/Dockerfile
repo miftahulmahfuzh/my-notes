@@ -1,5 +1,5 @@
 # Production Dockerfile for Cloud Run
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates
@@ -37,6 +37,9 @@ WORKDIR /app
 COPY --from=builder /app/server .
 
 # Copy migrations
+# In Cloud Build, backend/ is the build context, so migrations are at /app/migrations
+# In local builds with project root context, migrations would be at /app/backend/migrations
+# We copy from /app/migrations since Cloud Build uses backend/ as context
 COPY --from=builder /app/migrations ./migrations
 
 # Change ownership

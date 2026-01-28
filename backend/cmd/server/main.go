@@ -50,7 +50,15 @@ func main() {
 
 	// Run database migrations (all environments)
 	log.Println("🔄 Running database migrations...")
-	migrator := database.NewMigrator(db, "backend/migrations")
+	// Use migrations path that works both locally and in Docker
+	// Locally: binary runs from project root, so "backend/migrations" works
+	// Docker: migrations are copied to "./migrations", so we check both paths
+	migrationsPath := "migrations"
+	if _, err := os.Stat("backend/migrations"); err == nil {
+		migrationsPath = "backend/migrations"
+	}
+	log.Printf("📁 Using migrations path: %s", migrationsPath)
+	migrator := database.NewMigrator(db, migrationsPath)
 	if err := migrator.Up(); err != nil {
 		log.Fatalf("❌ Failed to run migrations: %v", err)
 	}

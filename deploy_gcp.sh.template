@@ -41,6 +41,18 @@ IMAGE_NAME="my-notes-api"
 JWT_SECRET=""
 
 # ========================================
+# LLM Configuration (Optional)
+# ========================================
+# Enable AI features: semantic search and note prettification
+# Leave LLM_DEEPSEEK_TENCENT_API_KEY empty to disable these features
+LLM_TYPE="DEEPSEEK_TENCENT"
+LLM_DEEPSEEK_TENCENT_API_KEY=""
+LLM_DEEPSEEK_TENCENT_BASE_URL=""
+LLM_DEEPSEEK_TENCENT_MODEL="deepseek-v3"
+LLM_MAX_SEARCH_TOKEN_LENGTH=100000
+LLM_REQUEST_TIMEOUT=30
+
+# ========================================
 # DERIVED VALUES (do not edit)
 # ========================================
 
@@ -362,7 +374,7 @@ EOF
 
     print_success "Docker image built and pushed"
 
-    # Deploy to Cloud Run
+    # Deploy to Cloud Run with all environment variables
     print_step "Deploying to Cloud Run..."
     gcloud run deploy $SERVICE_NAME \
         --image=$IMAGE_URI \
@@ -370,6 +382,22 @@ EOF
         --region=$REGION \
         --allow-unauthenticated \
         --set-cloudsql-instances="$CLOUDSQL_CONNECTION_NAME" \
+        --set-env-vars="DB_HOST=/cloudsql/${CLOUDSQL_CONNECTION_NAME}" \
+        --set-env-vars="DB_PORT=5432" \
+        --set-env-vars="DB_NAME=${DB_NAME}" \
+        --set-env-vars="DB_USER=${DB_USER}" \
+        --set-env-vars="DB_PASSWORD=${DB_PASSWORD}" \
+        --set-env-vars="JWT_SECRET=${JWT_SECRET}" \
+        --set-env-vars="APP_ENV=production" \
+        --set-env-vars="APP_DEBUG=false" \
+        --set-env-vars="SERVER_HOST=0.0.0.0" \
+        --set-env-vars="SERVER_PORT=8080" \
+        --set-env-vars="LLM_TYPE=${LLM_TYPE}" \
+        --set-env-vars="LLM_DEEPSEEK_TENCENT_API_KEY=${LLM_DEEPSEEK_TENCENT_API_KEY}" \
+        --set-env-vars="LLM_DEEPSEEK_TENCENT_BASE_URL=${LLM_DEEPSEEK_TENCENT_BASE_URL}" \
+        --set-env-vars="LLM_DEEPSEEK_TENCENT_MODEL=${LLM_DEEPSEEK_TENCENT_MODEL}" \
+        --set-env-vars="LLM_MAX_SEARCH_TOKEN_LENGTH=${LLM_MAX_SEARCH_TOKEN_LENGTH}" \
+        --set-env-vars="LLM_REQUEST_TIMEOUT=${LLM_REQUEST_TIMEOUT}" \
         --quiet
 
     print_success "Deployed to Cloud Run"
