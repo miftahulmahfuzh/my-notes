@@ -4,7 +4,7 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2026-01-28T11:00:00Z
+**Last Updated**: 2026-01-28T12:35:00Z
 
 **Total Active Tasks**: 2
 
@@ -26,6 +26,13 @@
 ## Active Tasks
 
 ### [P1] High
+- [x] **P1-CN-A026** Fix tag autocomplete missing in new note page (Ctrl+N)
+  - **Completed**: 2026-01-28
+  - **Method**: /implement from code analyzer
+  - **Files Modified**: extension/src/popup/index.tsx
+  - **Impact**: Ctrl+N now opens NoteEditor in create mode with full tag autocomplete support (typing # triggers suggestions)
+  - **Plan**: `.workflows/plan/P1-CN-A026.md`
+
 - [x] **P1-CN-A025** Fix logout endpoint 401 Unauthorized error
   - **Completed**: 2026-01-28
   - **Method**: /implement from code analyzer
@@ -201,6 +208,7 @@
 - P3-CN-A000: Purge dead code from frontend extension
 
 ### 2026-01
+- P1-CN-A026: Fix tag autocomplete missing in new note page (Ctrl+N)
 - P2-CN-A016: Add real-time search bar to notes list view
 - P2-CN-A017: Make tags clickable in note detail view for search filtering
 - P2-CN-A024: Add tag autocomplete feature to note editor

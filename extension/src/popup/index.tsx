@@ -206,6 +206,79 @@ const PopupApp: React.FC = () => {
     }
   };
 
+  /**
+   * Create a new note from NoteEditor (handles tag autocomplete enabled creation)
+   * @param noteData - Note data from NoteEditor component
+   */
+  const handleCreateNote = async (noteData: { title?: string; content: string }): Promise<void> => {
+    console.log('handleCreateNote called with:', noteData);
+
+    // Validate input
+    if (!noteData.content || noteData.content.trim().length === 0) {
+      setState(prev => ({
+        ...prev,
+        error: 'Note content cannot be empty',
+        isLoading: false
+      }));
+      return;
+    }
+
+    // Set loading state
+    setState(prev => ({
+      ...prev,
+      isLoading: true,
+      error: null
+    }));
+
+    try {
+      // Prepare create request
+      const createRequest: CreateNoteRequest = {
+        title: noteData.title?.trim() || undefined,
+        content: noteData.content.trim()
+      };
+
+      console.log('Sending create request:', createRequest);
+
+      // Call API to create the note
+      const response = await apiService.createNote(createRequest);
+
+      if (response.success && response.data) {
+        // Successfully created the note
+        console.log('Successfully created note:', response.data);
+
+        // Reset to notes list view
+        setState(prev => ({
+          ...prev,
+          editingNote: null,
+          showNoteEditor: false,
+          isLoading: false,
+          error: null
+        }));
+
+        // Refresh the notes list to show new note
+        await loadNotes();
+      } else {
+        // Handle API error
+        const errorMessage = response.error || 'Failed to create note';
+        setState(prev => ({
+          ...prev,
+          error: errorMessage,
+          isLoading: false
+        }));
+        console.error('Failed to create note:', errorMessage);
+      }
+    } catch (error) {
+      // Handle network or unexpected error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setState(prev => ({
+        ...prev,
+        error: `Failed to create note: ${errorMessage}`,
+        isLoading: false
+      }));
+      console.error('Failed to create note:', error);
+    }
+  };
+
   const handleAuthSuccess = () => {
     // Auth state will be updated via subscription
     // Load notes after successful authentication
@@ -239,7 +312,9 @@ const PopupApp: React.FC = () => {
       return {
         ...prev,
         navigationHistory: [...prev.navigationHistory, newHistoryEntry],
-        showCreateForm: true,
+        editingNote: null,           // Clear editingNote for new note (no note = create mode)
+        showNoteEditor: true,        // Use NoteEditor instead of showCreateForm
+        showCreateForm: false,       // Deprecated - no longer used
         showNotesList: false,
         showHelpView: false,
         error: null
@@ -1054,15 +1129,7 @@ const PopupApp: React.FC = () => {
 
     // Show note editor view
     if (state.showNoteEditor) {
-      // Handle case where no note is being edited
-      if (!state.editingNote) {
-        return (
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p className="loading-text">Loading editor...</p>
-          </div>
-        );
-      }
+      const isEditMode = !!state.editingNote; // true for edit, false for create
 
       return (
         <div className="note-editor-view">
@@ -1073,12 +1140,12 @@ const PopupApp: React.FC = () => {
             </div>
           }>
             <NoteEditor
-              note={state.editingNote}
-              onSave={updateNote}
+              note={state.editingNote ?? undefined} // undefined for create mode
+              onSave={isEditMode ? updateNote : handleCreateNote}
               onCancel={handleBackToNotes}
               loading={state.isLoading}
               autoFocus={true}
-              placeholder="Start editing your note..."
+              placeholder={isEditMode ? "Start editing your note..." : "Start typing your note..."}
             />
           </Suspense>
         </div>
