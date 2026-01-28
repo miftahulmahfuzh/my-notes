@@ -1053,7 +1053,7 @@ const PopupApp: React.FC = () => {
       return (
         <div className="notes-list">
           <div className="notes-search-header">
-            <div className="search-bar-container">
+            <div className={`search-bar-container ${state.semanticSearchEnabled ? 'semantic-mode' : ''}`}>
               <svg className="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1066,15 +1066,6 @@ const PopupApp: React.FC = () => {
                 value={state.searchQuery}
                 onChange={handleSearchChange}
               />
-              {state.searchQuery && (
-                <button
-                  className="search-clear-btn-standalone"
-                  onClick={handleClearSearch}
-                  aria-label="Clear search"
-                >
-                  <X size={17} strokeWidth={2} />
-                </button>
-              )}
             </div>
             <button
               onClick={() => setState(prev => ({ ...prev, semanticSearchEnabled: !prev.semanticSearchEnabled }))}

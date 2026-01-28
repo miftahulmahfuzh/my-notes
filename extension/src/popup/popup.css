@@ -635,7 +635,7 @@ body {
   max-width: 480px;
   background: var(--neutral-50);
   border: 2px solid var(--neutral-950);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   padding: var(--space-2) var(--space-3);
   gap: var(--space-2);
   transition: var(--transition-all);
@@ -2817,10 +2817,8 @@ body {
   100% { border-color: #ff0000; }
 }
 
-.search-input.semantic-mode {
+.search-bar-container.semantic-mode {
   animation: spectrum-border 2s linear infinite;
-  border-width: 2px;
-  border-style: solid;
 }
 
 /* Semantic search toggle button */
@@ -2834,6 +2832,7 @@ body {
   background: var(--white);
   color: var(--neutral-500);
   cursor: pointer;
+  border-radius: var(--radius-full);
   transition: var(--transition-all);
 }
 
@@ -2843,8 +2842,8 @@ body {
 }
 
 .btn-semantic-search.active {
-  background: var(--neutral-950);
-  color: var(--primary);
+  background: var(--primary);
+  color: var(--white);
   border-color: var(--neutral-950);
 }
 
