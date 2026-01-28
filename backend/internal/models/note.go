@@ -343,6 +343,12 @@ type SyncMetadata struct {
 	HasConflicts bool   `json:"has_conflicts"`
 }
 
+// SimplifiedNote represents a note for LLM processing
+type SimplifiedNote struct {
+	ID      string `json:"id"`
+	Content string `json:"content"` // title + " " + content
+}
+
 // APIResponse represents the standard API response format
 type APIResponse struct {
 	Success bool        `json:"success"`
