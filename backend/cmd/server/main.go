@@ -50,7 +50,7 @@ func main() {
 
 	// Run database migrations (all environments)
 	log.Println("🔄 Running database migrations...")
-	migrator := database.NewMigrator(db, "migrations")
+	migrator := database.NewMigrator(db, "backend/migrations")
 	if err := migrator.Up(); err != nil {
 		log.Fatalf("❌ Failed to run migrations: %v", err)
 	}

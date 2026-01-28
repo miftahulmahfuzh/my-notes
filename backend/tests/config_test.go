@@ -248,3 +248,40 @@ func TestConfigEnvironmentDetection(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigLoadsFromBackendDotEnv(t *testing.T) {
+	// Create a temporary backend directory structure
+	tempDir := t.TempDir()
+	backendDir := tempDir + "/backend"
+	err := os.MkdirAll(backendDir, 0755)
+	require.NoError(t, err)
+
+	// Create a .env file in the backend subdirectory
+	envContent := "JWT_SECRET=test_jwt_secret_from_backend_dotenv_at_least_32_chars\n"
+	envPath := backendDir + "/.env"
+	err = os.WriteFile(envPath, []byte(envContent), 0644)
+	require.NoError(t, err)
+
+	// Change to temp directory to test relative path loading
+	originalWd, _ := os.Getwd()
+	defer os.Chdir(originalWd)
+
+	// Change to the temp directory (project root equivalent)
+	err = os.Chdir(tempDir)
+	require.NoError(t, err)
+
+	// Ensure JWT_SECRET is not set in environment
+	os.Unsetenv("JWT_SECRET")
+	defer os.Unsetenv("JWT_SECRET")
+
+	// Load config - should load JWT_SECRET from backend/.env
+	cfg, err := config.LoadConfig("")
+	require.NoError(t, err)
+
+	// Verify that JWT_SECRET was loaded from backend/.env
+	assert.Equal(t, "test_jwt_secret_from_backend_dotenv_at_least_32_chars", cfg.Auth.JWTSecret)
+
+	// Verify the config is valid (no validation error)
+	err = cfg.Validate()
+	assert.NoError(t, err)
+}

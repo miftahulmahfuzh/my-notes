@@ -68,8 +68,8 @@ type CORSConfig struct {
 // LoadConfig loads configuration from environment variables and optional config file
 func LoadConfig(configPath string) (*Config, error) {
 	// Load .env file if it exists
-	// Try to load from current directory first, then from parent directory
-	envPaths := []string{".env", "../.env", "../../.env"}
+	// Try backend/.env first (where main config is), then fallback to other paths
+	envPaths := []string{"backend/.env", ".env", "../.env", "../../.env"}
 	var envErr error
 	for _, path := range envPaths {
 		if err := godotenv.Load(path); err == nil {

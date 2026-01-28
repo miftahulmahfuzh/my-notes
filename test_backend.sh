@@ -58,6 +58,21 @@ run_test_suite() {
 }
 
 # ============================================================================
+# CONFIG TESTS
+# ============================================================================
+
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}  Config Tests${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo ""
+
+# Config Loading Tests (tests environment variable loading from .env files)
+run_test_suite "Config Loading Tests" "./tests/config_test.go" "skip"
+
+# Server Initialization Tests (tests migrations path resolution)
+run_test_suite "Server Initialization Tests" "./tests/main_test.go" "skip"
+
+# ============================================================================
 # FRONTEND-RELATED BACKEND TESTS
 # ============================================================================
 # Based on API endpoints called by frontend:
