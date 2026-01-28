@@ -6,9 +6,9 @@
 
 **Last Updated**: 2026-01-28T14:40:00Z
 
-**Total Active Tasks**: 3
+**Total Active Tasks**: 2
 
-**Total Archived Tasks**: 14
+**Total Archived Tasks**: 15
 
 ## Quick Stats
 - P0 Critical: 0
@@ -17,9 +17,9 @@
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed Today: 0
-- Completed This Week: 0
-- Completed This Month: 0
+- Completed Today: 1
+- Completed This Week: 1
+- Completed This Month: 1
 
 ---
 
@@ -55,6 +55,13 @@
   - **Impact**: Users cannot edit notes from the list view, requiring workarounds to access note editor
 
 ### [P2] Medium
+- [x] **P2-CN-A028** Revamp note detail page: icon-only buttons, repositioned header, removed statistics, compact metadata
+  - **Completed**: 2026-01-28
+  - **Method**: /implement from code analyzer
+  - **Files Modified**: extension/src/components/NoteView.tsx, extension/src/popup/popup.css
+  - **Impact**: Header now displays icon-only buttons in full-width row at top, title below with full width, statistics removed, metadata uses smaller fonts (0.75rem) with tighter spacing
+  - **Plan**: `.workflows/plan/P2-CN-A028.md`
+
 - [x] **P2-CN-A024** Add tag autocomplete feature to note editor
   - **Completed**: 2026-01-28
   - **Method**: Direct implementation
@@ -219,3 +226,4 @@
 - P2-CN-A016: Add real-time search bar to notes list view
 - P2-CN-A017: Make tags clickable in note detail view for search filtering
 - P2-CN-A024: Add tag autocomplete feature to note editor
+- P2-CN-A028: Revamp note detail page: icon-only buttons, repositioned header, removed statistics, compact metadata

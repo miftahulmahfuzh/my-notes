@@ -1251,8 +1251,8 @@ body {
 /* Note view header section */
 .note-view-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--space-3);
   margin-bottom: var(--space-6);
   padding-bottom: var(--space-4);
   border-bottom: 2px solid var(--neutral-200);
@@ -1260,8 +1260,7 @@ body {
 
 /* Note title section */
 .note-view-title {
-  flex: 1;
-  min-width: 0; /* Allows text truncation */
+  width: 100%;
 }
 
 .note-view-title h2 {
@@ -1298,20 +1297,19 @@ body {
   border: 1px solid var(--neutral-200);
 }
 
-/* Action buttons container */
+/* Action buttons container - full width row at top */
 .note-view-actions {
   display: flex;
   gap: var(--space-2);
-  flex-shrink: 0;
-  margin-left: var(--space-4);
+  width: 100%;
 }
 
-/* Action button styling */
+/* Action button styling - icon only */
 .action-btn {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  justify-content: center;
+  padding: var(--space-2);
   border: 2px solid var(--neutral-300);
   border-radius: 6px;
   background-color: var(--white);
@@ -1321,6 +1319,8 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'Inter', sans-serif;
+  min-width: 40px;
+  height: 40px;
 }
 
 .action-btn:hover {
@@ -1521,16 +1521,16 @@ body {
   box-shadow: 0 2px 4px rgba(255, 77, 0, 0.3);
 }
 
-/* Note info section */
+/* Note info section - smaller fonts and tighter spacing */
 .note-view-info {
   background-color: var(--neutral-50);
   border-radius: 8px;
-  padding: var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--neutral-200);
 }
 
 .info-section {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-2);
 }
 
 .info-section:last-child {
@@ -1539,50 +1539,20 @@ body {
 
 .info-section h4 {
   font-family: 'Archivo', sans-serif;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--neutral-600);
-  margin: 0 0 var(--space-2) 0;
+  margin: 0 0 var(--space-1) 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .info-section p {
   font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--neutral-700);
   margin: 0;
   font-weight: 500;
-}
-
-/* Statistics grid */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-3);
-}
-
-.stat {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-2);
-  background-color: var(--white);
-  border-radius: 4px;
-  border: 1px solid var(--neutral-200);
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: var(--neutral-500);
-  font-weight: 500;
-}
-
-.stat-value {
-  font-size: 0.875rem;
-  color: var(--neutral-800);
-  font-weight: 600;
-  font-family: 'Archivo', sans-serif;
 }
 
 /* Responsive adjustments */
@@ -1591,29 +1561,17 @@ body {
     padding: var(--space-4);
   }
 
-  .note-view-header {
-    flex-direction: column;
-    gap: var(--space-4);
-    align-items: stretch;
-  }
-
   .note-view-actions {
-    justify-content: center;
-    margin-left: 0;
-    margin-top: var(--space-2);
+    gap: var(--space-1);
   }
 
   .action-btn {
-    flex: 1;
-    justify-content: center;
+    min-width: 36px;
+    height: 36px;
   }
 
   .note-view-title h2 {
     font-size: 1.5rem;
-  }
-
-  .stats {
-    grid-template-columns: 1fr;
   }
 
   .tags-list {
