@@ -16,6 +16,7 @@ import LogOut from 'lucide-react/dist/esm/icons/log-out';
 import X from 'lucide-react/dist/esm/icons/x';
 import HelpCircle from 'lucide-react/dist/esm/icons/help-circle';
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
+import Brain from 'lucide-react/dist/esm/icons/brain';
 
 // Styles
 import './popup.css';
@@ -35,6 +36,11 @@ interface AppState {
   // Data state
   notes: NoteResponse[];
   searchQuery: string;
+
+  // Semantic search state
+  semanticSearchEnabled: boolean;
+  searchDuration: string | null;
+  isSemanticSearching: boolean;
 
   // UI state
   isLoading: boolean;
@@ -75,6 +81,11 @@ const PopupApp: React.FC = () => {
     // Data state
     notes: [],
     searchQuery: '',
+
+    // Semantic search state
+    semanticSearchEnabled: false,
+    searchDuration: null,
+    isSemanticSearching: false,
 
     // UI state
     isLoading: false,
