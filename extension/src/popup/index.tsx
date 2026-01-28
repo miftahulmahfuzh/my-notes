@@ -993,20 +993,31 @@ const PopupApp: React.FC = () => {
               <input
                 ref={searchInputRef}
                 type="text"
-                className="search-input"
+                className={`search-input ${state.semanticSearchEnabled ? 'semantic-mode' : ''}`}
                 placeholder="Search notes..."
                 value={state.searchQuery}
                 onChange={handleSearchChange}
               />
+              {state.searchQuery && (
+                <button
+                  className="search-clear-btn-standalone"
+                  onClick={handleClearSearch}
+                  aria-label="Clear search"
+                >
+                  <X size={17} strokeWidth={2} />
+                </button>
+              )}
             </div>
-            {state.searchQuery && (
-              <button
-                className="search-clear-btn-standalone"
-                onClick={handleClearSearch}
-                aria-label="Clear search"
-              >
-                <X size={17} strokeWidth={2} />
-              </button>
+            <button
+              onClick={() => setState(prev => ({ ...prev, semanticSearchEnabled: !prev.semanticSearchEnabled }))}
+              className={`btn-semantic-search ${state.semanticSearchEnabled ? 'active' : ''}`}
+              aria-label="Toggle semantic search"
+              title={state.semanticSearchEnabled ? "Disable semantic search" : "Enable semantic search"}
+            >
+              <Brain size={18} strokeWidth={2} />
+            </button>
+            {state.searchDuration && (
+              <span className="search-duration">{state.searchDuration}</span>
             )}
             <button
               onClick={handleCreateNoteClick}
