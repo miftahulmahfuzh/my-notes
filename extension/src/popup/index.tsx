@@ -27,6 +27,10 @@ interface HistoryState {
   searchQuery?: string;
   noteId?: string;
   timestamp: number;
+  // Form state preservation
+  newNoteTitle?: string;
+  newNoteContent?: string;
+  editingNote?: NoteResponse | null;
 }
 
 interface AppState {
@@ -313,11 +317,20 @@ const PopupApp: React.FC = () => {
 
   const handleCreateNoteClick = () => {
     setState(prev => {
+      // If already in note editor, don't push to history
+      if (prev.showNoteEditor) {
+        return prev;
+      }
+
       // Push current state to history before navigating
       const newHistoryEntry: HistoryState = {
         view: prev.showHelpView ? 'help' : (prev.showNotesList ? 'notesList' : 'welcome'),
         searchQuery: prev.searchQuery,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        // Preserve form state when navigating away from editor
+        newNoteTitle: prev.newNoteTitle,
+        newNoteContent: prev.newNoteContent,
+        editingNote: prev.editingNote
       };
 
       return {
@@ -336,10 +349,22 @@ const PopupApp: React.FC = () => {
   const handleViewAllNotesClick = async () => {
     // Push current state to history before navigating to notes list
     setState(prev => {
+      // If already on notes list, don't push to history
+      if (prev.showNotesList && !prev.searchQuery) {
+        return prev;
+      }
+
       const newHistoryEntry: HistoryState = {
-        view: prev.showHelpView ? 'help' : (prev.showNotesList ? 'notesList' : 'welcome'),
+        view: prev.showHelpView ? 'help' :
+             prev.showNoteEditor ? 'noteEditor' :
+             prev.showNoteDetail ? 'noteDetail' : 'welcome',
         searchQuery: prev.searchQuery,
-        timestamp: Date.now()
+        noteId: prev.currentNote?.id,
+        timestamp: Date.now(),
+        // Preserve form state
+        newNoteTitle: prev.newNoteTitle,
+        newNoteContent: prev.newNoteContent,
+        editingNote: prev.editingNote
       };
 
       return {
@@ -353,11 +378,23 @@ const PopupApp: React.FC = () => {
 
   const handleHelpClick = () => {
     setState(prev => {
+      // Prevent duplicate Help entries
+      if (prev.showHelpView) {
+        return prev;
+      }
+
       // Push current state to history before navigating to Help
       const newHistoryEntry: HistoryState = {
-        view: prev.showNotesList ? 'notesList' : 'welcome',
+        view: prev.showNotesList ? 'notesList' :
+             prev.showNoteEditor ? 'noteEditor' :
+             prev.showNoteDetail ? 'noteDetail' : 'welcome',
         searchQuery: prev.searchQuery,
-        timestamp: Date.now()
+        noteId: prev.currentNote?.id,
+        timestamp: Date.now(),
+        // Preserve form state
+        newNoteTitle: prev.newNoteTitle,
+        newNoteContent: prev.newNoteContent,
+        editingNote: prev.editingNote
       };
 
       return {
@@ -386,13 +423,23 @@ const PopupApp: React.FC = () => {
     // Remove it from history
     const newHistory = history.slice(0, -1);
 
-    // Restore the previous state
+    // Restore the previous state with form data
     setState(prev => ({
       ...prev,
       navigationHistory: newHistory,
       showHelpView: false,
       showNotesList: previousState.view === 'notesList',
+      showNoteEditor: previousState.view === 'noteEditor',
+      showNoteDetail: previousState.view === 'noteDetail',
       searchQuery: previousState.searchQuery || '',
+      // Restore form state if available
+      newNoteTitle: previousState.newNoteTitle ?? '',
+      newNoteContent: previousState.newNoteContent ?? '',
+      editingNote: previousState.editingNote ?? null,
+      // Restore note detail if applicable
+      currentNote: previousState.noteId
+        ? prev.notes.find(n => n.id === previousState.noteId) || null
+        : null
     }));
   };
 
@@ -823,6 +870,10 @@ const PopupApp: React.FC = () => {
       showCreateForm: previousState.view === 'createForm',
       showHelpView: previousState.view === 'help',
       currentNote: previousState.noteId ? prev.notes.find(n => n.id === previousState.noteId) || null : null,
+      // Restore form state if available
+      newNoteTitle: previousState.newNoteTitle ?? '',
+      newNoteContent: previousState.newNoteContent ?? '',
+      editingNote: previousState.editingNote ?? null,
     }));
   };
 
