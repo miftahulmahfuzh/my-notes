@@ -717,7 +717,7 @@ body {
   border: 1px solid var(--neutral-200);
   border-radius: var(--radius-xl);
   padding: var(--space-4);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-2);
   box-shadow: var(--shadow-sm);
   transition: var(--transition-all);
 }
