@@ -326,6 +326,23 @@ class ApiService {
   }
 
   /**
+   * Semantic search notes with LLM
+   * GET /api/v1/search/notes?semantic=true&query=...
+   */
+  async semanticSearch(query: string): Promise<ApiResponse<SearchResult & { duration: number }>> {
+    const searchParams = new URLSearchParams();
+
+    if (query) searchParams.append('query', query);
+    searchParams.append('semantic', 'true');
+
+    const endpoint = `/api/v1/search/notes?${searchParams.toString()}`;
+
+    return this.makeRequest<SearchResult & { duration: number }>(endpoint, {
+      method: 'GET',
+    });
+  }
+
+  /**
    * Get notes by tag
    * GET /api/v1/notes/tags/{tag}?limit=20&offset=0
    */
