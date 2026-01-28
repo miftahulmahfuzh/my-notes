@@ -193,13 +193,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     // Calculate line height from computed style
     const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2;
 
-    // X position is the width of text before cursor on current line, plus padding
+    // X position is the width of text before cursor on current line, plus padding, minus horizontal scroll
     const paddingLeft = parseFloat(style.paddingLeft);
-    const x = spanRect.left - mirrorRect.left + paddingLeft;
+    const x = spanRect.left - mirrorRect.left + paddingLeft - textarea.scrollLeft;
 
-    // Y position is (line number - 1) * line height, plus padding
+    // Y position is (line number - 1) * line height, plus padding, minus vertical scroll
     const paddingTop = parseFloat(style.paddingTop);
-    const y = (lines.length - 1) * lineHeight + paddingTop;
+    const y = (lines.length - 1) * lineHeight + paddingTop - textarea.scrollTop;
 
     document.body.removeChild(mirror);
 
@@ -449,7 +449,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
               className="tag-autocomplete-dropdown"
               style={cursorCoords ? {
                 position: 'absolute',
-                left: `${Math.min(cursorCoords.x, 400)}px`, // Prevent going too far right
+                left: `${Math.min(cursorCoords.x + 40, 400)}px`, // Add ~5 char offset, prevent going too far right
                 top: shouldFlip ? 'auto' : `${cursorCoords.y + cursorCoords.lineHeight + 4}px`,
                 bottom: shouldFlip ? `${cursorCoords.y - 4}px` : 'auto',
                 width: 'fit-content',
