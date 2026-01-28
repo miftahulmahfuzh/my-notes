@@ -34,10 +34,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [triggerPosition, setTriggerPosition] = useState<number | null>(null);
+  const [cursorCoords, setCursorCoords] = useState<{ x: number; y: number; lineHeight: number } | null>(null);
+  const [shouldFlip, setShouldFlip] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const selectedItemRef = useRef<HTMLDivElement>(null);
 
   // Auto-generate title from first line if not provided
   const generateTitleFromContent = useCallback((text: string): string => {
@@ -105,6 +108,20 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showSuggestions]);
 
+  // Auto-scroll selected item into view
+  useEffect(() => {
+    if (showSuggestions && selectedIndex >= 0 && suggestionsRef.current) {
+      const listContainer = suggestionsRef.current.querySelector('.tag-autocomplete-list');
+      if (listContainer) {
+        const items = listContainer.querySelectorAll('.tag-autocomplete-item');
+        const selectedItem = items[selectedIndex] as HTMLDivElement;
+        if (selectedItem) {
+          selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }
+    }
+  }, [selectedIndex, showSuggestions]);
+
   // Find the hashtag trigger position and extract partial tag
   const findHashtagContext = (text: string, cursorPos: number): { triggerPos: number | null; partialTag: string } => {
     // Search backwards from cursor to find the most recent #
@@ -119,6 +136,75 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
     return { triggerPos: null, partialTag: '' };
   };
+
+  // Calculate cursor pixel coordinates using mirror div technique
+  const calculateCursorCoordinates = useCallback((text: string, cursorPos: number): { x: number; y: number; lineHeight: number } | null => {
+    if (!textareaRef.current) return null;
+
+    const textarea = textareaRef.current;
+    const style = window.getComputedStyle(textarea);
+    const properties = [
+      'boxSizing', 'width', 'height', 'overflowX', 'overflowY',
+      'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+      'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+      'fontStyle', 'fontVariant', 'fontWeight', 'fontStretch',
+      'fontSize', 'lineHeight', 'fontFamily', 'textAlign',
+      'textTransform', 'textIndent', 'textDecoration',
+      'letterSpacing', 'wordSpacing', 'direction', 'writingMode'
+    ];
+
+    // Create mirror div that mimics textarea styling
+    const mirror = document.createElement('div');
+    mirror.style.position = 'absolute';
+    mirror.style.visibility = 'hidden';
+    mirror.style.left = '0px';
+    mirror.style.top = '0px';
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.wordWrap = 'break-word';
+    mirror.style.overflow = 'hidden';
+    mirror.style.width = style.width;
+    mirror.style.height = style.height;
+
+    properties.forEach(prop => {
+      mirror.style[prop as any] = style[prop as any];
+    });
+
+    // Get the text before cursor
+    const textBeforeCursor = text.substring(0, cursorPos);
+
+    // Split by lines to calculate position
+    const lines = textBeforeCursor.split('\n');
+    const currentLineText = lines[lines.length - 1]; // Text on current line only
+
+    // Set only the current line text to get X position
+    mirror.textContent = currentLineText;
+
+    // Add a span at the end to measure cursor position on current line
+    const span = document.createElement('span');
+    span.textContent = '|';
+    mirror.appendChild(span);
+
+    document.body.appendChild(mirror);
+
+    // Get the span position (this gives us X on current line)
+    const spanRect = span.getBoundingClientRect();
+    const mirrorRect = mirror.getBoundingClientRect();
+
+    // Calculate line height from computed style
+    const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2;
+
+    // X position is the width of text before cursor on current line, plus padding
+    const paddingLeft = parseFloat(style.paddingLeft);
+    const x = spanRect.left - mirrorRect.left + paddingLeft;
+
+    // Y position is (line number - 1) * line height, plus padding
+    const paddingTop = parseFloat(style.paddingTop);
+    const y = (lines.length - 1) * lineHeight + paddingTop;
+
+    document.body.removeChild(mirror);
+
+    return { x, y, lineHeight };
+  }, []);
 
   // Filter available tags based on partial input
   const filterSuggestions = useCallback((partial: string): string[] => {
@@ -162,6 +248,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     setFilteredSuggestions([]);
     setSelectedIndex(0);
     setTriggerPosition(null);
+    setCursorCoords(null);
+    setShouldFlip(false);
   };
 
   const handleSave = async () => {
@@ -276,10 +364,26 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         // Only show if we have a # trigger and available tags
         if (triggerPos !== null && availableTags.length > 0) {
           setTriggerPosition(triggerPos);
+
+          // Calculate cursor pixel position
+          const coords = calculateCursorCoordinates(value, cursorPos);
+          console.log('🔍 Debug cursor coords:', coords);
+          if (coords) {
+            setCursorCoords(coords);
+
+            // Check if dropdown should flip (not enough space below)
+            const textareaRect = textareaRef.current.getBoundingClientRect();
+            const estimatedDropdownHeight = 220; // Approximate height
+            const spaceBelow = textareaRect.height - coords.y;
+            setShouldFlip(spaceBelow < estimatedDropdownHeight);
+            console.log('🔍 Debug positioning:', { coords, spaceBelow, shouldFlip: spaceBelow < estimatedDropdownHeight });
+          }
+
           const suggestions = filterSuggestions(partialTag);
           setFilteredSuggestions(suggestions);
           setShowSuggestions(suggestions.length > 0);
           setSelectedIndex(0);
+          console.log('🔍 Debug showSuggestions:', suggestions.length > 0);
         } else {
           closeSuggestions();
         }
@@ -343,33 +447,55 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
             <div
               ref={suggestionsRef}
               className="tag-autocomplete-dropdown"
-              style={{
+              style={cursorCoords ? {
+                position: 'absolute',
+                left: `${Math.min(cursorCoords.x, 400)}px`, // Prevent going too far right
+                top: shouldFlip ? 'auto' : `${cursorCoords.y + cursorCoords.lineHeight + 4}px`,
+                bottom: shouldFlip ? `${cursorCoords.y - 4}px` : 'auto',
+                width: 'fit-content',
+                minWidth: '150px',
+                maxWidth: '300px',
+                zIndex: 9999,
+                backgroundColor: 'white',
+                border: '2px solid #FF4D00',
+                borderRadius: '6px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              } : {
+                // Fallback positioning if cursor calculation fails
                 position: 'absolute',
                 bottom: '100%',
-                left: 0,
-                right: 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
                 marginBottom: '4px',
-                zIndex: 1000,
+                width: 'fit-content',
+                minWidth: '150px',
+                maxWidth: '300px',
+                zIndex: 9999,
+                backgroundColor: 'white',
+                border: '2px solid #FF4D00',
+                borderRadius: '6px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
               }}
             >
               <div className="tag-autocomplete-list">
                 {filteredSuggestions.map((tag, index) => (
                   <div
                     key={tag}
+                    ref={index === selectedIndex ? selectedItemRef : null}
                     className={`tag-autocomplete-item ${index === selectedIndex ? 'selected' : ''}`}
                     onClick={() => insertTag(tag)}
                     onMouseEnter={() => setSelectedIndex(index)}
                   >
                     <span className="tag-autocomplete-text">{tag}</span>
                     {index === selectedIndex && (
-                      <span className="tag-autocomplete-hint">Press Ctrl+M</span>
+                      <span className="tag-autocomplete-hint">↵</span>
                     )}
                   </div>
                 ))}
               </div>
               <div className="tag-autocomplete-footer">
-                <span>Use arrows or Ctrl+J/K to navigate</span>
-                <span>Ctrl+M to accept</span>
+                <span>↑↓ or Ctrl+J/K</span>
+                <span>Enter to accept</span>
               </div>
             </div>
           )}

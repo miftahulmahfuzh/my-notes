@@ -8,7 +8,7 @@
 
 **Total Active Tasks**: 2
 
-**Total Archived Tasks**: 13
+**Total Archived Tasks**: 14
 
 ## Quick Stats
 - P0 Critical: 0
@@ -26,6 +26,13 @@
 ## Active Tasks
 
 ### [P1] High
+- [x] **P1-CN-A025** Fix logout endpoint 401 Unauthorized error
+  - **Completed**: 2026-01-28
+  - **Method**: /implement from code analyzer
+  - **Files Modified**: extension/src/auth.ts
+  - **Impact**: Logout request now includes Authorization header, resolving 401 error
+  - **Plan**: `.workflows/plan/P1-CN-A025.md`
+
 - [ ] **P1-CN-A015** Fix non-clickable edit button in notes list
   - **Difficulty**: NORMAL
   - **Type**: Bug

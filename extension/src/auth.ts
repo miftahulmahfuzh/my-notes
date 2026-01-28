@@ -388,8 +388,13 @@ export class AuthService {
       }
 
       // Call backend logout if possible
+      const authHeader = await this.getAuthHeader();
+      const headers: Record<string, string> = {};
+      Object.assign(headers, authHeader);
+
       await fetch(`${CONFIG.API_BASE_URL}/api/v1/auth/logout`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers
       }).catch(() => {
         // Ignore logout errors
       });
