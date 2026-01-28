@@ -259,14 +259,14 @@ const NoteView: React.FC<NoteViewProps> = ({
       <div className="note-view-content">
         {isExpanded ? (
           <MarkdownPreview
-            html={note.content}
+            html={stripHashtags(note.content)}
             toc={toc}
             metadata={metadata}
           />
         ) : (
           <div className="note-text">
             <MarkdownPreview
-              html={displayContent}
+              html={stripHashtags(displayContent)}
               toc={[]}
               metadata={{}}
             />

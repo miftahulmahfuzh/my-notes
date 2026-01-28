@@ -1523,6 +1523,9 @@ body {
 
 /* Note info section - smaller fonts and tighter spacing */
 .note-view-info {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-6);
   background-color: var(--neutral-50);
   border-radius: 8px;
   padding: var(--space-3) var(--space-4);
@@ -1530,10 +1533,6 @@ body {
 }
 
 .info-section {
-  margin-bottom: var(--space-2);
-}
-
-.info-section:last-child {
   margin-bottom: 0;
 }
 
@@ -1581,6 +1580,11 @@ body {
   .tag {
     font-size: 0.75rem;
     padding: var(--space-1) var(--space-2);
+  }
+
+  .note-view-info {
+    flex-direction: column;
+    gap: var(--space-2);
   }
 }
 

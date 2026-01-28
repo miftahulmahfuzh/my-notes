@@ -974,18 +974,21 @@ const PopupApp: React.FC = () => {
     // Update the note in the notes array and currentNote state
     // NOTE: Don't call loadNotes() - it causes redirect to list view
     setState(prev => {
+      // Create NoteResponse with required tags field
+      const noteWithTags: NoteResponse = {
+        ...updatedNote,
+        tags: updatedNote.tags ?? []
+      };
+
       // Update the note in the notes array
       const updatedNotes = prev.notes.map(note =>
-        note.id === updatedNote.id ? updatedNote : note
+        note.id === updatedNote.id ? noteWithTags : note
       );
 
       return {
         ...prev,
         notes: updatedNotes,
-        currentNote: {
-          ...updatedNote,
-          tags: updatedNote.tags ?? []
-        }
+        currentNote: noteWithTags
       };
     });
   };
