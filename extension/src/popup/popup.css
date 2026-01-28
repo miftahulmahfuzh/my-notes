@@ -2805,3 +2805,53 @@ body {
 }
 
 /* =========================================== */
+/* ===== SEMANTIC SEARCH STYLES ===== */
+
+/* Spectrum border animation for semantic search mode */
+@keyframes spectrum-border {
+  0% { border-color: #ff0000; }
+  20% { border-color: #ffff00; }
+  40% { border-color: #00ff00; }
+  60% { border-color: #00ffff; }
+  80% { border-color: #0000ff; }
+  100% { border-color: #ff0000; }
+}
+
+.search-input.semantic-mode {
+  animation: spectrum-border 2s linear infinite;
+  border-width: 2px;
+  border-style: solid;
+}
+
+/* Semantic search toggle button */
+.btn-semantic-search {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--neutral-950);
+  background: var(--white);
+  color: var(--neutral-500);
+  cursor: pointer;
+  transition: var(--transition-all);
+}
+
+.btn-semantic-search:hover {
+  background: var(--neutral-100);
+  color: var(--neutral-900);
+}
+
+.btn-semantic-search.active {
+  background: var(--neutral-950);
+  color: var(--primary);
+  border-color: var(--neutral-950);
+}
+
+/* Search duration display */
+.search-duration {
+  font-size: 0.75rem;
+  color: var(--neutral-500);
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+}
