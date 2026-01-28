@@ -16,6 +16,7 @@ type Config struct {
 	Auth     AuthConfig     `yaml:"auth" env-prefix:"AUTH_"`
 	App      AppConfig      `yaml:"app" env-prefix:"APP_"`
 	CORS     CORSConfig     `yaml:"cors" env-prefix:"CORS_"`
+	LLM      LLMConfig      `yaml:"llm" env-prefix:"LLM_"`
 }
 
 // ServerConfig represents server configuration
@@ -63,6 +64,16 @@ type CORSConfig struct {
 	ExposedHeaders   []string `yaml:"exposed_headers" env:"EXPOSED_HEADERS" envDefault:""`
 	AllowCredentials bool     `yaml:"allow_credentials" env:"ALLOW_CREDENTIALS" envDefault:"false"`
 	MaxAge           int      `yaml:"max_age" env:"MAX_AGE" envDefault:"86400"`
+}
+
+// LLMConfig represents LLM service configuration
+type LLMConfig struct {
+	Type                   string `yaml:"type" env:"TYPE" envDefault:"DEEPSEEK_TENCENT"`
+	RequestTimeout         int    `yaml:"request_timeout" env:"REQUEST_TIMEOUT" envDefault:"30"`
+	DeepseekTencentModel   string `yaml:"deepseek_tencent_model" env:"DEEPSEEK_TENCENT_MODEL" envDefault:"deepseek-v3"`
+	DeepseekTencentAPIKey  string `yaml:"deepseek_tencent_api_key" env:"DEEPSEEK_TENCENT_API_KEY"`
+	DeepseekTencentBaseURL string `yaml:"deepseek_tencent_base_url" env:"DEEPSEEK_TENCENT_BASE_URL" envDefault:"https://api.lkeap.tencentcloud.com/v1"`
+	MaxSearchTokenLength   int    `yaml:"max_search_token_length" env:"MAX_SEARCH_TOKEN_LENGTH" envDefault:"100000"`
 }
 
 // LoadConfig loads configuration from environment variables and optional config file
@@ -122,6 +133,14 @@ func LoadConfig(configPath string) (*Config, error) {
 			ExposedHeaders:   getEnvSlice("CORS_EXPOSED_HEADERS", []string{}),
 			AllowCredentials: getEnvBool("CORS_ALLOW_CREDENTIALS", false),
 			MaxAge:           getEnvInt("CORS_MAX_AGE", 86400),
+		},
+		LLM: LLMConfig{
+			Type:                   getEnv("LLM_TYPE", "DEEPSEEK_TENCENT"),
+			RequestTimeout:         getEnvInt("LLM_REQUEST_TIMEOUT", 30),
+			DeepseekTencentModel:   getEnv("LLM_DEEPSEEK_TENCENT_MODEL", "deepseek-v3"),
+			DeepseekTencentAPIKey:  getEnv("LLM_DEEPSEEK_TENCENT_API_KEY", ""),
+			DeepseekTencentBaseURL: getEnv("LLM_DEEPSEEK_TENCENT_BASE_URL", "https://api.lkeap.tencentcloud.com/v1"),
+			MaxSearchTokenLength:   getEnvInt("LLM_MAX_SEARCH_TOKEN_LENGTH", 100000),
 		},
 	}
 
