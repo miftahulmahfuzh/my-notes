@@ -16,13 +16,15 @@ import (
 
 // NotesHandler handles note-related HTTP requests
 type NotesHandler struct {
-	noteService services.NoteServiceInterface
+	noteService          services.NoteServiceInterface
+	semanticSearchService *services.SemanticSearchService
 }
 
 // NewNotesHandler creates a new NotesHandler instance
-func NewNotesHandler(noteService services.NoteServiceInterface) *NotesHandler {
+func NewNotesHandler(noteService services.NoteServiceInterface, semanticSearchService *services.SemanticSearchService) *NotesHandler {
 	return &NotesHandler{
-		noteService: noteService,
+		noteService:          noteService,
+		semanticSearchService: semanticSearchService,
 	}
 }
 
@@ -226,8 +228,19 @@ func (h *NotesHandler) SearchNotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse query parameters
+	query := r.URL.Query().Get("query")
+	semanticParam := r.URL.Query().Get("semantic")
+	isSemantic := semanticParam == "true"
+
+	// Use semantic search if requested and service is available
+	if isSemantic && h.semanticSearchService != nil {
+		h.handleSemanticSearch(w, r, user, query)
+		return
+	}
+
+	// Original keyword search logic
 	request := &models.SearchNotesRequest{
-		Query:   r.URL.Query().Get("query"),
+		Query:   query,
 		OrderBy: r.URL.Query().Get("order_by"),
 		OrderDir: r.URL.Query().Get("order_dir"),
 	}
@@ -265,6 +278,34 @@ func (h *NotesHandler) SearchNotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, noteList)
+}
+
+// handleSemanticSearch handles semantic search requests
+func (h *NotesHandler) handleSemanticSearch(w http.ResponseWriter, r *http.Request, user *models.User, query string) {
+	ctx := r.Context()
+
+	notes, duration, err := h.semanticSearchService.Search(ctx, user.ID.String(), query)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Convert to NoteResponse format
+	noteResponses := make([]models.NoteResponse, len(notes))
+	for i, note := range notes {
+		resp := note.ToResponse()
+		resp.Tags = note.ExtractHashtags()
+		noteResponses[i] = resp
+	}
+
+	// Return with duration metadata
+	response := map[string]interface{}{
+		"notes":    noteResponses,
+		"total":    len(noteResponses),
+		"duration": duration,
+	}
+
+	respondWithJSON(w, http.StatusOK, response)
 }
 
 // GetNotesByTag handles GET /api/notes/tags/{tag}

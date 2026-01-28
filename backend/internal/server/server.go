@@ -144,7 +144,7 @@ func (s *Server) initializeServices() {
 
 	// Initialize note service and handler
 	noteService := services.NewNoteService(s.db, tagService)
-	notesHandler := handlers.NewNotesHandler(noteService)
+	notesHandler := handlers.NewNotesHandler(noteService, nil) // semanticSearchService will be set later
 
 	// Initialize tags handler
 	tagsHandler := handlers.NewTagsHandler(tagService)
