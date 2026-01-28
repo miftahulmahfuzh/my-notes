@@ -223,7 +223,15 @@ describe('AuthService', () => {
             refresh_token: 'new-refresh-token',
             expires_in: 900
           }
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          success: true,
+          data: {
+            access_token: 'new-access-token',
+            refresh_token: 'new-refresh-token',
+            expires_in: 900
+          }
+        }))
       });
 
       const authState = await authService.initialize();
@@ -274,7 +282,18 @@ describe('AuthService', () => {
             expires_in: 900,
             session_id: 'session-123'
           }
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          success: true,
+          data: {
+            user: mockUser,
+            access_token: 'backend-access-token',
+            refresh_token: 'backend-refresh-token',
+            token_type: 'Bearer',
+            expires_in: 900,
+            session_id: 'session-123'
+          }
+        }))
       });
 
       const result = await authService.authenticate();
@@ -348,7 +367,18 @@ describe('AuthService', () => {
             expires_in: 900,
             session_id: 'session-123'
           }
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          success: true,
+          data: {
+            user: mockUser,
+            access_token: 'backend-token',
+            refresh_token: 'refresh-token',
+            token_type: 'Bearer',
+            expires_in: 900,
+            session_id: 'session-123'
+          }
+        }))
       });
 
       await authService.authenticate();
@@ -382,7 +412,18 @@ describe('AuthService', () => {
             expires_in: 900,
             session_id: 'session-123'
           }
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          success: true,
+          data: {
+            user: mockUser,
+            access_token: 'token',
+            refresh_token: 'refresh',
+            token_type: 'Bearer',
+            expires_in: 900,
+            session_id: 'session-123'
+          }
+        }))
       });
 
       await authService.authenticate();
@@ -467,7 +508,12 @@ describe('AuthService', () => {
           access_token: 'new-token',
           refresh_token: 'new-refresh',
           expires_in: 900
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          access_token: 'new-token',
+          refresh_token: 'new-refresh',
+          expires_in: 900
+        }))
       });
 
       const result = await authService.isAuthenticated();
@@ -518,7 +564,12 @@ describe('AuthService', () => {
           access_token: 'new-access-token',
           refresh_token: 'new-refresh-token',
           expires_in: 900
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          access_token: 'new-access-token',
+          refresh_token: 'new-refresh-token',
+          expires_in: 900
+        }))
       });
 
       const result = await authService.refreshToken();
@@ -608,7 +659,12 @@ describe('AuthService', () => {
           access_token: 'new-access',
           refresh_token: 'new-refresh',
           expires_in: 1800
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          access_token: 'new-access',
+          refresh_token: 'new-refresh',
+          expires_in: 1800
+        }))
       });
 
       await authService.refreshToken();
@@ -651,7 +707,18 @@ describe('AuthService', () => {
             expires_in: 900,
             session_id: 'session-123'
           }
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          success: true,
+          data: {
+            user: mockUser,
+            access_token: 'access-123',
+            refresh_token: 'refresh-123',
+            token_type: 'Bearer',
+            expires_in: 900,
+            session_id: 'session-123'
+          }
+        }))
       });
 
       await authService.authenticate();
@@ -698,7 +765,18 @@ describe('AuthService', () => {
             expires_in: 900,
             session_id: 'session'
           }
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          success: true,
+          data: {
+            user: mockUser,
+            access_token: 'token',
+            refresh_token: 'refresh',
+            token_type: 'Bearer',
+            expires_in: 900,
+            session_id: 'session'
+          }
+        }))
       });
 
       await authService.authenticate();
@@ -726,7 +804,18 @@ describe('AuthService', () => {
             expires_in: 900,
             session_id: 'session'
           }
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          success: true,
+          data: {
+            user: mockUser,
+            access_token: 'token',
+            refresh_token: 'refresh',
+            token_type: 'Bearer',
+            expires_in: 900,
+            session_id: 'session'
+          }
+        }))
       });
 
       await authService.authenticate();
@@ -767,7 +856,18 @@ describe('AuthService', () => {
             expires_in: 900,
             session_id: 'session'
           }
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          success: true,
+          data: {
+            user: mockUser,
+            access_token: 'token',
+            refresh_token: 'refresh',
+            token_type: 'Bearer',
+            expires_in: 900,
+            session_id: 'session'
+          }
+        }))
       });
 
       await authService.authenticate();
@@ -848,7 +948,12 @@ describe('AuthService', () => {
           access_token: 'new-token',
           refresh_token: 'new-refresh',
           expires_in: 900
-        })
+        }),
+        text: () => Promise.resolve(JSON.stringify({
+          access_token: 'new-token',
+          refresh_token: 'new-refresh',
+          expires_in: 900
+        }))
       });
 
       await authService.getAuthHeader();

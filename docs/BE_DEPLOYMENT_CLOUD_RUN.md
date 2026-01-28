@@ -412,19 +412,19 @@ You need to update **2 files** in your extension:
 
 **Find this line:**
 ```typescript
-API_BASE_URL: 'http://localhost:8080/api/v1',
+API_BASE_URL: 'http://localhost:8080',
 ```
 
 **Replace with your deployed URL:**
 ```typescript
-API_BASE_URL: 'https://my-notes-api-xxxxx-xx.a.run.app/api/v1',
+API_BASE_URL: 'https://my-notes-api-xxxxx-xx.a.run.app',
 ```
 
 **Full context:**
 ```typescript
 export const CONFIG = {
   // API Configuration - Production URL on Cloud Run
-  API_BASE_URL: 'https://my-notes-api-xxxxx-xx.a.run.app/api/v1',
+  API_BASE_URL: 'https://my-notes-api-xxxxx-xx.a.run.app',
 
   // Google OAuth Configuration
   GOOGLE_OAUTH: {

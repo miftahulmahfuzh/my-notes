@@ -114,21 +114,6 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
       )}
 
       <div className="markdown-preview-content">
-        {metadata && Object.keys(metadata).length > 0 && (
-          <div className="metadata-header">
-            {metadata.title && <h1 className="document-title">{metadata.title}</h1>}
-            {metadata.description && (
-              <p className="document-description">{metadata.description}</p>
-            )}
-            {metadata.author && (
-              <p className="document-author">By {metadata.author}</p>
-            )}
-            {metadata.date && (
-              <p className="document-date">Created: {new Date(metadata.date).toLocaleDateString()}</p>
-            )}
-          </div>
-        )}
-
         <div className="markdown-content">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}

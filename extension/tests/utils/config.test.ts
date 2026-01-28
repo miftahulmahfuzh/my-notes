@@ -35,7 +35,7 @@ describe('Config Utility', () => {
       expect(CONFIG).toBeDefined();
       // Verify we can't add new properties (TypeScript will prevent this)
       const keys = Object.keys(CONFIG);
-      expect(keys.length).toBe(5); // API_BASE_URL, GOOGLE_OAUTH, TOKEN, STORAGE_KEYS, TIMEOUTS
+      expect(keys.length).toBe(6); // API_BASE_URL, NODE_ENV, GOOGLE_OAUTH, TOKEN, STORAGE_KEYS, TIMEOUTS
     });
   });
 
@@ -45,7 +45,7 @@ describe('Config Utility', () => {
 
   describe('CONFIG.API_BASE_URL', () => {
     test('API_BASE_URL is set correctly', () => {
-      expect(CONFIG.API_BASE_URL).toBe('http://localhost:8080/api/v1');
+      expect(CONFIG.API_BASE_URL).toBe('http://localhost:8080');
     });
 
     test('API_BASE_URL is a string', () => {

@@ -16,7 +16,7 @@ declare global {
 
 export const CONFIG = {
   // API Configuration - Injected at build time
-  API_BASE_URL: typeof __CONFIG__ !== 'undefined' ? __CONFIG__.API_BASE_URL : 'http://localhost:8080/api/v1',
+  API_BASE_URL: typeof __CONFIG__ !== 'undefined' ? __CONFIG__.API_BASE_URL : 'http://localhost:8080',
 
   // Environment
   NODE_ENV: typeof __CONFIG__ !== 'undefined' ? __CONFIG__.NODE_ENV : 'development',

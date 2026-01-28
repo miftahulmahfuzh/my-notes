@@ -10,8 +10,19 @@ import userEvent from '@testing-library/user-event';
 import NoteView from '../../src/components/NoteView';
 import { Note } from '../../src/types';
 
-// Mock the MarkdownPreview component
+// Mock the MarkdownPreview component - need to mock both the lazy component and the actual component
 jest.mock('../../src/components/MarkdownPreview', () => require('../components/__mocks__/MarkdownPreview'));
+jest.mock('../../src/components/MarkdownPreviewLazy', () => {
+  const MockMarkdownPreview = require('../components/__mocks__/MarkdownPreview').default;
+  return {
+    __esModule: true,
+    default: (props: any) => {
+      // Remove React.lazy wrapper for testing
+      const React = require('react');
+      return React.createElement(MockMarkdownPreview, props);
+    }
+  };
+});
 
 describe('NoteView Component', () => {
   const mockNote: Note = {
