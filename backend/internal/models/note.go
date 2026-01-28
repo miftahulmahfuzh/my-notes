@@ -349,6 +349,20 @@ type SimplifiedNote struct {
 	Content string `json:"content"` // title + " " + content
 }
 
+// SemanticSearchRequest extends SearchNotesRequest for semantic search
+type SemanticSearchRequest struct {
+	SearchNotesRequest
+	Semantic bool `form:"semantic"` // Enable semantic search mode
+}
+
+// LLMNoteResponse represents expected LLM JSON response
+type LLMNoteResponse struct {
+	RelevantItems []struct {
+		NoteID string `json:"note_id"`
+		Reason string `json:"reason"`
+	} `json:"relevant_items"`
+}
+
 // APIResponse represents the standard API response format
 type APIResponse struct {
 	Success bool        `json:"success"`
