@@ -1405,6 +1405,11 @@ body {
   animation: spin 0.6s linear infinite;
 }
 
+/* Reset margin for spinner inside prettify button to center it vertically */
+.prettify-btn .spinner {
+  margin: 0;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -1472,6 +1477,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'Inter', sans-serif;
+  margin-top: var(--space-4);
 }
 
 .expand-btn:hover {
