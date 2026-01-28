@@ -1356,10 +1356,84 @@ body {
   background-color: rgba(220, 38, 38, 0.05);
 }
 
+/* Prettify button styles */
+.prettify-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+}
+
+.prettify-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46a1 100%);
+  border-color: #5a67d8;
+  transform: translateY(-1px) scale(1.02);
+}
+
+.prettify-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #ccc;
+  border-color: #bbb;
+}
+
 .copy-btn.success {
   border-color: #16A34A;
   color: #16A34A;
   background-color: rgba(22, 163, 74, 0.1);
+}
+
+/* AI Improved Badge */
+.ai-improved-badge {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Loading Spinner */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Prettify Error */
+.prettify-error {
+  background: #fee;
+  color: #c33;
+  padding: 8px 12px;
+  margin: 8px 0;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #fcc;
+}
+
+.prettify-error button {
+  background: none;
+  border: none;
+  color: #c33;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 8px;
+}
+
+.prettify-error button:hover {
+  color: #a00;
 }
 
 /* Note content section */

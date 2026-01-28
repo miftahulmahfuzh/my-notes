@@ -13,13 +13,15 @@ import (
 
 // Note represents a note in the system
 type Note struct {
-	ID        uuid.UUID  `json:"id" db:"id"`
-	UserID    uuid.UUID  `json:"user_id" db:"user_id"`
-	Title     *string    `json:"title,omitempty" db:"title"`
-	Content   string     `json:"content" db:"content"`
-	CreatedAt time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at" db:"updated_at"`
-	Version   int        `json:"version" db:"version"`
+	ID           uuid.UUID   `json:"id" db:"id"`
+	UserID       uuid.UUID   `json:"user_id" db:"user_id"`
+	Title        *string     `json:"title,omitempty" db:"title"`
+	Content      string      `json:"content" db:"content"`
+	CreatedAt    time.Time   `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time   `json:"updated_at" db:"updated_at"`
+	Version      int         `json:"version" db:"version"`
+	PrettifiedAt *time.Time  `json:"prettified_at,omitempty" db:"prettified_at"`
+	AIImproved   bool        `json:"ai_improved" db:"ai_improved"`
 }
 
 // NoteResponse is the safe response format for note data
@@ -33,18 +35,22 @@ type NoteResponse struct {
 	Version      int                      `json:"version"`
 	Tags         []string                 `json:"tags,omitempty"`
 	SyncMetadata map[string]interface{}   `json:"sync_metadata,omitempty"`
+	PrettifiedAt *time.Time               `json:"prettified_at,omitempty"`
+	AIImproved   bool                     `json:"ai_improved"`
 }
 
 // ToResponse converts Note to NoteResponse
 func (n *Note) ToResponse() NoteResponse {
 	return NoteResponse{
-		ID:        n.ID,
-		UserID:    n.UserID,
-		Title:     n.Title,
-		Content:   n.Content,
-		CreatedAt: n.CreatedAt,
-		UpdatedAt: n.UpdatedAt,
-		Version:   n.Version,
+		ID:           n.ID,
+		UserID:       n.UserID,
+		Title:        n.Title,
+		Content:      n.Content,
+		CreatedAt:    n.CreatedAt,
+		UpdatedAt:    n.UpdatedAt,
+		Version:      n.Version,
+		PrettifiedAt: n.PrettifiedAt,
+		AIImproved:   n.AIImproved,
 	}
 }
 
@@ -361,6 +367,13 @@ type LLMNoteResponse struct {
 		NoteID string `json:"note_id"`
 		Reason string `json:"reason"`
 	} `json:"relevant_items"`
+}
+
+// PrettifyNoteResponse represents the response from prettify endpoint
+type PrettifyNoteResponse struct {
+	NoteResponse
+	SuggestedTags []string `json:"suggested_tags"`
+	ChangesMade   []string `json:"changes_made"`
 }
 
 // APIResponse represents the standard API response format

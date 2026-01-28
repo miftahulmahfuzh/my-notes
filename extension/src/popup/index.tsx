@@ -970,6 +970,19 @@ const PopupApp: React.FC = () => {
     }));
   };
 
+  const handleNoteChange = (updatedNote: Note): void => {
+    // Update current note and refresh notes list
+    setState(prev => ({
+      ...prev,
+      currentNote: {
+        ...updatedNote,
+        tags: updatedNote.tags ?? []
+      }
+    }));
+    // Also refresh the notes list to show updated state
+    loadNotes();
+  };
+
   // Filtered notes based on search query
   const filteredNotes = useMemo(() => {
     const query = state.searchQuery.toLowerCase().trim();
@@ -1264,6 +1277,7 @@ const PopupApp: React.FC = () => {
               onDelete={() => handleDeleteNote(state.currentNote!.id)}
               onClose={handleBackToNotes}
               onTagClick={handleTagClick}
+              onNoteChange={handleNoteChange}
             />
           </Suspense>
         </div>

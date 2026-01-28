@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,13 +19,19 @@ import (
 type NotesHandler struct {
 	noteService          services.NoteServiceInterface
 	semanticSearchService *services.SemanticSearchService
+	prettifyService      *services.PrettifyService
 }
 
 // NewNotesHandler creates a new NotesHandler instance
-func NewNotesHandler(noteService services.NoteServiceInterface, semanticSearchService *services.SemanticSearchService) *NotesHandler {
+func NewNotesHandler(
+	noteService services.NoteServiceInterface,
+	semanticSearchService *services.SemanticSearchService,
+	prettifyService *services.PrettifyService,
+) *NotesHandler {
 	return &NotesHandler{
 		noteService:          noteService,
 		semanticSearchService: semanticSearchService,
+		prettifyService:      prettifyService,
 	}
 }
 
@@ -66,9 +73,12 @@ func (h *NotesHandler) ListNotes(w http.ResponseWriter, r *http.Request) {
 	// Get user from context (set by auth middleware)
 	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {
+		log.Printf("[ListNotes] ERROR: User not authenticated")
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+
+	log.Printf("[ListNotes] Getting notes for user: %s", user.ID)
 
 	// Parse query parameters
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -94,13 +104,17 @@ func (h *NotesHandler) ListNotes(w http.ResponseWriter, r *http.Request) {
 		orderDir = "desc"
 	}
 
+	log.Printf("[ListNotes] Query params: limit=%d, offset=%d, order_by=%s, order_dir=%s", limit, offset, orderBy, orderDir)
+
 	// Get notes
 	noteList, err := h.noteService.ListNotes(user.ID.String(), limit, offset, orderBy, orderDir)
 	if err != nil {
+		log.Printf("[ListNotes] ERROR: Failed to list notes for user %s: %v", user.ID, err)
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
+	log.Printf("[ListNotes] Successfully retrieved %d notes (total: %d)", len(noteList.Notes), noteList.Total)
 	respondWithJSON(w, http.StatusOK, noteList)
 }
 
@@ -624,4 +638,42 @@ func (h *NotesHandler) getConflictStatus(note models.Note, conflicts []models.No
 	}
 
 	return "clean"
+}
+
+// PrettifyNote handles POST /api/notes/{id}/prettify
+func (h *NotesHandler) PrettifyNote(w http.ResponseWriter, r *http.Request) {
+	// Get user from context (set by auth middleware)
+	user, ok := r.Context().Value("user").(*models.User)
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
+		return
+	}
+
+	// Get note ID from URL
+	vars := mux.Vars(r)
+	noteID := vars["id"]
+	if noteID == "" {
+		respondWithError(w, http.StatusBadRequest, "Note ID is required")
+		return
+	}
+
+	// Check if prettify service is available
+	if h.prettifyService == nil {
+		respondWithError(w, http.StatusServiceUnavailable, "Prettify service not available")
+		return
+	}
+
+	// Prettify the note
+	ctx := r.Context()
+	result, err := h.prettifyService.PrettifyNote(ctx, user.ID.String(), noteID)
+	if err != nil {
+		if strings.Contains(err.Error(), "too short") {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+		} else {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, result)
 }

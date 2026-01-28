@@ -147,6 +147,7 @@ func (s *Server) initializeServices() {
 	var tokenizer *llm.Tiktoken
 	var resilientLLM *llm.ResilientLLM
 	var semanticSearchService *services.SemanticSearchService
+	var prettifyService *services.PrettifyService
 
 	if s.config.LLM.DeepseekTencentAPIKey != "" {
 		var err error
@@ -165,16 +166,24 @@ func (s *Server) initializeServices() {
 					noteService,
 					s.config.LLM.MaxSearchTokenLength,
 				)
+				prettifyService = services.NewPrettifyService(
+					resilientLLM,
+					noteService,
+					tagService,
+					s.db,
+				)
 				log.Println("✅ Semantic search enabled")
+				log.Println("✅ Prettify service enabled")
 			}
 		}
 	} else {
 		log.Println("ℹ️  No LLM API key configured - semantic search disabled")
+		log.Println("ℹ️  Prettify service disabled")
 	}
 
 	// Initialize note service and handler
 	noteService := services.NewNoteService(s.db, tagService)
-	notesHandler := handlers.NewNotesHandler(noteService, semanticSearchService)
+	notesHandler := handlers.NewNotesHandler(noteService, semanticSearchService, prettifyService)
 
 	// Initialize tags handler
 	tagsHandler := handlers.NewTagsHandler(tagService)
@@ -273,6 +282,7 @@ func (s *Server) setupRoutes() {
 		protected.HandleFunc("/notes/{id}", s.handlers.Notes.GetNote).Methods("GET")
 		protected.HandleFunc("/notes/{id}", s.handlers.Notes.UpdateNote).Methods("PUT")
 		protected.HandleFunc("/notes/{id}", s.handlers.Notes.DeleteNote).Methods("DELETE")
+		protected.HandleFunc("/notes/{id}/prettify", s.handlers.Notes.PrettifyNote).Methods("POST")
 		protected.HandleFunc("/notes/sync", s.handlers.Notes.SyncNotes).Methods("GET")
 		protected.HandleFunc("/notes/batch", s.handlers.Notes.BatchCreateNotes).Methods("POST")
 		protected.HandleFunc("/notes/batch", s.handlers.Notes.BatchUpdateNotes).Methods("PUT")

@@ -13,6 +13,8 @@ export interface Note {
   version: number;
   tags?: string[];
   sync_metadata?: Record<string, any>;
+  prettified_at?: string;
+  ai_improved?: boolean;
 }
 
 /**
@@ -37,6 +39,14 @@ export interface UpdateNoteRequest {
   title?: string;
   content?: string;
   version?: number;
+}
+
+/**
+ * Prettify response format from API
+ */
+export interface PrettifyResponse extends NoteResponse {
+  suggested_tags: string[];
+  changes_made: string[];
 }
 
 /**

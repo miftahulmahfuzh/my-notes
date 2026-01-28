@@ -14,7 +14,8 @@ export type {
   ApiResponse,
   ApiError,
   ApiErrorResponse,
-  ApiSuccessResponse
+  ApiSuccessResponse,
+  PrettifyResponse
 } from './types';
 
 // Also import them for use within the file
@@ -27,7 +28,8 @@ import {
   SearchRequest,
   SearchResult,
   ApiResponse,
-  TagsListResponse
+  TagsListResponse,
+  PrettifyResponse
 } from './types';
 
 import { CONFIG } from './utils/config';
@@ -94,7 +96,8 @@ class ApiService {
         }
 
         // If it's a retryable error, continue to next attempt
-        lastError = new Error(result.error || 'Unknown error');
+        const errorStr = typeof result.error === 'string' ? result.error : JSON.stringify(result.error);
+        lastError = new Error(errorStr || 'Unknown error');
 
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
@@ -158,10 +161,15 @@ class ApiService {
       }
 
       if (!response.ok) {
+        // data.error might be an object (ApiError) or string
+        const errorMessage = typeof data.error === 'object'
+          ? (data.error?.message || data.error?.code || data.error?.details || 'Unknown error')
+          : data.error || data.message || `HTTP ${response.status}: ${response.statusText}`;
+
         return {
           success: false,
-          error: data.error || data.message || `HTTP ${response.status}: ${response.statusText}`,
-          message: data.message || 'Request failed'
+          error: errorMessage,
+          message: typeof data.message === 'string' ? data.message : 'Request failed'
         };
       }
 
@@ -198,8 +206,11 @@ class ApiService {
   /**
    * Check if an error is retryable
    */
-  private isRetryableError(error?: string): boolean {
+  private isRetryableError(error?: string | unknown): boolean {
     if (!error) return false;
+
+    const errorStr = typeof error === 'string' ? error : String(error);
+    const errorLower = errorStr.toLowerCase();
 
     const retryableErrors = [
       'network',
@@ -217,7 +228,7 @@ class ApiService {
     ];
 
     return retryableErrors.some(retryableError =>
-      error.toLowerCase().includes(retryableError.toLowerCase())
+      errorLower.includes(retryableError.toLowerCase())
     );
   }
 
@@ -288,6 +299,16 @@ class ApiService {
     return this.makeRequest<NoteResponse>(`/api/v1/notes/${id}`, {
       method: 'PUT',
       body: JSON.stringify(request),
+    });
+  }
+
+  /**
+   * Prettify a note using AI
+   * POST /api/v1/notes/{id}/prettify
+   */
+  async prettifyNote(id: string): Promise<ApiResponse<PrettifyResponse>> {
+    return this.makeRequest<PrettifyResponse>(`/api/v1/notes/${id}/prettify`, {
+      method: 'POST',
     });
   }
 

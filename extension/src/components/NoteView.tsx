@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Note } from '../types';
+import { Note, PrettifyResponse } from '../types';
+import { apiService } from '../api';
 import MarkdownPreview from './MarkdownPreviewLazy';
 import { extractTOC, extractMetadata } from '../utils/markdown';
 import { stripHashtags } from '../utils/contentUtils';
@@ -10,6 +11,7 @@ interface NoteViewProps {
   onDelete: () => void;
   onClose: () => void;
   onTagClick?: (tag: string) => void;
+  onNoteChange?: (updatedNote: Note) => void;
 }
 
 const NoteView: React.FC<NoteViewProps> = ({
@@ -17,11 +19,14 @@ const NoteView: React.FC<NoteViewProps> = ({
   onEdit,
   onDelete,
   onClose,
-  onTagClick
+  onTagClick,
+  onNoteChange,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [toc, setToc] = useState<any[]>([]);
   const [metadata, setMetadata] = useState<Record<string, string>>({} as Record<string, string>);
+  const [isPrettifying, setIsPrettifying] = useState(false);
+  const [prettifyError, setPrettifyError] = useState<string | null>(null);
 
   // Extract TOC and metadata from markdown content
   useEffect(() => {
@@ -31,14 +36,34 @@ const NoteView: React.FC<NoteViewProps> = ({
     setMetadata(extractedMetadata as Record<string, string>);
   }, [note.content]);
 
-  // Set up keyboard shortcut for copy (Ctrl+C / Cmd+C)
+  // Check if note can be prettified
+  const canPrettify = !note.ai_improved || note.prettified_at === undefined;
+
+  // Count words excluding hashtags
+  const getWordCountExcludingTags = (content: string): number => {
+    const hashtagRegex = /#\w+/g;
+    const contentWithoutTags = content.replace(hashtagRegex, '');
+    const words = contentWithoutTags.trim().split(/\s+/);
+    return words.filter(w => w.length > 0).length;
+  };
+
+  const wordCount = getWordCountExcludingTags(note.content);
+  const hasEnoughContent = wordCount >= 5;
+
+  // Set up keyboard shortcut for copy (Ctrl+C / Cmd+C) and prettify (Ctrl+P)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check for Ctrl+C or Cmd+C
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-        // Always copy full note content regardless of text selection
         e.preventDefault();
         handleCopyContent();
+      }
+      // Check for Ctrl+P or Cmd+P for prettify
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        if (canPrettify && hasEnoughContent && !isPrettifying) {
+          e.preventDefault();
+          handlePrettify();
+        }
       }
     };
 
@@ -46,7 +71,33 @@ const NoteView: React.FC<NoteViewProps> = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [note.content]); // Re-bind if note content changes
+  }, [note, canPrettify, hasEnoughContent, isPrettifying]);
+
+  const handlePrettify = async () => {
+    if (!canPrettify || !hasEnoughContent || isPrettifying) {
+      return;
+    }
+
+    setIsPrettifying(true);
+    setPrettifyError(null);
+
+    try {
+      const response = await apiService.prettifyNote(note.id);
+
+      if (response.success && response.data) {
+        // Notify parent of note change
+        if (onNoteChange) {
+          onNoteChange(response.data);
+        }
+      } else {
+        setPrettifyError(response.error || 'Failed to prettify note');
+      }
+    } catch (error) {
+      setPrettifyError(error instanceof Error ? error.message : 'Failed to prettify note');
+    } finally {
+      setIsPrettifying(false);
+    }
+  };
 
   // Extract hashtags from content
   const extractHashtags = (content: string): string[] => {
@@ -128,9 +179,41 @@ const NoteView: React.FC<NoteViewProps> = ({
                 v{note.version}
               </span>
             )}
+            {note.ai_improved && (
+              <span className="ai-improved-badge" title="Improved by AI">
+                Improved By AI
+              </span>
+            )}
           </div>
         </div>
         <div className="note-view-actions">
+          <button
+            onClick={handlePrettify}
+            disabled={!canPrettify || !hasEnoughContent || isPrettifying}
+            className="action-btn prettify-btn"
+            title={
+              !hasEnoughContent
+                ? 'Note too short (min 5 words)'
+                : !canPrettify
+                ? 'Already prettified. Edit to re-enable.'
+                : 'Prettify with AI (Ctrl+P)'
+            }
+          >
+            {isPrettifying ? (
+              <>
+                <span className="spinner"></span>
+                Prettifying...
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-4A2.5 2.5 0 0 1 9.5 2Z"/>
+                  <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-4A2.5 2.5 0 0 0 14.5 2Z"/>
+                </svg>
+                Prettify
+              </>
+            )}
+          </button>
           <button
             onClick={handleCopyContent}
             id="copy-btn"
@@ -178,6 +261,13 @@ const NoteView: React.FC<NoteViewProps> = ({
           </button>
         </div>
       </div>
+
+      {prettifyError && (
+        <div className="prettify-error">
+          {prettifyError}
+          <button onClick={() => setPrettifyError(null)}>×</button>
+        </div>
+      )}
 
       <div className="note-view-content">
         {isExpanded ? (

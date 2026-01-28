@@ -92,14 +92,15 @@ func (s *NoteService) GetNoteByID(userID, noteID string) (*models.Note, error) {
 
 	var note models.Note
 	query := `
-		SELECT id, user_id, title, content, created_at, updated_at, version
+		SELECT id, user_id, title, content, created_at, updated_at, version, prettified_at, ai_improved
 		FROM notes
 		WHERE id = $1 AND user_id = $2
 	`
 
 	err := s.db.QueryRowContext(ctx, query, noteID, userID).Scan(
 		&note.ID, &note.UserID, &note.Title, &note.Content,
-		&note.CreatedAt, &note.UpdatedAt, &note.Version)
+		&note.CreatedAt, &note.UpdatedAt, &note.Version,
+		&note.PrettifiedAt, &note.AIImproved)
 
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("note not found")
@@ -138,19 +139,25 @@ func (s *NoteService) UpdateNote(userID, noteID string, request *models.UpdateNo
 	// Increment version for optimistic locking
 	currentNote.Version++
 
+	// Clear AI improved flag on manual edit
+	currentNote.AIImproved = false
+	currentNote.PrettifiedAt = nil
+
 	// Update in database
 	query := `
 		UPDATE notes
-		SET title = $1, content = $2, updated_at = $3, version = $4
-		WHERE id = $5 AND user_id = $6 AND version = $7 - 1
-		RETURNING id, user_id, title, content, created_at, updated_at, version
+		SET title = $1, content = $2, updated_at = $3, version = $4, prettified_at = $5, ai_improved = $6
+		WHERE id = $7 AND user_id = $8 AND version = $9 - 1
+		RETURNING id, user_id, title, content, created_at, updated_at, version, prettified_at, ai_improved
 	`
 
 	err = s.db.QueryRowContext(ctx, query,
 		currentNote.Title, currentNote.Content, currentNote.UpdatedAt,
-		currentNote.Version, currentNote.ID, currentNote.UserID, currentNote.Version).Scan(
+		currentNote.Version, currentNote.PrettifiedAt, currentNote.AIImproved,
+		currentNote.ID, currentNote.UserID, currentNote.Version).Scan(
 		&currentNote.ID, &currentNote.UserID, &currentNote.Title, &currentNote.Content,
-		&currentNote.CreatedAt, &currentNote.UpdatedAt, &currentNote.Version)
+		&currentNote.CreatedAt, &currentNote.UpdatedAt, &currentNote.Version,
+		&currentNote.PrettifiedAt, &currentNote.AIImproved)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -245,7 +252,7 @@ func (s *NoteService) ListNotes(userID string, limit, offset int, orderBy, order
 
 	// Get notes with pagination
 	query := fmt.Sprintf(`
-		SELECT id, user_id, title, content, created_at, updated_at, version
+		SELECT id, user_id, title, content, created_at, updated_at, version, prettified_at, ai_improved
 		FROM notes
 		WHERE user_id = $1
 		ORDER BY %s %s
@@ -262,7 +269,8 @@ func (s *NoteService) ListNotes(userID string, limit, offset int, orderBy, order
 	for rows.Next() {
 		var note models.Note
 		err := rows.Scan(&note.ID, &note.UserID, &note.Title, &note.Content,
-			&note.CreatedAt, &note.UpdatedAt, &note.Version)
+			&note.CreatedAt, &note.UpdatedAt, &note.Version,
+			&note.PrettifiedAt, &note.AIImproved)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan note: %w", err)
 		}
@@ -355,7 +363,7 @@ func (s *NoteService) SearchNotes(userID string, request *models.SearchNotesRequ
 
 	// Build the main query
 	query := fmt.Sprintf(`
-		SELECT DISTINCT id, user_id, title, content, created_at, updated_at, version
+		SELECT DISTINCT id, user_id, title, content, created_at, updated_at, version, prettified_at, ai_improved
 		FROM notes
 		%s
 		ORDER BY %s %s
@@ -375,7 +383,8 @@ func (s *NoteService) SearchNotes(userID string, request *models.SearchNotesRequ
 	for rows.Next() {
 		var note models.Note
 		err := rows.Scan(&note.ID, &note.UserID, &note.Title, &note.Content,
-			&note.CreatedAt, &note.UpdatedAt, &note.Version)
+			&note.CreatedAt, &note.UpdatedAt, &note.Version,
+			&note.PrettifiedAt, &note.AIImproved)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan note: %w", err)
 		}
@@ -436,7 +445,7 @@ func (s *NoteService) GetNotesByTag(userID, tag string, limit, offset int) (*mod
 
 	// Get notes with tag filter
 	query := `
-		SELECT n.id, n.user_id, n.title, n.content, n.created_at, n.updated_at, n.version
+		SELECT n.id, n.user_id, n.title, n.content, n.created_at, n.updated_at, n.version, n.prettified_at, n.ai_improved
 		FROM notes n
 		JOIN note_tags nt ON n.id = nt.note_id
 		JOIN tags t ON nt.tag_id = t.id
@@ -455,7 +464,8 @@ func (s *NoteService) GetNotesByTag(userID, tag string, limit, offset int) (*mod
 	for rows.Next() {
 		var note models.Note
 		err := rows.Scan(&note.ID, &note.UserID, &note.Title, &note.Content,
-			&note.CreatedAt, &note.UpdatedAt, &note.Version)
+			&note.CreatedAt, &note.UpdatedAt, &note.Version,
+			&note.PrettifiedAt, &note.AIImproved)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan note: %w", err)
 		}
@@ -494,7 +504,7 @@ func (s *NoteService) GetNotesWithTimestamp(userID string, since time.Time) ([]m
 	ctx := context.Background()
 
 	query := `
-		SELECT id, user_id, title, content, created_at, updated_at, version
+		SELECT id, user_id, title, content, created_at, updated_at, version, prettified_at, ai_improved
 		FROM notes
 		WHERE user_id = $1 AND updated_at > $2
 		ORDER BY updated_at ASC
@@ -510,7 +520,8 @@ func (s *NoteService) GetNotesWithTimestamp(userID string, since time.Time) ([]m
 	for rows.Next() {
 		var note models.Note
 		err := rows.Scan(&note.ID, &note.UserID, &note.Title, &note.Content,
-			&note.CreatedAt, &note.UpdatedAt, &note.Version)
+			&note.CreatedAt, &note.UpdatedAt, &note.Version,
+			&note.PrettifiedAt, &note.AIImproved)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan note: %w", err)
 		}
@@ -808,14 +819,14 @@ func (s *NoteService) GetNotesForSync(userID string, limit, offset int, since *t
 
 	// Build base query
 	baseQuery := `
-		SELECT id, user_id, title, content, created_at, updated_at, version
+		SELECT id, user_id, title, content, created_at, updated_at, version, prettified_at, ai_improved
 		FROM notes
 		WHERE user_id = $1
 	`
 
 	countQuery := "SELECT COUNT(*) FROM notes WHERE user_id = $1"
 
-	args := []interface{}{userUUID}
+	args := []any{userUUID}
 	argIndex := 2
 
 	// Add timestamp filter if provided
@@ -855,6 +866,8 @@ func (s *NoteService) GetNotesForSync(userID string, limit, offset int, since *t
 			&note.CreatedAt,
 			&note.UpdatedAt,
 			&note.Version,
+			&note.PrettifiedAt,
+			&note.AIImproved,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to scan note: %w", err)
@@ -897,7 +910,7 @@ func (s *NoteService) DetectConflicts(userID string, notes []models.Note) ([]mod
 
 	// Build query to get remote versions of these notes
 	placeholders := make([]string, len(noteIDs))
-	args := make([]interface{}, len(noteIDs)+1)
+	args := make([]any, len(noteIDs)+1)
 	args[0] = userUUID
 
 	for i, id := range noteIDs {
@@ -906,7 +919,7 @@ func (s *NoteService) DetectConflicts(userID string, notes []models.Note) ([]mod
 	}
 
 	query := fmt.Sprintf(`
-		SELECT id, user_id, title, content, created_at, updated_at, version
+		SELECT id, user_id, title, content, created_at, updated_at, version, prettified_at, ai_improved
 		FROM notes
 		WHERE user_id = $1 AND id IN (%s)
 	`, strings.Join(placeholders, ","))
@@ -928,6 +941,8 @@ func (s *NoteService) DetectConflicts(userID string, notes []models.Note) ([]mod
 			&remoteNote.CreatedAt,
 			&remoteNote.UpdatedAt,
 			&remoteNote.Version,
+			&remoteNote.PrettifiedAt,
+			&remoteNote.AIImproved,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan remote note: %w", err)

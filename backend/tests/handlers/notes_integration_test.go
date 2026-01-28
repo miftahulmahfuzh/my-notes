@@ -73,7 +73,7 @@ func (suite *NotesIntegrationTestSuite) SetupSuite() {
 
 	// Create note service with real database
 	noteService := services.NewNoteService(suite.db, tagService)
-	suite.noteHandler = handlers.NewNotesHandler(noteService, nil) // semanticSearchService not needed for tests
+	suite.noteHandler = handlers.NewNotesHandler(noteService, nil, nil) // semanticSearchService and prettifyService not needed for tests
 
 	// Setup router with routes
 	suite.router = mux.NewRouter()
