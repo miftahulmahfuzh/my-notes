@@ -4,7 +4,7 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2026-01-27T15:57:00Z
+**Last Updated**: 2026-01-28T10:25:00Z
 
 **Total Active Tasks**: 2
 
@@ -35,6 +35,12 @@
   - **Impact**: Users cannot edit notes from the list view, requiring workarounds to access note editor
 
 ### [P2] Medium
+- [x] **P2-CN-A023** Add Ctrl+C keyboard shortcut to note detail view for copying content
+  - **Completed**: 2026-01-28 10:25:00
+  - **Method**: Direct implementation
+  - **Files Modified**: extension/src/components/NoteView.tsx, extension/src/popup/index.tsx
+  - **Impact**: Ctrl+C/Cmd+C in note detail view now copies note content (hashtags stripped) to clipboard with visual feedback. Help page updated with Note Detail section.
+
 - [ ] **P2-CN-A001** Test and verify note listing functionality end-to-end
   - **Difficulty**: NORMAL
   - **Context**: Note creation and saving to database verified, but note listing feature not yet tested

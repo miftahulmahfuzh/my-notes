@@ -31,6 +31,23 @@ const NoteView: React.FC<NoteViewProps> = ({
     setMetadata(extractedMetadata as Record<string, string>);
   }, [note.content]);
 
+  // Set up keyboard shortcut for copy (Ctrl+C / Cmd+C)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+C or Cmd+C
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        // Always copy full note content regardless of text selection
+        e.preventDefault();
+        handleCopyContent();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [note.content]); // Re-bind if note content changes
+
   // Extract hashtags from content
   const extractHashtags = (content: string): string[] => {
     const hashtagRegex = /#\w+/g;

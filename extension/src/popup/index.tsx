@@ -1145,6 +1145,16 @@ const PopupApp: React.FC = () => {
             </div>
 
             <div className="help-section">
+              <h3 className="text-h3">Note Detail</h3>
+              <div className="shortcut-list">
+                <div className="shortcut-item">
+                  <kbd>Ctrl</kbd> + <kbd>C</kbd>
+                  <span>Copy note content (without hashtags)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="help-section">
               <h3 className="text-h3">Tags</h3>
               <p className="text-sm">
                 Clicking a tag in a note detail view will redirect you to the search page with that tag as the search query.
