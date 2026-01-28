@@ -80,10 +80,7 @@ module.exports = (env, argv) => {
         'process.browser': JSON.stringify(true),
         __CONFIG__: JSON.stringify({
           NODE_ENV: mode,
-          API_BASE_URL: envVars.VITE_API_BASE_URL || (isProduction
-            ? 'https://my-notes-api-7bnrhx3mka-uc.a.run.app'
-            : 'http://localhost:8080'
-          ),
+          API_BASE_URL: envVars.VITE_API_BASE_URL || 'http://localhost:8080',
         }),
       }),
       new HtmlWebpackPlugin({
