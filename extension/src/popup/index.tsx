@@ -971,16 +971,23 @@ const PopupApp: React.FC = () => {
   };
 
   const handleNoteChange = (updatedNote: Note): void => {
-    // Update current note and refresh notes list
-    setState(prev => ({
-      ...prev,
-      currentNote: {
-        ...updatedNote,
-        tags: updatedNote.tags ?? []
-      }
-    }));
-    // Also refresh the notes list to show updated state
-    loadNotes();
+    // Update the note in the notes array and currentNote state
+    // NOTE: Don't call loadNotes() - it causes redirect to list view
+    setState(prev => {
+      // Update the note in the notes array
+      const updatedNotes = prev.notes.map(note =>
+        note.id === updatedNote.id ? updatedNote : note
+      );
+
+      return {
+        ...prev,
+        notes: updatedNotes,
+        currentNote: {
+          ...updatedNote,
+          tags: updatedNote.tags ?? []
+        }
+      };
+    });
   };
 
   // Filtered notes based on search query

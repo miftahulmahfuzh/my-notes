@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/gpd/my-notes/internal/config"
@@ -87,45 +88,44 @@ func DropTestDatabase(db *sql.DB) {
 		return
 	}
 
-	// Only drop if it's a test database
-	if len(dbName) > 4 && dbName[len(dbName)-4:] == "_test" {
-		// Close connection to the database we want to drop
-		db.Close()
-
-		// Connect to postgres database to drop test database
-		cfg := config.DatabaseConfig{
-			Host:     "localhost",
-			Port:     5432,
-			Name:     "postgres",
-			User:     "postgres",
-			Password: "postgres123",
-			SSLMode:  "disable",
-		}
-
-		adminDB, err := NewConnection(cfg)
-		if err != nil {
-			log.Printf("Failed to connect to admin database: %v", err)
-			return
-		}
-		defer adminDB.Close()
-
-		// Kill connections to the test database
-		_, err = adminDB.Exec(fmt.Sprintf(`
-			SELECT pg_terminate_backend(pg_stat_activity.pid)
-			FROM pg_stat_activity
-			WHERE pg_stat_activity.datname = '%s'
-			AND pid <> pg_backend_pid()
-		`, dbName))
-
-		// Drop the test database
-		_, err = adminDB.Exec(fmt.Sprintf("DROP DATABASE %s", dbName))
-		if err != nil {
-			log.Printf("Failed to drop test database %s: %v", dbName, err)
-			return
-		}
-
-		log.Printf("Test database dropped: %s", dbName)
+	// Only drop if it's a test database (must contain "test" somewhere in the name)
+	// This prevents accidentally dropping production databases
+	if !strings.Contains(strings.ToLower(dbName), "test") {
+		log.Printf("Skipping drop of non-test database: %s", dbName)
+		return
 	}
+
+	// Close connection to the database we want to drop
+	db.Close()
+
+	// Use test config to connect to postgres database for cleanup
+	// Import config package to get test database settings
+	cfg := config.GetTestDatabaseConfig()
+	cfg.Name = "postgres" // Connect to postgres database to drop the test database
+
+	adminDB, err := NewConnection(cfg)
+	if err != nil {
+		log.Printf("Failed to connect to admin database: %v", err)
+		return
+	}
+	defer adminDB.Close()
+
+	// Kill connections to the test database
+	_, err = adminDB.Exec(fmt.Sprintf(`
+		SELECT pg_terminate_backend(pg_stat_activity.pid)
+		FROM pg_stat_activity
+		WHERE pg_stat_activity.datname = '%s'
+		AND pid <> pg_backend_pid()
+	`, dbName))
+
+	// Drop the test database
+	_, err = adminDB.Exec(fmt.Sprintf("DROP DATABASE %s", dbName))
+	if err != nil {
+		log.Printf("Failed to drop test database %s: %v", dbName, err)
+		return
+	}
+
+	log.Printf("Test database dropped: %s", dbName)
 }
 
 // dropTestDatabase is a helper function to drop a test database by name

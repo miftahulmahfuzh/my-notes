@@ -250,3 +250,20 @@ func contains(slice []string, item string) bool {
 	}
 	return false
 }
+
+// UseLLMDuringTest returns true if LLM tests should run
+func UseLLMDuringTest() bool {
+	return getEnvBool("USE_LLM_DURING_TEST", false)
+}
+
+// GetTestDatabaseConfig returns database config for testing (uses TEST_DB_* vars)
+func GetTestDatabaseConfig() DatabaseConfig {
+	return DatabaseConfig{
+		Host:     getEnv("TEST_DB_HOST", getEnv("DB_HOST", "localhost")),
+		Port:     getEnvInt("TEST_DB_PORT", getEnvInt("DB_PORT", 5432)),
+		Name:     getEnv("TEST_DB_NAME", getEnv("DB_NAME", "notes_test")),
+		User:     getEnv("TEST_DB_USER", getEnv("DB_USER", "postgres")),
+		Password: getEnv("TEST_DB_PASSWORD", getEnv("DB_PASSWORD", "postgres123")),
+		SSLMode:  "disable",
+	}
+}

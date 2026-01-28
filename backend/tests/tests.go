@@ -15,6 +15,10 @@ import (
 // Set to false by default to skip PostgreSQL-dependent tests unless explicitly enabled
 var USE_POSTGRE_DURING_TEST = getEnvBool("USE_POSTGRE_DURING_TEST", false)
 
+// USE_LLM_DURING_TEST controls whether LLM-dependent tests should run
+// Usage: USE_LLM_DURING_TEST=true go test ./...
+var USE_LLM_DURING_TEST = getEnvBool("USE_LLM_DURING_TEST", false)
+
 // Helper functions for environment variables
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
