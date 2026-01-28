@@ -1326,20 +1326,33 @@ const PopupApp: React.FC = () => {
           </div>
 
           <div className="content-section content-section--help">
+            <p className="text-sm"><strong>Global Shortcuts</strong></p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>N</strong> New note</p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>H</strong> Help</p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>B</strong> Back</p>
             <hr className="help-separator" />
+            <p className="text-sm"><strong>List/Search Shortcuts</strong></p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>F</strong> Keyword search</p>
             <p className="text-sm"><strong>Keyword:</strong> Text matching in titles/content</p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>Shift</strong> + <strong>F</strong> Semantic search</p>
-            <p className="text-sm"><strong>Semantic:</strong> LLM-powered understanding (rainbow border)</p>
+            <p className="text-sm"><strong>Semantic:</strong> LLM-powered understanding (brain on)</p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Clear search</p>
             <hr className="help-separator" />
+            <p className="text-sm"><strong>Note Editing Shortcuts</strong></p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>Z</strong> Undo changes</p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>S</strong> Save note</p>
             <p className="text-sm"><strong>Tab</strong> Indent (2 spaces)</p>
             <hr className="help-separator" />
+            <p className="text-sm"><strong>Tags Suggestion Shortcuts</strong></p>
+            <p className="text-sm"><strong>#</strong> Show tags suggestion (during edit)</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>J</strong> Move down</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>K</strong> Move up</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>M</strong> Select tag</p>
+            <hr className="help-separator" />
+            <p className="text-sm"><strong>Note Detail Shortcuts</strong></p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Copy content</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>P</strong> Prettify note</p>
+            <p className="text-sm"><strong>Prettify:</strong> LLM-powered note improvements</p>
             <p className="text-sm">Click tag to filter notes</p>
           </div>
         </div>
