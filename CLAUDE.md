@@ -51,6 +51,25 @@ my-notes/
 - Brutalist UI (high contrast, bold typography)
 - Full-text search
 
+## Keyboard Shortcuts
+
+### Global Shortcuts (work everywhere)
+- **Ctrl+N**: Create new note
+- **Ctrl+H**: Open Help page
+- **Ctrl+B**: Navigate back in history
+
+### Notes List
+- **Ctrl+F**: Enable keyword search and focus search input
+- **Ctrl+Shift+F**: Enable semantic search and focus search input
+- **Ctrl+C**: Clear search query (when search is active)
+
+### Note Editor
+- **Ctrl+S**: Save note
+- **Tab**: Insert 2 spaces for indentation
+
+### Note Detail
+- **Ctrl+C**: Copy note content (without hashtags)
+
 ## Authentication
 
 The Silence Notes Chrome Extension uses Chrome Identity API for authentication:
