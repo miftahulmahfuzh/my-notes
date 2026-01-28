@@ -10,6 +10,7 @@ import (
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/config"
 	"github.com/gpd/my-notes/internal/handlers"
+	"github.com/gpd/my-notes/internal/llm"
 	"github.com/gpd/my-notes/internal/middleware"
 	"github.com/gpd/my-notes/internal/services"
 	"github.com/gorilla/mux"
@@ -142,9 +143,38 @@ func (s *Server) initializeServices() {
 		s.userService,
 	)
 
+	// Initialize LLM components for semantic search
+	var tokenizer *llm.Tiktoken
+	var resilientLLM *llm.ResilientLLM
+	var semanticSearchService *services.SemanticSearchService
+
+	if s.config.LLM.DeepseekTencentAPIKey != "" {
+		var err error
+		tokenizer, err = llm.NewTokenizer()
+		if err != nil {
+			log.Printf("⚠️  Failed to create tokenizer: %v - semantic search disabled", err)
+		} else {
+			resilientLLM, err = llm.NewResilientLLM(context.Background(), s.config, nil)
+			if err != nil {
+				log.Printf("⚠️  Failed to create LLM client: %v - semantic search disabled", err)
+			} else {
+				noteService := services.NewNoteService(s.db, tagService)
+				semanticSearchService = services.NewSemanticSearchService(
+					resilientLLM,
+					tokenizer,
+					noteService,
+					s.config.LLM.MaxSearchTokenLength,
+				)
+				log.Println("✅ Semantic search enabled")
+			}
+		}
+	} else {
+		log.Println("ℹ️  No LLM API key configured - semantic search disabled")
+	}
+
 	// Initialize note service and handler
 	noteService := services.NewNoteService(s.db, tagService)
-	notesHandler := handlers.NewNotesHandler(noteService, nil) // semanticSearchService will be set later
+	notesHandler := handlers.NewNotesHandler(noteService, semanticSearchService)
 
 	// Initialize tags handler
 	tagsHandler := handlers.NewTagsHandler(tagService)
