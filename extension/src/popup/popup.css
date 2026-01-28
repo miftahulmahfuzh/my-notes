@@ -2614,8 +2614,19 @@ body {
   margin-bottom: var(--space-2); /* 8px - consistent spacing between all lines */
 }
 
+.content-section--help .text-sm:first-child {
+  margin-top: var(--space-3); /* 12px - extra spacing after header */
+}
+
 .content-section--help .text-sm:last-child {
   margin-bottom: 0; /* No extra space after last line */
+}
+
+/* Help page separator - consistent spacing */
+.help-separator {
+  border: none;
+  border-top: 1px solid var(--neutral-300);
+  margin: var(--space-3) 0; /* 12px spacing above and below */
 }
 
 .content-section--help .text-h3 {

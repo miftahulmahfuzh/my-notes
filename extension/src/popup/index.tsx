@@ -1314,14 +1314,17 @@ const PopupApp: React.FC = () => {
           <div className="content-section content-section--help">
             <p className="text-sm"><strong>Ctrl</strong> + <strong>N</strong> New note</p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>H</strong> Help</p>
-            <p className="text-sm"><strong>Ctrl</strong> + <strong>F</strong> Keyword search</p>
-            <p className="text-sm"><strong>Ctrl</strong> + <strong>Shift</strong> + <strong>F</strong> Semantic search</p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>B</strong> Back</p>
-            <p className="text-sm"><strong>Keyword:</strong> Text matching in titles/content<br/><strong>Semantic:</strong> LLM-powered understanding (rainbow border)</p>
-            <p className="text-sm">Toggle via Brain icon or Ctrl+F / Ctrl+Shift+F</p>
+            <hr className="help-separator" />
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>F</strong> Keyword search</p>
+            <p className="text-sm"><strong>Keyword:</strong> Text matching in titles/content</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>Shift</strong> + <strong>F</strong> Semantic search</p>
+            <p className="text-sm"><strong>Semantic:</strong> LLM-powered understanding (rainbow border)</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Clear search</p>
+            <hr className="help-separator" />
             <p className="text-sm"><strong>Ctrl</strong> + <strong>S</strong> Save note</p>
             <p className="text-sm"><strong>Tab</strong> Indent (2 spaces)</p>
-            <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Clear search</p>
+            <hr className="help-separator" />
             <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Copy content</p>
             <p className="text-sm">Click tag to filter notes</p>
           </div>
