@@ -15,6 +15,7 @@ type TagServiceInterface interface {
 	CreateTag(request *models.CreateTagRequest) (*models.Tag, error)
 	GetTagByID(tagID string) (*models.Tag, error)
 	GetTagByName(tagName string) (*models.Tag, error)
+	GetAllTags(userID string, limit int, offset int) (*models.TagList, error)
 	ExtractTagsFromContent(content string) []string
 	ProcessTagsForNote(noteID string, tags []string) error
 	UpdateTagsForNote(noteID string, tags []string) error
@@ -220,4 +221,79 @@ func (s *TagService) deleteAllNoteTags(ctx context.Context, noteID string) error
 		return fmt.Errorf("failed to delete note tags: %w", err)
 	}
 	return nil
+}
+
+// GetAllTags retrieves all tags for the current user with pagination
+func (s *TagService) GetAllTags(userID string, limit int, offset int) (*models.TagList, error) {
+	ctx := context.Background()
+
+	// Set defaults
+	if limit <= 0 {
+		limit = 100
+	}
+	if limit > 1000 {
+		limit = 1000
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	// Query to get all tags with their note counts for this user
+	// Note: Tags are global (not per-user), but we only want tags used by this user's notes
+	query := `
+		SELECT DISTINCT
+			t.id,
+			t.name,
+			t.created_at,
+			COUNT(nt.note_id) as note_count
+		FROM tags t
+		INNER JOIN note_tags nt ON t.id = nt.tag_id
+		INNER JOIN notes n ON nt.note_id = n.id
+		WHERE n.user_id = $1
+		GROUP BY t.id, t.name, t.created_at
+		ORDER BY t.name ASC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query tags: %w", err)
+	}
+	defer rows.Close()
+
+	var tags []models.TagResponse
+	for rows.Next() {
+		var tag models.TagResponse
+		err := rows.Scan(&tag.ID, &tag.Name, &tag.CreatedAt, &tag.NoteCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan tag: %w", err)
+		}
+		tags = append(tags, tag)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating tags: %w", err)
+	}
+
+	// Get total count
+	var total int
+	countQuery := `
+		SELECT COUNT(DISTINCT t.id)
+		FROM tags t
+		INNER JOIN note_tags nt ON t.id = nt.tag_id
+		INNER JOIN notes n ON nt.note_id = n.id
+		WHERE n.user_id = $1
+	`
+	err = s.db.QueryRowContext(ctx, countQuery, userID).Scan(&total)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count tags: %w", err)
+	}
+
+	return &models.TagList{
+		Tags:   tags,
+		Total:  total,
+		Limit:  limit,
+		Offset: offset,
+		HasMore: offset + limit < total,
+	}, nil
 }

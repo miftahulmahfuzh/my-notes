@@ -111,8 +111,8 @@ func (Tag) TableName() string {
 type TagList struct {
 	Tags   []TagResponse `json:"tags"`
 	Total  int            `json:"total"`
-	Page   int            `json:"page"`
 	Limit  int            `json:"limit"`
+	Offset int            `json:"offset"`
 	HasMore bool          `json:"has_more"`
 }
 

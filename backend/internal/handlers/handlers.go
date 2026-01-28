@@ -6,8 +6,7 @@ type Handlers struct {
 	Auth       *AuthHandler
 	ChromeAuth *ChromeAuthHandler
 	Notes      *NotesHandler
-	// Additional handlers will be added in subsequent phases:
-	// Search *SearchHandler
+	Tags       *TagsHandler
 }
 
 // NewHandlers creates a new handlers instance
@@ -16,8 +15,7 @@ func NewHandlers() *Handlers {
 		Health: NewHealthHandler(),
 		Auth:   nil, // Will be initialized after services are created
 		Notes:  nil, // Will be initialized after services are created
-		// Additional handlers will be initialized in subsequent phases:
-		// Search: NewSearchHandler(...),
+		Tags:   nil, // Will be initialized after services are created
 	}
 }
 
@@ -30,4 +28,9 @@ func (h *Handlers) SetAuthHandlers(authHandler *AuthHandler, chromeAuthHandler *
 // SetNotesHandler initializes the notes handler with service dependencies
 func (h *Handlers) SetNotesHandler(notesHandler *NotesHandler) {
 	h.Notes = notesHandler
+}
+
+// SetTagsHandler initializes the tags handler with service dependencies
+func (h *Handlers) SetTagsHandler(tagsHandler *TagsHandler) {
+	h.Tags = tagsHandler
 }

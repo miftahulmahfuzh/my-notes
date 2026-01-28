@@ -146,11 +146,17 @@ func (s *Server) initializeServices() {
 	noteService := services.NewNoteService(s.db, tagService)
 	notesHandler := handlers.NewNotesHandler(noteService)
 
+	// Initialize tags handler
+	tagsHandler := handlers.NewTagsHandler(tagService)
+
 	// Initialize auth handlers
 	s.handlers.SetAuthHandlers(authHandler, chromeAuthHandler)
 
 	// Initialize notes handler
 	s.handlers.SetNotesHandler(notesHandler)
+
+	// Initialize tags handler
+	s.handlers.SetTagsHandler(tagsHandler)
 
 	log.Printf("✅ Security services initialized")
 	log.Printf("🔒 Security mode: %s", s.config.App.Environment)
@@ -248,11 +254,9 @@ func (s *Server) setupRoutes() {
 	protected.HandleFunc("/search/notes", s.handlers.Notes.SearchNotes).Methods("GET")
 
 	// Tag routes
-	// protected.HandleFunc("/tags", s.handlers.Tags.GetTags).Methods("GET")
-	// protected.HandleFunc("/tags", s.handlers.Tags.CreateTag).Methods("POST")
-	// protected.HandleFunc("/tags/suggestions", s.handlers.Tags.GetSuggestions).Methods("GET")
-
-	// Search routes are now handled by the notes handler
+	if s.handlers.Tags != nil {
+		protected.HandleFunc("/tags", s.handlers.Tags.GetTags).Methods("GET")
+	}
 
 	// Static routes for serving assets (if needed)
 	// s.router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
