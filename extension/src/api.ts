@@ -26,7 +26,8 @@ import {
   NoteListResponse,
   SearchRequest,
   SearchResult,
-  ApiResponse
+  ApiResponse,
+  TagsListResponse
 } from './types';
 
 import { CONFIG } from './utils/config';
@@ -436,6 +437,31 @@ class ApiService {
    */
   async healthCheck(): Promise<ApiResponse<{ status: string }>> {
     return this.makeRequest<{ status: string }>('/api/v1/health', {
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Get all tags for the current user
+   * GET /api/v1/tags?limit=100&offset=0
+   */
+  async getTags(params: {
+    limit?: number;
+    offset?: number;
+  } = {}): Promise<ApiResponse<TagsListResponse>> {
+    const searchParams = new URLSearchParams();
+
+    // Set defaults - fetch up to 100 tags at once
+    const limit = params.limit ?? 100;
+    const offset = params.offset ?? 0;
+
+    searchParams.append('limit', limit.toString());
+    searchParams.append('offset', offset.toString());
+
+    const query = searchParams.toString();
+    const endpoint = `/api/v1/tags${query ? `?${query}` : ''}`;
+
+    return this.makeRequest<TagsListResponse>(endpoint, {
       method: 'GET',
     });
   }

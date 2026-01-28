@@ -79,6 +79,22 @@ export interface Tag {
   created_at: string;
 }
 
+/**
+ * Response from GET /api/v1/tags endpoint
+ */
+export interface TagsListResponse {
+  tags: Array<{
+    id: string;
+    name: string;       // Tag name with # prefix
+    created_at: string;
+    note_count?: number;
+  }>;
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
 export interface NoteTag {
   note_id: string;
   tag_id: string;
