@@ -252,7 +252,7 @@ class ApiService {
 
   /**
    * Get all notes for the current user with pagination
-   * GET /api/v1/notes?limit=20&offset=0&order_by=created_at&order_dir=desc
+   * GET /api/v1/notes?limit=20&offset=0&order_by=updated_at&order_dir=desc
    */
   async getNotes(params: {
     limit?: number;
@@ -265,7 +265,7 @@ class ApiService {
     // Set defaults
     const limit = params.limit ?? 20;
     const offset = params.offset ?? 0;
-    const orderBy = params.order_by ?? 'created_at';
+    const orderBy = params.order_by ?? 'updated_at';
     const orderDir = params.order_dir ?? 'desc';
 
     searchParams.append('limit', limit.toString());

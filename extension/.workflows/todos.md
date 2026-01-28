@@ -4,7 +4,7 @@
 
 **Package Code**: CN
 
-**Last Updated**: 2026-01-28T14:40:00Z
+**Last Updated**: 2026-01-28T22:43:00Z
 
 **Total Active Tasks**: 2
 
@@ -55,6 +55,12 @@
   - **Impact**: Users cannot edit notes from the list view, requiring workarounds to access note editor
 
 ### [P2] Medium
+- [x] **P2-CN-A029** Change note list default sorting from created_at to updated_at
+  - **Completed**: 2026-01-28
+  - **Method**: /implement from code analyzer
+  - **Files Modified**: extension/src/api.ts
+  - **Impact**: Notes now sort by updated_at DESC (most recent edit first). Edited notes move to top of list.
+  - **Plan**: `.workflows/plan/P2-CN-A029.md`
 - [x] **P2-CN-A028** Revamp note detail page: icon-only buttons, repositioned header, removed statistics, compact metadata
   - **Completed**: 2026-01-28
   - **Method**: /implement from code analyzer
@@ -221,6 +227,7 @@
 - P3-CN-A000: Purge dead code from frontend extension
 
 ### 2026-01
+- P2-CN-A029: Change note list default sorting from created_at to updated_at
 - P1-CN-A027: Fix horizontal scrollbar in Chrome extension popup
 - P1-CN-A026: Fix tag autocomplete missing in new note page (Ctrl+N)
 - P2-CN-A016: Add real-time search bar to notes list view
