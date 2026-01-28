@@ -68,3 +68,23 @@ func (r *ResilientLLM) GenerateFromSinglePrompt(ctx context.Context, prompt stri
 	}
 	return result.(string), nil
 }
+
+// GenerateContent generates a completion from message content
+func (r *ResilientLLM) GenerateContent(ctx context.Context, messages []llms.MessageContent) (*llms.ContentResponse, error) {
+	result, err := r.breaker.Execute(func() (interface{}, error) {
+		return r.llm.GenerateContent(ctx, messages)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*llms.ContentResponse), nil
+}
+
+// Stream generates a streaming completion from a single prompt
+func (r *ResilientLLM) Stream(ctx context.Context, prompt string, streamingFunc func(context.Context, []byte) error) error {
+	_, err := r.breaker.Execute(func() (interface{}, error) {
+		response, err := llms.GenerateFromSinglePrompt(ctx, r.llm, prompt, llms.WithStreamingFunc(streamingFunc))
+		return response, err
+	})
+	return err
+}
