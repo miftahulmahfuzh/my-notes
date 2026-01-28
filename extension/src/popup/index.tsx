@@ -916,11 +916,17 @@ const PopupApp: React.FC = () => {
       return state.notes;
     }
 
+    // In semantic mode, notes are already filtered by API
+    if (state.semanticSearchEnabled) {
+      return state.notes;
+    }
+
+    // Keyword mode: client-side filtering
     return state.notes.filter(note => {
       const searchableText = `${note.title || ''} ${note.content}`.toLowerCase();
       return searchableText.includes(query);
     });
-  }, [state.notes, state.searchQuery]);
+  }, [state.notes, state.searchQuery, state.semanticSearchEnabled]);
 
   // =============================================================
 
