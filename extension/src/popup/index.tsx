@@ -748,6 +748,59 @@ const PopupApp: React.FC = () => {
     setState(prev => ({ ...prev, searchQuery: '' }));
   };
 
+  // Enable semantic search mode
+  const enableSemanticSearch = () => {
+    setState(prev => ({ ...prev, semanticSearchEnabled: true }));
+  };
+
+  // Enable keyword search mode
+  const enableKeywordSearch = () => {
+    setState(prev => ({ ...prev, semanticSearchEnabled: false }));
+  };
+
+  // Handle semantic search with debouncing
+  useEffect(() => {
+    if (!state.semanticSearchEnabled || !state.searchQuery.trim()) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setState(prev => ({ ...prev, isSemanticSearching: true }));
+
+        const response = await apiService.semanticSearch(state.searchQuery);
+
+        if (response.success && response.data) {
+          const notesData = response.data as any;
+          setState(prev => ({
+            ...prev,
+            notes: notesData.notes || [],
+            searchDuration: notesData.duration ? `Took ${notesData.duration.toFixed(2)}s` : null,
+            isSemanticSearching: false,
+          }));
+        } else {
+          // Show error but allow fallback
+          setState(prev => ({
+            ...prev,
+            error: 'Semantic search unavailable. Try keyword search.',
+            semanticSearchEnabled: false,
+            isSemanticSearching: false,
+          }));
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        setState(prev => ({
+          ...prev,
+          error: `Search failed: ${errorMessage}`,
+          semanticSearchEnabled: false,
+          isSemanticSearching: false,
+        }));
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [state.semanticSearchEnabled, state.searchQuery]);
+
   // Handle Ctrl+B - Navigate back in history
   const handleBack = (): void => {
     const history = state.navigationHistory;
