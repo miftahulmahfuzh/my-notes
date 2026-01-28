@@ -2585,27 +2585,40 @@ body {
 /* Help Page Styles */
 
 .help-section {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4); /* 16px - reduced from 24px */
 }
 
 .help-section .text-h3 {
-  margin-bottom: var(--space-3);
-  color: var(--neutral-900);
+  margin-bottom: var(--space-2); /* 8px - reduced from 12px */
+  color: var(--neutral-900); /* Ensure consistent dark color */
 }
 
 .shortcut-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2); /* 8px - reduced from 12px */
 }
 
 .shortcut-item {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
+  gap: var(--space-2); /* 8px - reduced from 12px */
+  padding: var(--space-2) var(--space-3); /* 8px 12px - tighter padding */
   border: 2px solid var(--neutral-300);
   background: var(--neutral-50);
+}
+
+/* Ensure all Help page text uses consistent colors */
+.content-section--help .text-sm {
+  color: var(--neutral-700); /* Consistent body text color */
+}
+
+.content-section--help .text-h3 {
+  color: var(--neutral-900); /* Consistent heading color */
+}
+
+.content-section--help strong {
+  color: var(--neutral-900); /* Bold text matches headings */
 }
 
 .shortcut-item kbd {

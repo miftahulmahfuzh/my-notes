@@ -876,6 +876,13 @@ const PopupApp: React.FC = () => {
         return;
       }
 
+      // Ctrl+H: Navigate to Help page (works everywhere)
+      if (e.key === 'h') {
+        e.preventDefault();
+        handleHelpClick();
+        return;
+      }
+
       // Ctrl+B: Navigate back in history
       if (e.key === 'b') {
         e.preventDefault();
@@ -1251,23 +1258,27 @@ const PopupApp: React.FC = () => {
 
           <div className="content-section content-section--help">
             <div className="help-section">
-              <h3 className="text-h3">Navigation Shortcuts (Global)</h3>
+              <h3 className="text-h3">Navigation (Global)</h3>
               <div className="shortcut-list">
                 <div className="shortcut-item">
                   <kbd>Ctrl</kbd> + <kbd>N</kbd>
-                  <span>Navigate to Create New Note page</span>
+                  <span>New note</span>
+                </div>
+                <div className="shortcut-item">
+                  <kbd>Ctrl</kbd> + <kbd>H</kbd>
+                  <span>Help</span>
                 </div>
                 <div className="shortcut-item">
                   <kbd>Ctrl</kbd> + <kbd>F</kbd>
-                  <span>Focus search with keyword mode (when in notes list view)</span>
+                  <span>Keyword search</span>
                 </div>
                 <div className="shortcut-item">
                   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>
-                  <span>Focus search with semantic mode enabled (when in notes list view)</span>
+                  <span>Semantic search</span>
                 </div>
                 <div className="shortcut-item">
                   <kbd>Ctrl</kbd> + <kbd>B</kbd>
-                  <span>Navigate back to previous state (preserves search query)</span>
+                  <span>Back</span>
                 </div>
               </div>
             </div>
@@ -1275,19 +1286,16 @@ const PopupApp: React.FC = () => {
             <div className="help-section">
               <h3 className="text-h3">Search Modes</h3>
               <p className="text-sm">
-                The extension supports two search modes:
+                <strong>Keyword:</strong> Text matching in titles/content<br/>
+                <strong>Semantic:</strong> LLM-powered understanding (rainbow border)
               </p>
-              <ul className="text-sm">
-                <li><strong>Keyword Search:</strong> Fast client-side matching of text in titles and content</li>
-                <li><strong>Semantic Search:</strong> LLM-powered understanding of search intent and meaning (indicated by animated rainbow border)</li>
-              </ul>
               <p className="text-sm">
-                Click the Brain icon to toggle between modes, or use Ctrl+F (keyword) / Ctrl+Shift+F (semantic).
+                Toggle via Brain icon or Ctrl+F / Ctrl+Shift+F
               </p>
             </div>
 
             <div className="help-section">
-              <h3 className="text-h3">Note Editor</h3>
+              <h3 className="text-h3">Editor</h3>
               <div className="shortcut-list">
                 <div className="shortcut-item">
                   <kbd>Ctrl</kbd> + <kbd>S</kbd>
@@ -1295,7 +1303,7 @@ const PopupApp: React.FC = () => {
                 </div>
                 <div className="shortcut-item">
                   <kbd>Tab</kbd>
-                  <span>Insert 2 spaces for indentation</span>
+                  <span>Indent (2 spaces)</span>
                 </div>
               </div>
             </div>
@@ -1305,7 +1313,7 @@ const PopupApp: React.FC = () => {
               <div className="shortcut-list">
                 <div className="shortcut-item">
                   <kbd>Ctrl</kbd> + <kbd>C</kbd>
-                  <span>Clear search query (when search is active)</span>
+                  <span>Clear search</span>
                 </div>
               </div>
             </div>
@@ -1315,16 +1323,14 @@ const PopupApp: React.FC = () => {
               <div className="shortcut-list">
                 <div className="shortcut-item">
                   <kbd>Ctrl</kbd> + <kbd>C</kbd>
-                  <span>Copy note content (without hashtags)</span>
+                  <span>Copy content</span>
                 </div>
               </div>
             </div>
 
             <div className="help-section">
               <h3 className="text-h3">Tags</h3>
-              <p className="text-sm">
-                Clicking a tag in a note detail view will redirect you to the search page with that tag as the search query.
-              </p>
+              <p className="text-sm">Click tag to filter notes</p>
             </div>
           </div>
         </div>
