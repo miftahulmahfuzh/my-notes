@@ -189,22 +189,34 @@ PRETTIFY RULES:
 1. Detect the language of the content first
 2. Fix all typos using language-specific corrections
 3. Remove excess spacing, tabs, dots, commas
-4. Prettify JSON (fix broken parentheses/formatting)
-5. Fix indentation if deemed broken
-6. Remove all emoticons
-7. Convert markdown tables to simple bullet lists
-8. Remove markdown headers and convert to bullets (use "-" for bullets)
-9. Simplify formatting - use bullet points only, no complex markdown
-10. If current title is empty, generate a title based on content (max 50 chars)
-11. Suggest 2-3 relevant tags based on content (start with #, e.g., #tag1)
-12. When suggesting tags, prefer using tags from "YOUR EXISTING TAGS" list if they are relevant to the content
+4. Detect content type and handle appropriately:
+   a) If content contains JSON (with curly braces { } and "key": "value" format):
+      - Keep it as valid JSON
+      - Fix any broken JSON syntax (missing braces, quotes, commas)
+      - Prettify with proper indentation (2 spaces per level)
+      - Do NOT convert to bullet lists
+   b) If content contains Go struct definitions (type X struct):
+      - Keep it as valid Go code
+      - Fix any broken struct syntax
+      - Prettify with proper indentation (tabs or spaces)
+      - Do NOT convert to bullet lists
+   c) For regular text content:
+      - Remove markdown headers and convert to bullets (use "-" for bullets)
+      - Convert markdown tables to simple bullet lists
+      - Simplify formatting - use bullet points only
+5. Remove all emoticons
+6. Preserve URLs exactly as they appear
+7. If current title is empty, generate a title based on content (max 50 chars)
+8. Suggest 2-3 relevant tags based on content (start with #, e.g., #tag1)
+9. When suggesting tags, prefer using tags from "YOUR EXISTING TAGS" list if they are relevant to the content
 
 IMPORTANT:
 - Return valid JSON only
 - Keep the content meaning but make it cleaner and more readable
-- Convert table structures to simple bullet lists
-- Remove markdown table syntax (|, ---, +) entirely
-- For empty titles, create a descriptive title from the content
+- For JSON and Go structs: preserve the format, just fix and indent properly
+- For regular text: convert to bullet lists
+- Preserve hashtags in content
+- Remove markdown table syntax (|, ---, +) entirely from non-code content
 
 Response format (JSON):
 {
