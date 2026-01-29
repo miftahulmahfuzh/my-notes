@@ -261,9 +261,10 @@ const PopupApp: React.FC = () => {
         // Successfully created the note
         console.log('Successfully created note:', response.data);
 
-        // Reset to notes list view
+        // Update currentNote with the newly created note
         setState(prev => ({
           ...prev,
+          currentNote: response.data || null,
           editingNote: null,
           showNoteEditor: false,
           isLoading: false,
@@ -272,6 +273,13 @@ const PopupApp: React.FC = () => {
 
         // Refresh the notes list to show new note
         await loadNotes();
+
+        // Set detail view state after loadNotes to show the new note
+        setState(prev => ({
+          ...prev,
+          showNoteDetail: true,
+          showNotesList: false
+        }));
       } else {
         // Handle API error
         const errorMessage = response.error || 'Failed to create note';

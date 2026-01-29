@@ -48,3 +48,4 @@ jobs:
         npx jest tests/components/NoteEditor.test.tsx
         npx jest tests/utils/config.test.ts
         npx jest tests/utils/contentUtils.test.ts
+        npx jest tests/utils/markdown.test.ts
