@@ -256,8 +256,9 @@ func TestConfigLoadsFromBackendDotEnv(t *testing.T) {
 	err := os.MkdirAll(backendDir, 0755)
 	require.NoError(t, err)
 
-	// Create a .env file in the backend subdirectory
-	envContent := "JWT_SECRET=test_jwt_secret_from_backend_dotenv_at_least_32_chars\n"
+	// Create a .env file in the backend subdirectory with all required fields
+	envContent := "JWT_SECRET=test_jwt_secret_from_backend_dotenv_at_least_32_chars\n" +
+		"DB_PASSWORD=test_db_password\n"
 	envPath := backendDir + "/.env"
 	err = os.WriteFile(envPath, []byte(envContent), 0644)
 	require.NoError(t, err)
