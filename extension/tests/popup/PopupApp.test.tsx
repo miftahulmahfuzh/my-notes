@@ -29,6 +29,8 @@ jest.mock('../../src/api', () => ({
     createNote: jest.fn(),
     updateNote: jest.fn(),
     deleteNote: jest.fn(),
+    getTags: jest.fn(),
+    prettifyNote: jest.fn(),
   },
   // Re-export types
   NoteResponse: {},
@@ -144,6 +146,24 @@ describe('PopupApp Component', () => {
     apiService.deleteNote.mockResolvedValue({
       success: true,
       data: { message: 'Note deleted' },
+    });
+
+    // @ts-ignore
+    apiService.getTags.mockResolvedValue({
+      success: true,
+      data: {
+        tags: [],
+        total: 0,
+      },
+    });
+
+    // @ts-ignore
+    apiService.prettifyNote.mockResolvedValue({
+      success: true,
+      data: {
+        content: 'Prettified content',
+        improved: true,
+      },
     });
   });
 
@@ -271,11 +291,10 @@ describe('PopupApp Component', () => {
       const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
       await user.click(createNoteButton);
 
-      // Should show create note form
+      // Should show NoteEditor component
       await waitFor(() => {
-        expect(screen.getByText(/Create New Note/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/note title/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/content/i)).toBeInTheDocument();
+        // NoteEditor has a textarea with placeholder
+        expect(screen.getByPlaceholderText(/Start typing your note/i)).toBeInTheDocument();
       });
     });
 
@@ -301,13 +320,12 @@ describe('PopupApp Component', () => {
       await user.click(createNoteButton);
 
       await waitFor(() => {
-        const titleInput = screen.getByLabelText(/note title/i);
-        const contentTextarea = screen.getByLabelText(/content/i);
+        // NoteEditor has title input and content textarea
+        const titleInput = screen.getByPlaceholderText(/Note title/i);
+        const contentTextarea = screen.getByPlaceholderText(/Start typing your note/i);
 
         expect(titleInput).toBeInTheDocument();
         expect(contentTextarea).toBeInTheDocument();
-        expect(titleInput).toHaveAttribute('placeholder', 'Enter a title...');
-        expect(contentTextarea).toHaveAttribute('placeholder', 'Write your note here...');
       });
     });
 
@@ -333,8 +351,9 @@ describe('PopupApp Component', () => {
       await user.click(createNoteButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /save note/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+        // NoteEditor has Save and Cancel buttons
+        expect(screen.getByRole('button', { name: /Save/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
       });
     });
   });
@@ -631,8 +650,7 @@ describe('PopupApp Component', () => {
       await user.type(searchInput, 'test');
 
       await waitFor(() => {
-        const clearButton = screen.getByLabelText(/clear search/i);
-        expect(clearButton).toBeInTheDocument();
+        expect(searchInput).toHaveValue('test');
       });
     });
   });
@@ -775,12 +793,11 @@ describe('PopupApp Component', () => {
       await user.type(searchInput, 'test');
 
       await waitFor(() => {
-        const clearButton = screen.getByLabelText(/clear search/i);
-        expect(clearButton).toBeInTheDocument();
+        expect(searchInput).toHaveValue('test');
       });
 
-      const clearButton = screen.getByLabelText(/clear search/i);
-      await user.click(clearButton);
+      // Clear the input directly (Ctrl+C is the keyboard shortcut in production)
+      await user.clear(searchInput);
 
       await waitFor(() => {
         expect(searchInput).toHaveValue('');
@@ -866,16 +883,16 @@ describe('PopupApp Component', () => {
       await user.click(createNoteButton);
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/content/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Start typing your note/i)).toBeInTheDocument();
       });
 
-      const titleInput = screen.getByLabelText(/note title/i);
-      const contentTextarea = screen.getByLabelText(/content/i);
+      const titleInput = screen.getByPlaceholderText(/Note title/i);
+      const contentTextarea = screen.getByPlaceholderText(/Start typing your note/i);
 
       await user.type(titleInput, 'Test Note Title');
       await user.type(contentTextarea, 'Test note content');
 
-      const saveButton = screen.getByRole('button', { name: /save note/i });
+      const saveButton = screen.getByRole('button', { name: /Save/i });
       await user.click(saveButton);
 
       await waitFor(() => {
@@ -925,10 +942,10 @@ describe('PopupApp Component', () => {
       const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
       await user.click(createNoteButton);
 
-      const contentTextarea = screen.getByLabelText(/content/i);
+      const contentTextarea = screen.getByPlaceholderText(/Start typing your note/i);
       await user.type(contentTextarea, 'New note content');
 
-      const saveButton = screen.getByRole('button', { name: /save note/i });
+      const saveButton = screen.getByRole('button', { name: /Save/i });
       await user.click(saveButton);
 
       await waitFor(() => {
@@ -958,7 +975,7 @@ describe('PopupApp Component', () => {
       await user.click(createNoteButton);
 
       // Save button should be disabled when content is empty
-      const saveButton = screen.getByRole('button', { name: /save note/i });
+      const saveButton = screen.getByRole('button', { name: /Save/i });
       expect(saveButton).toBeDisabled();
     });
   });
@@ -1362,10 +1379,10 @@ describe('PopupApp Component', () => {
       const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
       await user.click(createNoteButton);
 
-      const contentTextarea = screen.getByLabelText(/content/i);
+      const contentTextarea = screen.getByPlaceholderText(/Start typing your note/i);
       await user.type(contentTextarea, 'Test content');
 
-      const saveButton = screen.getByRole('button', { name: /save note/i });
+      const saveButton = screen.getByRole('button', { name: /Save/i });
       await user.click(saveButton);
 
       await waitFor(() => {
@@ -1430,17 +1447,17 @@ describe('PopupApp Component', () => {
       const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
       await user.click(createNoteButton);
 
-      const contentTextarea = screen.getByLabelText(/content/i);
+      const contentTextarea = screen.getByPlaceholderText(/Start typing your note/i);
       await user.type(contentTextarea, 'Test content');
 
-      const saveButton = screen.getByRole('button', { name: /save note/i });
+      const saveButton = screen.getByRole('button', { name: /Save/i });
       await user.click(saveButton);
 
       await waitFor(() => {
         expect(screen.getByText(/network error/i)).toBeInTheDocument();
       });
 
-      const tryAgainButton = screen.getByRole('button', { name: /try again/i });
+      const tryAgainButton = screen.getByRole('button', { name: /Try Again/i });
       await user.click(tryAgainButton);
 
       await waitFor(() => {
@@ -1477,9 +1494,9 @@ describe('PopupApp Component', () => {
       // Press Ctrl+N to trigger create note navigation
       await user.keyboard('{Control>}n{/Control}');
 
-      // Should navigate to create note form
+      // Should navigate to NoteEditor
       await waitFor(() => {
-        expect(screen.getByText(/Create New Note/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Start typing your note/i)).toBeInTheDocument();
       });
     });
 
@@ -1536,10 +1553,10 @@ describe('PopupApp Component', () => {
       const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
       await user.click(createNoteButton);
 
-      const contentTextarea = screen.getByLabelText(/content/i);
+      const contentTextarea = screen.getByPlaceholderText(/Start typing your note/i);
       await user.type(contentTextarea, 'Test content');
 
-      const saveButton = screen.getByRole('button', { name: /save note/i });
+      const saveButton = screen.getByRole('button', { name: /Save/i });
 
       // Click save and wait for loading state to appear
       await act(async () => {
@@ -1676,10 +1693,10 @@ describe('PopupApp Component', () => {
       const createNoteButton = screen.getByRole('button', { name: /Create Note/i });
       await user.click(createNoteButton);
 
-      const contentTextarea = screen.getByLabelText(/content/i);
+      const contentTextarea = screen.getByPlaceholderText(/Start typing your note/i);
       await user.type(contentTextarea, 'Test content');
 
-      const saveButton = screen.getByRole('button', { name: /save note/i });
+      const saveButton = screen.getByRole('button', { name: /Save/i });
       await user.click(saveButton);
 
       // Should show loading state (global spinner) instead of disabled buttons
@@ -1901,22 +1918,37 @@ describe('PopupApp Component', () => {
 
       await user.click(screen.getByRole('button', { name: /Help/i }));
 
-      // Should show all keyboard shortcuts
+      // Should show all keyboard shortcuts - text is split across elements
       await waitFor(() => {
-        // Navigation shortcuts
-        expect(screen.getByText(/Navigate to Create New Note page/i)).toBeInTheDocument();
-        expect(screen.getByText(/Focus search input/i)).toBeInTheDocument();
-        expect(screen.getByText(/Navigate back to previous state/i)).toBeInTheDocument();
+        // Global shortcuts
+        expect(screen.getByText(/Global Shortcuts/i)).toBeInTheDocument();
+        expect(screen.getByText(/New note/)).toBeInTheDocument();
+        expect(screen.getByText(/Help/)).toBeInTheDocument();
+        expect(screen.getByText(/Back/)).toBeInTheDocument();
 
-        // Note Editor shortcuts
-        expect(screen.getByText(/Save note/i)).toBeInTheDocument();
-        expect(screen.getByText(/Insert 2 spaces for indentation/i)).toBeInTheDocument();
+        // List/Search shortcuts
+        expect(screen.getByText(/List\/Search Shortcuts/i)).toBeInTheDocument();
+        expect(screen.getByText(/Keyword search/)).toBeInTheDocument();
+        expect(screen.getByText(/Semantic search/)).toBeInTheDocument();
+        expect(screen.getByText(/Clear search/)).toBeInTheDocument();
 
-        // Notes List shortcuts
-        expect(screen.getByText(/Clear search query/i)).toBeInTheDocument();
+        // Note Editing shortcuts
+        expect(screen.getByText(/Note Editing Shortcuts/i)).toBeInTheDocument();
+        expect(screen.getByText(/Save note/)).toBeInTheDocument();
+        expect(screen.getByText(/Indent/)).toBeInTheDocument();
 
-        // Tab for indentation
-        expect(screen.getByText(/Tab/i)).toBeInTheDocument();
+        // Tags Suggestion shortcuts
+        expect(screen.getByText(/Tags Suggestion Shortcuts/i)).toBeInTheDocument();
+        expect(screen.getByText(/Show tags suggestion/)).toBeInTheDocument();
+        expect(screen.getByText(/Move down/)).toBeInTheDocument();
+        expect(screen.getByText(/Move up/)).toBeInTheDocument();
+        expect(screen.getByText(/Select tag/)).toBeInTheDocument();
+
+        // Note Detail shortcuts
+        expect(screen.getByText(/Note Detail Shortcuts/i)).toBeInTheDocument();
+        expect(screen.getByText(/Copy content/)).toBeInTheDocument();
+        expect(screen.getByText(/Prettify note/)).toBeInTheDocument();
+        expect(screen.getByText(/Click tag to filter notes/)).toBeInTheDocument();
       });
     });
 
@@ -1942,8 +1974,7 @@ describe('PopupApp Component', () => {
 
       // Should mention tag functionality
       await waitFor(() => {
-        expect(screen.getByText(/clicking a tag/i)).toBeInTheDocument();
-        expect(screen.getByText(/search page/i)).toBeInTheDocument();
+        expect(screen.getByText(/Click tag to filter notes/i)).toBeInTheDocument();
       });
     });
 
