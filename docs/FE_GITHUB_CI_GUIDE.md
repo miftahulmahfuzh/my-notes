@@ -131,6 +131,68 @@ on:
 
 ---
 
+## Running Tests from Different Directories
+
+### From Project Root
+
+When running tests from the project root, you **must specify the jest config path**:
+
+```bash
+# From project root (/my-notes)
+npx jest --config=extension/jest.config.js tests/utils/config.test.ts
+```
+
+**Why:** Jest won't find `extension/jest.config.js` from the project root. Without `--config`, you'll get errors like:
+```
+SyntaxError: Cannot use import statement outside a module
+```
+or
+```
+Support for the experimental syntax 'jsx' isn't currently enabled
+```
+
+These errors occur because Jest isn't loading the ts-jest transform and Babel presets from the config.
+
+---
+
+### From Extension Directory
+
+When running from within the `extension/` directory, Jest finds the config automatically:
+
+```bash
+# From extension directory
+cd extension
+npx jest tests/utils/config.test.ts
+```
+
+**Why:** Jest searches for `jest.config.js` in the current directory, which it finds in `extension/`.
+
+---
+
+### In CI Environment
+
+In GitHub Actions, with `working-directory: ./extension`, the config is found automatically:
+
+```yaml
+- name: Run frontend tests
+  working-directory: ./extension
+  run: npx jest tests/utils/config.test.ts
+```
+
+**Why:** The working directory is already `extension/`, so Jest finds the config file.
+
+---
+
+### Quick Reference
+
+| Context | Command |
+|---------|---------|
+| Project root | `npx jest --config=extension/jest.config.js <test-path>` |
+| Extension dir | `npx jest <test-path>` |
+| CI (with working-directory) | `npx jest <test-path>` |
+
+---
+
 ## Adding New Test Cases
 
 ### Step 1: Ensure Test Exists and Passes Locally
@@ -342,7 +404,51 @@ Each test file should:
 
 ## Common Pitfalls and Solutions
 
-### Pitfall 1: Missing Babel Preset
+### Pitfall 1: Jest Config Not Being Loaded
+
+**Error:**
+```
+SyntaxError: Cannot use import statement outside a module
+```
+or
+```
+Support for the experimental syntax 'jsx' isn't currently enabled
+```
+or
+```
+If you already added the plugin for this syntax to your config,
+it's possible that your config isn't being loaded.
+```
+
+**Cause:** Running Jest from the project root without specifying the config file path. Jest doesn't find `extension/jest.config.js` and falls back to defaults without ts-jest transforms.
+
+**Solution:** Always use `--config` when running from project root:
+```bash
+# Wrong (from project root)
+npx jest tests/utils/config.test.ts
+
+# Correct (from project root)
+npx jest --config=extension/jest.config.js tests/utils/config.test.ts
+```
+
+**Alternative:** Change to extension directory first:
+```bash
+cd extension
+npx jest tests/utils/config.test.ts
+```
+
+**Prevention:** Create an alias or script in your shell for running tests:
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+alias jest-test='npx jest --config=extension/jest.config.js'
+
+# Usage
+jest-test tests/utils/config.test.ts
+```
+
+---
+
+### Pitfall 2: Missing Babel Preset
 
 **Error:**
 ```
@@ -365,7 +471,7 @@ are defined as dependencies or devDependencies in your package.json
 
 ---
 
-### Pitfall 2: ESM Import Issues
+### Pitfall 3: ESM Import Issues
 
 **Error:**
 ```
@@ -386,7 +492,7 @@ transform: {
 
 ---
 
-### Pitfall 3: CSS Module Imports
+### Pitfall 4: CSS Module Imports
 
 **Error:**
 ```
@@ -407,7 +513,7 @@ If you see this error, verify your CSS file path matches these patterns.
 
 ---
 
-### Pitfall 4: Chrome Extension APIs Not Defined
+### Pitfall 5: Chrome Extension APIs Not Defined
 
 **Error:**
 ```
@@ -435,7 +541,7 @@ global.chrome = {
 
 ---
 
-### Pitfall 5: Path Alias Not Resolved
+### Pitfall 6: Path Alias Not Resolved
 
 **Error:**
 ```
@@ -457,7 +563,7 @@ If still failing, check your `tsconfig.json` has matching path aliases.
 
 ---
 
-### Pitfall 6: Test Timeout in CI
+### Pitfall 7: Test Timeout in CI
 
 **Error:**
 ```
@@ -480,7 +586,7 @@ jest.setTimeout(10000);
 
 ---
 
-### Pitfall 7: Flaky Tests (Interrittent Failures)
+### Pitfall 8: Flaky Tests (Interrittent Failures)
 
 **Symptoms:** Test passes sometimes, fails other times in CI.
 
@@ -619,8 +725,8 @@ node-version: '20.x'  # Match this locally
 5. Check GitHub Actions logs for detailed error messages
 
 **Incremental Progress:**
-- Current: 1 test in CI (`iconRendering.test.tsx`)
-- Next: Add 2-3 more tests, verify each
+- Current: 4 tests in CI (`iconRendering.test.tsx`, `LoginForm.test.tsx`, `NoteEditor.test.tsx`, `config.test.ts`)
+- Next: Add more validated tests incrementally
 - Goal: All validated tests running in CI
 
 **Remember:** CI is the source of truth. If tests pass locally but fail in CI, there's an environment difference that needs to be addressed.
