@@ -98,7 +98,8 @@ describe('NoteView Component', () => {
         />
       );
 
-      expect(screen.getByText('This is a test note with #hashtag and #anotherTag')).toBeInTheDocument();
+      // Hashtags are stripped from content display by stripHashtags
+      expect(screen.getByText(/This is a test note with/)).toBeInTheDocument();
     });
 
     test('extracts and displays hashtags', () => {
@@ -127,65 +128,6 @@ describe('NoteView Component', () => {
 
       expect(screen.getByText('Created')).toBeInTheDocument();
       expect(screen.getByText('Last Updated')).toBeInTheDocument();
-      expect(screen.getByText('Statistics')).toBeInTheDocument();
-    });
-
-    test('displays statistics', () => {
-      render(
-        <NoteView
-          note={mockNote}
-          onEdit={mockOnEdit}
-          onDelete={mockOnDelete}
-          onClose={mockOnClose}
-        />
-      );
-
-      expect(screen.getByText('Characters:')).toBeInTheDocument();
-      expect(screen.getByText('Words:')).toBeInTheDocument();
-      expect(screen.getByText('Lines:')).toBeInTheDocument();
-      expect(screen.getByText('Tags:')).toBeInTheDocument();
-    });
-
-    test('displays correct character count', () => {
-      render(
-        <NoteView
-          note={mockNote}
-          onEdit={mockOnEdit}
-          onDelete={mockOnDelete}
-          onClose={mockOnClose}
-        />
-      );
-
-      const charCount = mockNote.content.length;
-      expect(screen.getByText(charCount.toString())).toBeInTheDocument();
-    });
-
-    test('displays correct word count', () => {
-      render(
-        <NoteView
-          note={mockNote}
-          onEdit={mockOnEdit}
-          onDelete={mockOnDelete}
-          onClose={mockOnClose}
-        />
-      );
-
-      const wordCount = mockNote.content.trim().split(/\s+/).length;
-      expect(screen.getByText(wordCount.toString())).toBeInTheDocument();
-    });
-
-    test('displays correct line count', () => {
-      render(
-        <NoteView
-          note={mockNote}
-          onEdit={mockOnEdit}
-          onDelete={mockOnDelete}
-          onClose={mockOnClose}
-        />
-      );
-
-      const lineCount = mockNote.content.split('\n').length;
-      expect(screen.getByText(lineCount.toString())).toBeInTheDocument();
     });
   });
 
@@ -288,7 +230,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      expect(screen.getByText('Copy')).toBeInTheDocument();
+      expect(screen.getByTitle('Copy content')).toBeInTheDocument();
     });
 
     test('renders Edit button', () => {
@@ -301,7 +243,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      expect(screen.getByText('Edit')).toBeInTheDocument();
+      expect(screen.getByTitle('Edit note')).toBeInTheDocument();
     });
 
     test('renders Delete button', () => {
@@ -314,7 +256,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      expect(screen.getByText('Delete')).toBeInTheDocument();
+      expect(screen.getByTitle('Delete note')).toBeInTheDocument();
     });
 
     test('renders Close button', () => {
@@ -327,7 +269,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      expect(screen.getByText('Close')).toBeInTheDocument();
+      expect(screen.getByTitle('Close note')).toBeInTheDocument();
     });
   });
 
@@ -344,16 +286,16 @@ describe('NoteView Component', () => {
         />
       );
 
-      const copyButton = screen.getByText('Copy');
+      const copyButton = screen.getByTitle('Copy content');
       await user.click(copyButton);
 
-      // The button shows "Copied!" feedback, which indicates the copy operation was attempted
+      // The button adds 'success' class for feedback
       await waitFor(() => {
-        expect(copyButton).toHaveTextContent('Copied!');
+        expect(copyButton).toHaveClass('success');
       });
     });
 
-    test('shows "Copied!" feedback after successful copy', async () => {
+    test('shows "success" class after successful copy', async () => {
       const user = userEvent.setup();
 
       render(
@@ -365,17 +307,17 @@ describe('NoteView Component', () => {
         />
       );
 
-      const copyButton = screen.getByText('Copy');
+      const copyButton = screen.getByTitle('Copy content');
       await user.click(copyButton);
 
       await waitFor(() => {
-        expect(copyButton).toHaveTextContent('Copied!');
+        expect(copyButton).toHaveClass('success');
       });
 
-      // Wait for timeout to reset button text
+      // Wait for timeout to reset button class
       await waitFor(
         () => {
-          expect(copyButton).toHaveTextContent('Copy');
+          expect(copyButton).not.toHaveClass('success');
         },
         { timeout: 2500 }
       );
@@ -395,7 +337,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      const editButton = screen.getByText('Edit');
+      const editButton = screen.getByTitle('Edit note');
       await user.click(editButton);
 
       expect(mockOnEdit).toHaveBeenCalledTimes(1);
@@ -413,7 +355,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      const deleteButton = screen.getByText('Delete');
+      const deleteButton = screen.getByTitle('Delete note');
       await user.click(deleteButton);
 
       expect(mockOnDelete).toHaveBeenCalledTimes(1);
@@ -431,7 +373,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      const closeButton = screen.getByText('Close');
+      const closeButton = screen.getByTitle('Close note');
       await user.click(closeButton);
 
       expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -496,25 +438,6 @@ describe('NoteView Component', () => {
       );
 
       expect(screen.queryByText('Tags')).not.toBeInTheDocument();
-    });
-
-    test('shows 0 tags in statistics when note has no hashtags', () => {
-      const noteWithoutHashtags: Note = {
-        ...mockNote,
-        content: 'This is a plain note without any hashtags'
-      };
-
-      render(
-        <NoteView
-          note={noteWithoutHashtags}
-          onEdit={mockOnEdit}
-          onDelete={mockOnDelete}
-          onClose={mockOnClose}
-        />
-      );
-
-      const statsSection = screen.getByText('Statistics').closest('.info-section');
-      expect(statsSection).toHaveTextContent('Tags:0');
     });
   });
 
@@ -607,6 +530,7 @@ describe('NoteView Component', () => {
     test('handles empty content', () => {
       const emptyNote: Note = {
         ...mockNote,
+        title: '',
         content: ''
       };
 
@@ -619,10 +543,8 @@ describe('NoteView Component', () => {
         />
       );
 
-      // Check for labels and verify zero values exist somewhere
-      expect(screen.getByText('Characters:')).toBeInTheDocument();
-      expect(screen.getByText('Words:')).toBeInTheDocument();
-      expect(screen.getAllByText('0').length).toBeGreaterThan(0);
+      // Component should render without errors for empty content
+      expect(screen.getByText('Untitled Note')).toBeInTheDocument();
     });
 
     test('handles content with only whitespace', () => {
@@ -640,8 +562,8 @@ describe('NoteView Component', () => {
         />
       );
 
-      expect(screen.getByText('Words:')).toBeInTheDocument();
-      expect(screen.getAllByText('0').length).toBeGreaterThan(0);
+      // Component should render without errors for whitespace content
+      expect(screen.getByText('Test Note Title')).toBeInTheDocument();
     });
 
     test('handles multiple identical hashtags (deduplicates)', () => {
@@ -715,9 +637,9 @@ describe('NoteView Component', () => {
         />
       );
 
-      // Check for the label and value separately
-      expect(screen.getByText('Lines:')).toBeInTheDocument();
-      expect(screen.getByText('5')).toBeInTheDocument();
+      // Content should be displayed - use testid to find markdown content
+      expect(screen.getByTestId('markdown-content')).toBeInTheDocument();
+      expect(screen.getByTestId('markdown-content')).toHaveTextContent(/Line 1/);
     });
   });
 
@@ -732,7 +654,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      const copyButton = screen.getByText('Copy').closest('button');
+      const copyButton = screen.getByTitle('Copy content');
       expect(copyButton).toHaveAttribute('title', 'Copy content');
     });
 
@@ -746,7 +668,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      const editButton = screen.getByText('Edit').closest('button');
+      const editButton = screen.getByTitle('Edit note');
       expect(editButton).toHaveAttribute('title', 'Edit note');
     });
 
@@ -760,7 +682,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      const deleteButton = screen.getByText('Delete').closest('button');
+      const deleteButton = screen.getByTitle('Delete note');
       expect(deleteButton).toHaveAttribute('title', 'Delete note');
     });
 
@@ -774,7 +696,7 @@ describe('NoteView Component', () => {
         />
       );
 
-      const closeButton = screen.getByText('Close').closest('button');
+      const closeButton = screen.getByTitle('Close note');
       expect(closeButton).toHaveAttribute('title', 'Close note');
     });
 
