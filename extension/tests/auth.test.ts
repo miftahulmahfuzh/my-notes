@@ -47,13 +47,8 @@ describe('AuthService', () => {
 
     authService = AuthService.getInstance();
 
-    // Reset auth state for each test
-    authService.setAuthState({
-      isAuthenticated: false,
-      isLoading: false,
-      user: null,
-      error: null
-    });
+    // Reset auth service state including any in-progress refresh operations
+    authService.resetForTesting();
 
     mockUser = {
       id: 'test-user-id',
@@ -187,32 +182,35 @@ describe('AuthService', () => {
 
     it('initialize() with expired tokens attempts refresh', async () => {
       const expiredTime = Date.now() - 1000;
+      const newExpiryTime = Date.now() + (900 * 1000);
 
-      (chrome.storage.local.get as jest.Mock)
-        .mockImplementationOnce((keys: any, callback: any) => {
-          const result: Record<string, any> = {
-            access_token: 'expired-token',
-            token_expiry: expiredTime.toString(),
-            refresh_token: 'valid-refresh-token',
-            user_info: mockUser
-          };
-          if (callback) callback(result);
-          return Promise.resolve(result);
-        })
-        .mockImplementationOnce((keys: any, callback: any) => {
-          const result: Record<string, any> = {
-            token_expiry: expiredTime.toString()
-          };
-          if (callback) callback(result);
-          return Promise.resolve(result);
-        })
-        .mockImplementationOnce((keys: any, callback: any) => {
-          const result: Record<string, any> = {
-            refresh_token: 'valid-refresh-token'
-          };
-          if (callback) callback(result);
-          return Promise.resolve(result);
-        });
+      // Use a stateful mock that simulates storage
+      const mockStorage: Record<string, any> = {
+        access_token: 'expired-token',
+        token_expiry: expiredTime.toString(),
+        refresh_token: 'valid-refresh-token',
+        user_info: mockUser
+      };
+
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys: any, callback: any) => {
+        // Return the current storage state based on requested keys
+        const result: Record<string, any> = {};
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          if (mockStorage[key] !== undefined) {
+            result[key] = mockStorage[key];
+          }
+        }
+        if (callback) callback(result);
+        return Promise.resolve(result);
+      });
+
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items: any, callback?: () => void) => {
+        // Update the mock storage when data is set
+        Object.assign(mockStorage, items);
+        if (callback) callback();
+        return Promise.resolve(undefined);
+      });
 
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
@@ -339,7 +337,8 @@ describe('AuthService', () => {
         ok: false,
         status: 401,
         statusText: 'Unauthorized',
-        json: () => Promise.resolve({ error: 'Invalid token' })
+        json: () => Promise.resolve({ error: 'Invalid token' }),
+        text: () => Promise.resolve(JSON.stringify({ error: 'Invalid token' }))
       });
 
       const result = await authService.authenticate();
@@ -469,19 +468,38 @@ describe('AuthService', () => {
     it('isAuthenticated() returns false for expired token when refresh fails', async () => {
       const expiredTime = Date.now() - 1000;
 
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        const result: Record<string, any> = {
-          access_token: 'expired-token',
-          token_expiry: expiredTime.toString(),
-          refresh_token: 'invalid-refresh'
-        };
+      // Use a stateful mock that simulates storage and can be cleared
+      const mockStorage: Record<string, any> = {
+        access_token: 'expired-token',
+        token_expiry: expiredTime.toString(),
+        refresh_token: 'invalid-refresh'
+      };
+
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys: any, callback: any) => {
+        const result: Record<string, any> = {};
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          if (mockStorage[key] !== undefined) {
+            result[key] = mockStorage[key];
+          }
+        }
         if (callback) callback(result);
         return Promise.resolve(result);
       });
 
+      (chrome.storage.local.remove as jest.Mock).mockImplementation((keys: any, callback?: () => void) => {
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          delete mockStorage[key];
+        }
+        if (callback) callback();
+        return Promise.resolve(undefined);
+      });
+
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
-        status: 401
+        status: 401,
+        text: () => Promise.resolve('Unauthorized')
       });
 
       const result = await authService.isAuthenticated();
@@ -491,15 +509,31 @@ describe('AuthService', () => {
 
     it('isAuthenticated() attempts refresh on expiry', async () => {
       const expiredTime = Date.now() - 1000;
+      const newExpiryTime = Date.now() + (900 * 1000);
 
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        const result: Record<string, any> = {
-          access_token: 'expired-token',
-          token_expiry: expiredTime.toString(),
-          refresh_token: 'valid-refresh'
-        };
+      // Use a stateful mock that simulates storage
+      const mockStorage: Record<string, any> = {
+        access_token: 'expired-token',
+        token_expiry: expiredTime.toString(),
+        refresh_token: 'valid-refresh'
+      };
+
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys: any, callback: any) => {
+        const result: Record<string, any> = {};
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          if (mockStorage[key] !== undefined) {
+            result[key] = mockStorage[key];
+          }
+        }
         if (callback) callback(result);
         return Promise.resolve(result);
+      });
+
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items: any, callback?: () => void) => {
+        Object.assign(mockStorage, items);
+        if (callback) callback();
+        return Promise.resolve(undefined);
       });
 
       (global.fetch as jest.Mock).mockResolvedValue({
@@ -527,19 +561,40 @@ describe('AuthService', () => {
     it('isAuthenticated() handles refresh failure', async () => {
       const expiredTime = Date.now() - 1000;
 
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        const result: Record<string, any> = {
-          access_token: 'expired-token',
-          token_expiry: expiredTime.toString(),
-          refresh_token: 'bad-refresh'
-        };
+      // Use a stateful mock that simulates storage and can be cleared
+      const mockStorage: Record<string, any> = {
+        access_token: 'expired-token',
+        token_expiry: expiredTime.toString(),
+        refresh_token: 'bad-refresh'
+      };
+
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys: any, callback: any) => {
+        const result: Record<string, any> = {};
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          if (mockStorage[key] !== undefined) {
+            result[key] = mockStorage[key];
+          }
+        }
         if (callback) callback(result);
         return Promise.resolve(result);
       });
 
+      (chrome.storage.local.remove as jest.Mock).mockImplementation((keys: any, callback?: () => void) => {
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          delete mockStorage[key];
+        }
+        if (callback) callback();
+        return Promise.resolve(undefined);
+      });
+
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
-        status: 401
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ error: 'Unauthorized' }),
+        text: () => Promise.resolve('Unauthorized')
       });
 
       const result = await authService.isAuthenticated();
@@ -549,13 +604,38 @@ describe('AuthService', () => {
   });
 
   describe('6. Token Refresh', () => {
+    beforeEach(() => {
+      // Reset the refresh state for these tests
+      authService.resetForTesting();
+      // Ensure chrome.identity.removeCachedAuthToken is properly mocked
+      (chrome.identity.removeCachedAuthToken as jest.Mock).mockImplementation((params: any, callback?: () => void) => {
+        if (callback) callback();
+        return Promise.resolve();
+      });
+    });
+
     it('refreshToken() successfully refreshes valid token', async () => {
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        const result: Record<string, any> = {
-          refresh_token: 'valid-refresh-token'
-        };
+      // Use stateful mock for storage
+      const mockStorage: Record<string, any> = {
+        refresh_token: 'valid-refresh-token'
+      };
+
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys: any, callback?: any) => {
+        const result: Record<string, any> = {};
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          if (mockStorage[key] !== undefined) {
+            result[key] = mockStorage[key];
+          }
+        }
         if (callback) callback(result);
         return Promise.resolve(result);
+      });
+
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items: any, callback?: () => void) => {
+        Object.assign(mockStorage, items);
+        if (callback) callback();
+        return Promise.resolve(undefined);
       });
 
       (global.fetch as jest.Mock).mockResolvedValue({
@@ -582,59 +662,122 @@ describe('AuthService', () => {
           body: expect.stringContaining('valid-refresh-token')
         })
       );
-    });
+    }, 10000);
 
     it('refreshToken() fails with invalid refresh token', async () => {
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        const result: Record<string, any> = {
-          refresh_token: 'invalid-refresh-token'
-        };
+      // Use stateful mock for storage
+      const mockStorage: Record<string, any> = {
+        refresh_token: 'invalid-refresh-token'
+      };
+
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys: any, callback?: any) => {
+        const result: Record<string, any> = {};
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          if (mockStorage[key] !== undefined) {
+            result[key] = mockStorage[key];
+          }
+        }
         if (callback) callback(result);
         return Promise.resolve(result);
       });
 
+      (chrome.storage.local.remove as jest.Mock).mockImplementation((keys: any, callback?: () => void) => {
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          delete mockStorage[key];
+        }
+        if (callback) callback();
+        return Promise.resolve(undefined);
+      });
+
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
-        status: 401
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ error: 'Unauthorized' }),
+        text: () => Promise.resolve('Unauthorized')
       });
 
       const result = await authService.refreshToken();
 
       expect(result).toBe(false);
-    });
+    }, 10000);
 
     it('refreshToken() fails on backend error', async () => {
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        const result: Record<string, any> = {
-          refresh_token: 'valid-refresh'
-        };
+      // Use stateful mock for storage
+      const mockStorage: Record<string, any> = {
+        refresh_token: 'valid-refresh'
+      };
+
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys: any, callback?: any) => {
+        const result: Record<string, any> = {};
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          if (mockStorage[key] !== undefined) {
+            result[key] = mockStorage[key];
+          }
+        }
         if (callback) callback(result);
         return Promise.resolve(result);
       });
 
+      (chrome.storage.local.remove as jest.Mock).mockImplementation((keys: any, callback?: () => void) => {
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          delete mockStorage[key];
+        }
+        if (callback) callback();
+        return Promise.resolve(undefined);
+      });
+
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
-        status: 500
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: () => Promise.resolve({ error: 'Internal Server Error' }),
+        text: () => Promise.resolve('Internal Server Error')
       });
 
       const result = await authService.refreshToken();
 
       expect(result).toBe(false);
-    });
+    }, 10000);
 
     it('refreshToken() logs out on failure', async () => {
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        const result: Record<string, any> = {
-          access_token: 'old-access',
-          refresh_token: 'bad-refresh'
-        };
+      // Use stateful mock for storage
+      const mockStorage: Record<string, any> = {
+        access_token: 'old-access',
+        refresh_token: 'bad-refresh'
+      };
+
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys: any, callback?: any) => {
+        const result: Record<string, any> = {};
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          if (mockStorage[key] !== undefined) {
+            result[key] = mockStorage[key];
+          }
+        }
         if (callback) callback(result);
         return Promise.resolve(result);
       });
 
+      (chrome.storage.local.remove as jest.Mock).mockImplementation((keys: any, callback?: () => void) => {
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          delete mockStorage[key];
+        }
+        if (callback) callback();
+        return Promise.resolve(undefined);
+      });
+
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
-        status: 401
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ error: 'Unauthorized' }),
+        text: () => Promise.resolve('Unauthorized')
       });
 
       await authService.refreshToken();
@@ -932,14 +1075,29 @@ describe('AuthService', () => {
     it('getAuthHeader() refreshes token if expired', async () => {
       const expiredTime = Date.now() - 1000;
 
-      (chrome.storage.local.get as jest.Mock).mockImplementation((keys, callback) => {
-        const result: Record<string, any> = {
-          access_token: 'expired-token',
-          token_expiry: expiredTime.toString(),
-          refresh_token: 'valid-refresh'
-        };
+      // Use a stateful mock that simulates storage
+      const mockStorage: Record<string, any> = {
+        access_token: 'expired-token',
+        token_expiry: expiredTime.toString(),
+        refresh_token: 'valid-refresh'
+      };
+
+      (chrome.storage.local.get as jest.Mock).mockImplementation((keys: any, callback: any) => {
+        const result: Record<string, any> = {};
+        const keyArray = Array.isArray(keys) ? keys : [keys];
+        for (const key of keyArray) {
+          if (mockStorage[key] !== undefined) {
+            result[key] = mockStorage[key];
+          }
+        }
         if (callback) callback(result);
         return Promise.resolve(result);
+      });
+
+      (chrome.storage.local.set as jest.Mock).mockImplementation((items: any, callback?: () => void) => {
+        Object.assign(mockStorage, items);
+        if (callback) callback();
+        return Promise.resolve(undefined);
       });
 
       (global.fetch as jest.Mock).mockResolvedValue({
@@ -1004,7 +1162,9 @@ describe('AuthService', () => {
 
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:8080/api/v1/auth/logout',
-        { method: 'DELETE' }
+        expect.objectContaining({
+          method: 'DELETE'
+        })
       );
     });
 

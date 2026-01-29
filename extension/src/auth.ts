@@ -55,6 +55,8 @@ export class AuthService {
   private static instance: AuthService;
   private authState: AuthState;
   private listeners: Set<(state: AuthState) => void> = new Set();
+  private isRefreshing: boolean = false;
+  private refreshPromise: Promise<boolean> | null = null;
 
   private constructor() {
     this.authState = {
@@ -73,6 +75,21 @@ export class AuthService {
       AuthService.instance = new AuthService();
     }
     return AuthService.instance;
+  }
+
+  /**
+   * Reset service state (for testing purposes)
+   * This clears any in-progress refresh operations and resets auth state
+   */
+  resetForTesting(): void {
+    this.isRefreshing = false;
+    this.refreshPromise = null;
+    this.authState = {
+      isAuthenticated: false,
+      isLoading: false,
+      user: null,
+      error: null
+    };
   }
 
   /**
@@ -102,6 +119,12 @@ export class AuthService {
    * Check if user is authenticated and token is valid
    */
   async isAuthenticated(): Promise<boolean> {
+    // If a refresh is already in progress, wait for it
+    if (this.isRefreshing && this.refreshPromise) {
+      console.log('[Auth] isAuthenticated: refresh already in progress, waiting');
+      return this.refreshPromise;
+    }
+
     const token = await this.getStoredToken(STORAGE_KEYS.ACCESS_TOKEN);
     const expiry = await this.getStoredToken(STORAGE_KEYS.TOKEN_EXPIRY);
 
@@ -122,10 +145,8 @@ export class AuthService {
 
     if (now >= expiryTime) {
       console.log('[Auth] isAuthenticated: token expired, attempting refresh');
-      // Try to refresh token
-      const refreshed = await this.refreshToken();
-      console.log('[Auth] isAuthenticated: refresh result:', refreshed);
-      return refreshed;
+      // Try to refresh token (this will cache the promise)
+      return this.refreshToken();
     }
 
     console.log('[Auth] isAuthenticated: true - token valid');
@@ -334,46 +355,62 @@ export class AuthService {
    * Refresh authentication token
    */
   async refreshToken(): Promise<boolean> {
-    try {
-      const refreshToken = await this.getStoredToken(STORAGE_KEYS.REFRESH_TOKEN);
+    // If a refresh is already in progress, return the existing promise
+    if (this.isRefreshing && this.refreshPromise) {
+      console.log('[Auth] refreshToken: already refreshing, returning existing promise');
+      return this.refreshPromise;
+    }
 
-      if (!refreshToken) {
-        return false;
-      }
+    // Set refreshing flag and create the promise
+    this.isRefreshing = true;
+    this.refreshPromise = (async () => {
+      try {
+        const refreshToken = await this.getStoredToken(STORAGE_KEYS.REFRESH_TOKEN);
 
-      const response = await fetch(`${CONFIG.API_BASE_URL}/api/v1/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          refresh_token: refreshToken
-        })
-      });
+        if (!refreshToken) {
+          return false;
+        }
 
-      if (!response.ok) {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/api/v1/auth/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            refresh_token: refreshToken
+          })
+        });
+
+        if (!response.ok) {
+          await this.logout();
+          return false;
+        }
+
+        const data = await response.json();
+
+        // The backend wraps responses in APIResponse format: { success: true, data: {...} }
+        const responseData = data.success ? data.data : data;
+
+        // Update stored tokens
+        await this.storeToken(STORAGE_KEYS.ACCESS_TOKEN, responseData.access_token);
+        await this.storeToken(STORAGE_KEYS.REFRESH_TOKEN, responseData.refresh_token);
+
+        const expiryTime = Date.now() + (responseData.expires_in * 1000);
+        await this.storeToken(STORAGE_KEYS.TOKEN_EXPIRY, expiryTime.toString());
+
+        return true;
+      } catch (error) {
+        console.error('Token refresh failed:', error);
         await this.logout();
         return false;
+      } finally {
+        // Always clear the refreshing state when done
+        this.isRefreshing = false;
+        this.refreshPromise = null;
       }
+    })();
 
-      const data = await response.json();
-
-      // The backend wraps responses in APIResponse format: { success: true, data: {...} }
-      const responseData = data.success ? data.data : data;
-
-      // Update stored tokens
-      await this.storeToken(STORAGE_KEYS.ACCESS_TOKEN, responseData.access_token);
-      await this.storeToken(STORAGE_KEYS.REFRESH_TOKEN, responseData.refresh_token);
-
-      const expiryTime = Date.now() + (responseData.expires_in * 1000);
-      await this.storeToken(STORAGE_KEYS.TOKEN_EXPIRY, expiryTime.toString());
-
-      return true;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      await this.logout();
-      return false;
-    }
+    return this.refreshPromise;
   }
 
   /**
@@ -388,16 +425,18 @@ export class AuthService {
       }
 
       // Call backend logout if possible
-      const authHeader = await this.getAuthHeader();
-      const headers: Record<string, string> = {};
-      Object.assign(headers, authHeader);
-
-      await fetch(`${CONFIG.API_BASE_URL}/api/v1/auth/logout`, {
-        method: 'DELETE',
-        headers
-      }).catch(() => {
-        // Ignore logout errors
-      });
+      // NOTE: Directly access stored token to avoid circular dependency with isAuthenticated()
+      // which checks isRefreshing flag during token refresh failures
+      if (token) {
+        await fetch(`${CONFIG.API_BASE_URL}/api/v1/auth/logout`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }).catch(() => {
+          // Ignore logout errors
+        });
+      }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
