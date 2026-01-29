@@ -85,11 +85,6 @@ The working auth system uses individual keys in Chrome storage:
 - `session_id` - User session identifier
 - `user_info` - User profile data
 
-### Unused OAuth Routes
-The following backend routes exist but are NOT used by the Chrome extension:
-- `POST /api/v1/auth/google` - Standard OAuth flow (for future web/mobile apps)
-- `POST /api/v1/auth/exchange` - OAuth callback handler
-
 ## Database Schema
 
 ```sql
@@ -130,11 +125,7 @@ USE_POSTGRE_DURING_TEST=true ./test_backend.sh  # Run tests
 
 ### Frontend (Extension)
 ```bash
-cd extension
-npm run dev                     # Watch mode
-npm run build                   # Production build
-npm test                        # Run tests
-npm run lint                    # Lint code
+./test_frontend.sh
 ```
 
 ## Code Standards
@@ -144,3 +135,6 @@ npm run lint                    # Lint code
 - TDD: write tests first
 - >90% code coverage
 - Conventional commit messages
+
+## MCP
+Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.

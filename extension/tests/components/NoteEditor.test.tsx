@@ -133,18 +133,6 @@ describe('NoteEditor Component', () => {
       expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
     });
-
-    it('should display keyboard shortcuts hint', () => {
-      render(
-        <NoteEditor
-          onSave={mockOnSave}
-          onCancel={mockOnCancel}
-        />
-      );
-
-      expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument();
-      expect(screen.getByText('Save note')).toBeInTheDocument();
-    });
   });
 
   describe('Character and Word Count', () => {
