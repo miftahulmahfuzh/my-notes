@@ -721,7 +721,7 @@ node-version: '20.x'  # Match this locally
 5. Check GitHub Actions logs for detailed error messages
 
 **Incremental Progress:**
-- Current: 9 tests in CI (`iconRendering.test.tsx`, `LoginForm.test.tsx`, `NoteEditor.test.tsx`, `config.test.ts`, `contentUtils.test.ts`, `markdown.test.ts`, `auth.test.ts`, `api.test.ts`, `PopupApp.test.tsx`)
+- Current: 10 tests in CI (`iconRendering.test.tsx`, `LoginForm.test.tsx`, `NoteEditor.test.tsx`, `config.test.ts`, `contentUtils.test.ts`, `markdown.test.ts`, `auth.test.ts`, `api.test.ts`, `PopupApp.test.tsx`, `background/index.test.ts`)
 - Next: Add more validated tests incrementally
 - Goal: All validated tests running in CI
 
