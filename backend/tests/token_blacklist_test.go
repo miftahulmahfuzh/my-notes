@@ -1,4 +1,4 @@
-package auth_test
+package tests
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/gpd/my-notes/internal/services"
-	"github.com/gpd/my-notes/tests"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,13 +15,13 @@ import (
 
 // TestValidateToken_Blacklisted tests that blacklisted tokens fail validation
 func TestValidateToken_Blacklisted(t *testing.T) {
-	if !tests.USE_POSTGRE_DURING_TEST {
+	if !USE_POSTGRE_DURING_TEST {
 		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
 	// Setup test database
-	db := tests.SetupTestDB(t)
-	defer tests.CleanupTestDB(t, db)
+	db := SetupTestDB(t)
+	defer CleanupTestDB(t, db)
 
 	// Create token service with blacklist
 	tokenService := auth.NewTokenService(
@@ -66,13 +65,13 @@ func TestValidateToken_Blacklisted(t *testing.T) {
 
 // TestValidateToken_NotBlacklisted tests that non-blacklisted tokens validate successfully
 func TestValidateToken_NotBlacklisted(t *testing.T) {
-	if !tests.USE_POSTGRE_DURING_TEST {
+	if !USE_POSTGRE_DURING_TEST {
 		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
 	// Setup test database
-	db := tests.SetupTestDB(t)
-	defer tests.CleanupTestDB(t, db)
+	db := SetupTestDB(t)
+	defer CleanupTestDB(t, db)
 
 	// Create token service with blacklist
 	tokenService := auth.NewTokenService(
@@ -110,13 +109,13 @@ func TestValidateToken_NotBlacklisted(t *testing.T) {
 
 // TestValidateRefreshToken_Blacklisted tests that blacklisted refresh tokens fail validation
 func TestValidateRefreshToken_Blacklisted(t *testing.T) {
-	if !tests.USE_POSTGRE_DURING_TEST {
+	if !USE_POSTGRE_DURING_TEST {
 		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
 	// Setup test database
-	db := tests.SetupTestDB(t)
-	defer tests.CleanupTestDB(t, db)
+	db := SetupTestDB(t)
+	defer CleanupTestDB(t, db)
 
 	// Create token service with blacklist
 	tokenService := auth.NewTokenService(
@@ -160,13 +159,13 @@ func TestValidateRefreshToken_Blacklisted(t *testing.T) {
 
 // TestValidateToken_WithoutBlacklistService tests that tokens validate successfully when no blacklist is configured
 func TestValidateToken_WithoutBlacklistService(t *testing.T) {
-	if !tests.USE_POSTGRE_DURING_TEST {
+	if !USE_POSTGRE_DURING_TEST {
 		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
 	// Setup test database
-	db := tests.SetupTestDB(t)
-	defer tests.CleanupTestDB(t, db)
+	db := SetupTestDB(t)
+	defer CleanupTestDB(t, db)
 
 	// Create token service WITHOUT blacklist
 	tokenService := auth.NewTokenService(
@@ -202,13 +201,13 @@ func TestValidateToken_WithoutBlacklistService(t *testing.T) {
 
 // TestValidateToken_BlacklistError tests that validation continues even if blacklist check fails
 func TestValidateToken_BlacklistError(t *testing.T) {
-	if !tests.USE_POSTGRE_DURING_TEST {
+	if !USE_POSTGRE_DURING_TEST {
 		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
 	// Setup test database
-	db := tests.SetupTestDB(t)
-	defer tests.CleanupTestDB(t, db)
+	db := SetupTestDB(t)
+	defer CleanupTestDB(t, db)
 
 	// Create token service with blacklist
 	tokenService := auth.NewTokenService(

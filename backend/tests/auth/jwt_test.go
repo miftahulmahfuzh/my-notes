@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -56,7 +57,7 @@ func TestTokenValidation(t *testing.T) {
 	require.NoError(t, err)
 
 	// Validate token
-	claims, err := tokenService.ValidateToken(tokenPair.AccessToken)
+	claims, err := tokenService.ValidateToken(context.Background(), tokenPair.AccessToken)
 	assert.NoError(t, err)
 	assert.Equal(t, user.ID.String(), claims.UserID)
 	assert.Equal(t, user.Email, claims.Email)
@@ -81,7 +82,7 @@ func TestTokenExpiration(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Token should be expired
-	_, err = tokenService.ValidateToken(tokenPair.AccessToken)
+	_, err = tokenService.ValidateToken(context.Background(), tokenPair.AccessToken)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "expired")
 }
@@ -95,7 +96,7 @@ func TestTokenRefresh(t *testing.T) {
 	require.NoError(t, err)
 
 	// Validate refresh token
-	_, err = tokenService.ValidateRefreshToken(originalTokens.RefreshToken)
+	_, err = tokenService.ValidateRefreshToken(context.Background(), originalTokens.RefreshToken)
 	assert.NoError(t, err)
 
 	// Generate new token pair
@@ -107,7 +108,7 @@ func TestTokenRefresh(t *testing.T) {
 	assert.NotEqual(t, originalTokens.RefreshToken, newTokens.RefreshToken)
 
 	// New tokens should be valid
-	claims, err := tokenService.ValidateToken(newTokens.AccessToken)
+	claims, err := tokenService.ValidateToken(context.Background(), newTokens.AccessToken)
 	assert.NoError(t, err)
 	assert.Equal(t, user.ID.String(), claims.UserID)
 }
@@ -116,12 +117,12 @@ func TestInvalidToken(t *testing.T) {
 	tokenService := setupTokenService(t)
 
 	// Test with completely invalid token
-	_, err := tokenService.ValidateToken("invalid.token.here")
+	_, err := tokenService.ValidateToken(context.Background(), "invalid.token.here")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to parse token")
 
 	// Test with malformed token
-	_, err = tokenService.ValidateToken("only.one.part")
+	_, err = tokenService.ValidateToken(context.Background(), "only.one.part")
 	assert.Error(t, err)
 }
 
@@ -150,7 +151,7 @@ func TestTokenWithWrongSecret(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to validate with second service (should fail)
-	_, err = tokenService2.ValidateToken(tokenPair.AccessToken)
+	_, err = tokenService2.ValidateToken(context.Background(), tokenPair.AccessToken)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "signature is invalid")
 }
@@ -172,7 +173,7 @@ func TestTokenWithInvalidIssuer(t *testing.T) {
 	)
 
 	// Should fail due to invalid issuer
-	_, err = differentService.ValidateToken(tokenPair.AccessToken)
+	_, err = differentService.ValidateToken(context.Background(), tokenPair.AccessToken)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid token issuer")
 }
@@ -194,7 +195,7 @@ func TestTokenWithInvalidAudience(t *testing.T) {
 	)
 
 	// Should fail due to invalid audience
-	_, err = differentService.ValidateToken(tokenPair.AccessToken)
+	_, err = differentService.ValidateToken(context.Background(), tokenPair.AccessToken)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid token audience")
 }

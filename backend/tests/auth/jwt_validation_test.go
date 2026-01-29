@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -65,7 +66,7 @@ func TestTokenValidationEdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tokenService.ValidateToken(tt.token)
+			_, err := tokenService.ValidateToken(context.Background(), tt.token)
 			if tt.expectError {
 				assert.Error(t, err)
 				if tt.errorMsg != "" {
@@ -85,7 +86,7 @@ func TestTokenClaimsValidation(t *testing.T) {
 	tokenPair, err := tokenService.GenerateTokenPair(user)
 	require.NoError(t, err)
 
-	claims, err := tokenService.ValidateToken(tokenPair.AccessToken)
+	claims, err := tokenService.ValidateToken(context.Background(), tokenPair.AccessToken)
 	require.NoError(t, err)
 
 	// Verify all required claims are present
@@ -116,7 +117,7 @@ func TestTokenTimestamps(t *testing.T) {
 	require.NoError(t, err)
 	afterCreation := time.Now()
 
-	claims, err := tokenService.ValidateToken(tokenPair.AccessToken)
+	claims, err := tokenService.ValidateToken(context.Background(), tokenPair.AccessToken)
 	require.NoError(t, err)
 
 	// Verify issued at time is within reasonable range
@@ -146,13 +147,13 @@ func TestTokenWithDifferentUsers(t *testing.T) {
 	require.NoError(t, err)
 
 	// Validate token1
-	claims1, err := tokenService.ValidateToken(token1.AccessToken)
+	claims1, err := tokenService.ValidateToken(context.Background(), token1.AccessToken)
 	require.NoError(t, err)
 	assert.Equal(t, user1.ID.String(), claims1.UserID)
 	assert.Equal(t, user1.Email, claims1.Email)
 
 	// Validate token2
-	claims2, err := tokenService.ValidateToken(token2.AccessToken)
+	claims2, err := tokenService.ValidateToken(context.Background(), token2.AccessToken)
 	require.NoError(t, err)
 	assert.Equal(t, user2.ID.String(), claims2.UserID)
 	assert.Equal(t, user2.Email, claims2.Email)
@@ -179,7 +180,7 @@ func TestTokenUniqueness(t *testing.T) {
 		tokens[tokenPair.AccessToken] = true
 
 		// Validate the token
-		claims, err := tokenService.ValidateToken(tokenPair.AccessToken)
+		claims, err := tokenService.ValidateToken(context.Background(), tokenPair.AccessToken)
 		assert.NoError(t, err)
 		assert.Equal(t, user.ID.String(), claims.UserID)
 	}
@@ -208,7 +209,7 @@ func TestTokenWithShortExpiry(t *testing.T) {
 	}
 
 	// Check if token is already expired (this is expected with very short expiry)
-	_, err = shortService.ValidateToken(tokenPair.AccessToken)
+	_, err = shortService.ValidateToken(context.Background(), tokenPair.AccessToken)
 	if err != nil && (err.Error() == "failed to parse token: token has invalid claims: token is expired" ||
 		err.Error() == "failed to parse token: token is expired") {
 		// This is actually the expected behavior - token expires immediately
@@ -218,7 +219,7 @@ func TestTokenWithShortExpiry(t *testing.T) {
 
 	// If token is somehow still valid, wait for it to expire
 	time.Sleep(5 * time.Millisecond)
-	_, err = shortService.ValidateToken(tokenPair.AccessToken)
+	_, err = shortService.ValidateToken(context.Background(), tokenPair.AccessToken)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "expired")
 }
@@ -231,12 +232,12 @@ func TestTokenRefreshValidation(t *testing.T) {
 	require.NoError(t, err)
 
 	// Refresh token should be valid as regular token too
-	claims, err := tokenService.ValidateToken(tokenPair.RefreshToken)
+	claims, err := tokenService.ValidateToken(context.Background(), tokenPair.RefreshToken)
 	assert.NoError(t, err)
 	assert.Equal(t, user.ID.String(), claims.UserID)
 
 	// Refresh token should also be valid via refresh-specific method
-	refreshClaims, err := tokenService.ValidateRefreshToken(tokenPair.RefreshToken)
+	refreshClaims, err := tokenService.ValidateRefreshToken(context.Background(), tokenPair.RefreshToken)
 	assert.NoError(t, err)
 	assert.Equal(t, user.ID.String(), refreshClaims.UserID)
 }
@@ -253,7 +254,7 @@ func TestTokenIDUniqueness(t *testing.T) {
 		require.NoError(t, err)
 
 		// Get claims from access token
-		claims, err := tokenService.ValidateToken(tokenPair.AccessToken)
+		claims, err := tokenService.ValidateToken(context.Background(), tokenPair.AccessToken)
 		require.NoError(t, err)
 
 		// Token ID should be unique
