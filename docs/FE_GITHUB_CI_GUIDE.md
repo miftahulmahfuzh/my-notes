@@ -431,11 +431,7 @@ npx jest tests/utils/config.test.ts
 npx jest --config=extension/jest.config.js tests/utils/config.test.ts
 ```
 
-**Alternative:** Change to extension directory first:
-```bash
-cd extension
-npx jest tests/utils/config.test.ts
-```
+**Important:** Running from within `extension/` directory can also fail with Babel parsing errors because ts-jest transform may not load correctly. Always use `--config` from project root to verify tests before adding to CI.
 
 **Prevention:** Create an alias or script in your shell for running tests:
 ```bash
@@ -725,7 +721,7 @@ node-version: '20.x'  # Match this locally
 5. Check GitHub Actions logs for detailed error messages
 
 **Incremental Progress:**
-- Current: 4 tests in CI (`iconRendering.test.tsx`, `LoginForm.test.tsx`, `NoteEditor.test.tsx`, `config.test.ts`)
+- Current: 7 tests in CI (`iconRendering.test.tsx`, `LoginForm.test.tsx`, `NoteEditor.test.tsx`, `config.test.ts`, `contentUtils.test.ts`, `markdown.test.ts`, `auth.test.ts`)
 - Next: Add more validated tests incrementally
 - Goal: All validated tests running in CI
 
