@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -238,12 +239,13 @@ func TestTokenRefreshFlow(t *testing.T) {
 	newRefreshToken := response.Data.RefreshToken
 
 	// Validate new access token
-	claims, err := tokenService.ValidateToken(newAccessToken)
+	ctx := context.Background()
+	claims, err := tokenService.ValidateToken(ctx, newAccessToken)
 	assert.NoError(t, err)
 	assert.Equal(t, user.ID.String(), claims.UserID)
 
 	// Validate new refresh token
-	refreshClaims, err := tokenService.ValidateRefreshToken(newRefreshToken)
+	refreshClaims, err := tokenService.ValidateRefreshToken(ctx, newRefreshToken)
 	assert.NoError(t, err)
 	assert.Equal(t, user.ID.String(), refreshClaims.UserID)
 

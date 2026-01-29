@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -39,6 +41,32 @@ func (suite *LogoutTestSuite) SetupSuite() {
 		suite.T().Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
+	// Load configuration to ensure .env file is loaded
+	_, err := config.LoadConfig("")
+	if err != nil {
+		suite.T().Logf("Warning: Failed to load config: %v", err)
+	}
+
+	// Create test database configuration
+	dbConfig := config.DatabaseConfig{
+		Host:     getEnv("TEST_DB_HOST", getEnv("DB_HOST", "localhost")),
+		Port:     getEnvInt("TEST_DB_PORT", getEnvInt("DB_PORT", 5432)),
+		User:     getEnv("TEST_DB_USER", getEnv("DB_USER", "postgres")),
+		Password: getEnv("TEST_DB_PASSWORD", getEnv("DB_PASSWORD", "postgres123")),
+		Name:     getEnv("TEST_DB_NAME", getEnv("DB_NAME", "notes_test")),
+		SSLMode:  "disable",
+	}
+
+	// Create test database
+	db, err := database.CreateTestDatabase(dbConfig)
+	require.NoError(suite.T(), err, "Failed to create test database")
+	suite.db = db
+
+	// Run migrations
+	migrator := database.NewMigrator(db, "../../migrations")
+	err = migrator.Up()
+	require.NoError(suite.T(), err, "Failed to run test migrations")
+
 	// Load test configuration
 	testConfig := &config.Config{
 		App: config.AppConfig{
@@ -53,30 +81,13 @@ func (suite *LogoutTestSuite) SetupSuite() {
 			WriteTimeout: 30,
 			IdleTimeout:  120,
 		},
-		Database: config.DatabaseConfig{
-			Host:     "localhost",
-			Port:     5432,
-			Name:     "my_notes_test",
-			User:     "test_user",
-			Password: "test_password",
-			SSLMode:  "disable",
-		},
+		Database: dbConfig,
 		Auth: config.AuthConfig{
 			JWTSecret:      "test-secret-key-for-jwt-token-generation",
 			TokenExpiry:    1,  // 1 hour
 			RefreshExpiry:  24, // 24 hours
 		},
 	}
-
-	// Initialize test database
-	db, err := database.NewConnection(testConfig.Database)
-	require.NoError(suite.T(), err, "Failed to connect to test database")
-	suite.db = db
-
-	// Run test migrations
-	migrator := database.NewMigrator(db, "../../migrations")
-	err = migrator.Up()
-	require.NoError(suite.T(), err, "Failed to run test migrations")
 
 	suite.testConfig = testConfig
 
@@ -90,11 +101,11 @@ func (suite *LogoutTestSuite) SetupSuite() {
 	)
 
 	// Initialize blacklist service
-	suite.blacklistSvc = services.NewBlacklistService(db)
+	suite.blacklistSvc = services.NewBlacklistService(suite.db)
 	suite.tokenService.SetBlacklist(suite.blacklistSvc)
 
 	// Initialize handlers
-	userService := services.NewUserService(db)
+	userService := services.NewUserService(suite.db)
 	authHandler := handlers.NewAuthHandler(suite.tokenService, userService)
 	authHandler.SetBlacklist(suite.blacklistSvc)
 
@@ -102,16 +113,13 @@ func (suite *LogoutTestSuite) SetupSuite() {
 	h.SetAuthHandlers(authHandler, nil)
 
 	// Create server
-	suite.server = server.NewServer(testConfig, h, db)
+	suite.server = server.NewServer(testConfig, h, suite.db)
 }
 
 // TearDownSuite runs once after all tests
 func (suite *LogoutTestSuite) TearDownSuite() {
 	if suite.db != nil {
-		// Clean up database tables
-		suite.db.Exec("DROP SCHEMA public CASCADE")
-		suite.db.Exec("CREATE SCHEMA public")
-		suite.db.Close()
+		database.DropTestDatabase(suite.db)
 	}
 }
 
@@ -152,6 +160,21 @@ func (suite *LogoutTestSuite) createTestUser() (*models.User, *auth.TokenPair, e
 		return nil, nil, err
 	}
 
+	// Parse the token to get the session ID
+	ctx := context.Background()
+	claims, err := suite.tokenService.ValidateToken(ctx, tokenPair.AccessToken)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Create a session in the database for the token
+	sessionQuery := `INSERT INTO user_sessions (id, user_id, ip_address, user_agent, created_at, last_seen, is_active)
+		VALUES ($1, $2, $3, $4, NOW(), NOW(), true)`
+	_, err = suite.db.Exec(sessionQuery, claims.SessionID, user.ID, "192.0.2.1", "test-client/1.0")
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return &user, tokenPair, nil
 }
 
@@ -163,6 +186,7 @@ func (suite *LogoutTestSuite) TestLogout_Success() {
 	// Make logout request
 	req := httptest.NewRequest("DELETE", "/api/v1/auth/logout", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenPair.AccessToken)
+	req.Header.Set("User-Agent", "test-client/1.0")
 	w := httptest.NewRecorder()
 
 	suite.server.GetRouter().ServeHTTP(w, req)
@@ -202,6 +226,7 @@ func (suite *LogoutTestSuite) TestLogout_BlacklistedTokenRejected() {
 	// Try to use the blacklisted token
 	req := httptest.NewRequest("GET", "/api/v1/notes", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenPair.AccessToken)
+	req.Header.Set("User-Agent", "test-client/1.0")
 	w := httptest.NewRecorder()
 
 	suite.server.GetRouter().ServeHTTP(w, req)
@@ -215,6 +240,7 @@ func (suite *LogoutTestSuite) TestLogout_InvalidClaims() {
 	// Make logout request with no user context (token not parsed)
 	req := httptest.NewRequest("DELETE", "/api/v1/auth/logout", nil)
 	req.Header.Set("Authorization", "Bearer invalid-token")
+	req.Header.Set("User-Agent", "test-client/1.0")
 	w := httptest.NewRecorder()
 
 	suite.server.GetRouter().ServeHTTP(w, req)
@@ -228,6 +254,7 @@ func (suite *LogoutTestSuite) TestLogout_InvalidToken() {
 	// Make logout request with invalid token
 	req := httptest.NewRequest("DELETE", "/api/v1/auth/logout", nil)
 	req.Header.Set("Authorization", "Bearer complete-nonsense-token")
+	req.Header.Set("User-Agent", "test-client/1.0")
 	w := httptest.NewRecorder()
 
 	suite.server.GetRouter().ServeHTTP(w, req)
@@ -240,6 +267,7 @@ func (suite *LogoutTestSuite) TestLogout_InvalidToken() {
 func (suite *LogoutTestSuite) TestLogout_MissingToken() {
 	// Make logout request without token
 	req := httptest.NewRequest("DELETE", "/api/v1/auth/logout", nil)
+	req.Header.Set("User-Agent", "test-client/1.0")
 	w := httptest.NewRecorder()
 
 	suite.server.GetRouter().ServeHTTP(w, req)
@@ -251,4 +279,21 @@ func (suite *LogoutTestSuite) TestLogout_MissingToken() {
 // Run the test suite
 func TestLogoutSuite(t *testing.T) {
 	suite.Run(t, new(LogoutTestSuite))
+}
+
+// Helper functions for environment variables
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
+	}
+	return defaultValue
 }

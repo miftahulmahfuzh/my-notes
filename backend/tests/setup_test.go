@@ -33,6 +33,8 @@ type TestConfig struct {
 }
 
 // GetTestConfig returns test configuration
+
+// GetTestConfig returns test configuration
 func GetTestConfig() *TestConfig {
 	// Load configuration to ensure .env file is loaded
 	_, err := config.LoadConfig("")
