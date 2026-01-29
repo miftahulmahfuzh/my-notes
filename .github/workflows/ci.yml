@@ -51,3 +51,4 @@ jobs:
         npx jest tests/utils/markdown.test.ts
         npx jest tests/auth.test.ts
         npx jest tests/api.test.ts
+        npx jest tests/popup/PopupApp.test.tsx
