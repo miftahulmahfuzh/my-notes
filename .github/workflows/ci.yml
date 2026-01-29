@@ -56,3 +56,4 @@ jobs:
         npx jest tests/components/NoteView.test.tsx
         npx jest tests/components/Options.test.tsx
         npx jest tests/components/SimpleUserProfile.test.tsx
+        npx jest tests/components/Settings.test.tsx

@@ -721,8 +721,8 @@ node-version: '20.x'  # Match this locally
 5. Check GitHub Actions logs for detailed error messages
 
 **Incremental Progress:**
-- Current: 13 tests in CI (`iconRendering.test.tsx`, `LoginForm.test.tsx`, `NoteEditor.test.tsx`, `config.test.ts`, `contentUtils.test.ts`, `markdown.test.ts`, `auth.test.ts`, `api.test.ts`, `PopupApp.test.tsx`, `background/index.test.ts`, `NoteView.test.tsx`, `Options.test.tsx`, `SimpleUserProfile.test.tsx`)
-- Next: Add more validated tests incrementally
-- Goal: All validated tests running in CI
+- Current: 14 tests in CI (`iconRendering.test.tsx`, `LoginForm.test.tsx`, `NoteEditor.test.tsx`, `config.test.ts`, `contentUtils.test.ts`, `markdown.test.ts`, `auth.test.ts`, `api.test.ts`, `PopupApp.test.tsx`, `background/index.test.ts`, `NoteView.test.tsx`, `Options.test.tsx`, `SimpleUserProfile.test.tsx`, `Settings.test.tsx`)
+- Next: All validated tests now in CI
+- Goal: Achieved ✓
 
 **Remember:** CI is the source of truth. If tests pass locally but fail in CI, there's an environment difference that needs to be addressed.
