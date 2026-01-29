@@ -1,6 +1,7 @@
 # Frontend GitHub CI/CD Guide
 
 **Last Updated:** 2026-01-29
+
 **Related Files:**
 - `.github/workflows/ci.yml` - GitHub Actions workflow configuration
 - `extension/jest.config.js` - Jest test configuration
