@@ -70,6 +70,13 @@ func (s *Server) initializeServices() {
 		"silence-notes-users",
 	)
 
+	// Initialize blacklist service for token revocation
+	blacklistSvc := services.NewBlacklistService(s.db)
+	s.tokenService.SetBlacklist(blacklistSvc)
+
+	// Start blacklist cleanup goroutine
+	go blacklistCleanupLoop(blacklistSvc, 1*time.Hour)
+
 	// Initialize security configuration
 	var securityConfig *config.SecurityConfig
 	switch s.config.App.Environment {
@@ -136,6 +143,7 @@ func (s *Server) initializeServices() {
 		s.tokenService,
 		s.userService,
 	)
+	authHandler.SetBlacklist(blacklistSvc)
 
 	// Initialize Chrome extension auth handler
 	chromeAuthHandler := handlers.NewChromeAuthHandler(
@@ -365,4 +373,21 @@ func (s *Server) ResetRateLimiters() {
 
 	// Clear any remaining global rate limiters
 	middleware.ClearUserRateLimiters()
+}
+
+// blacklistCleanupLoop runs periodic cleanup of expired blacklist entries
+func blacklistCleanupLoop(svc *services.BlacklistService, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		rows, err := svc.CleanupExpiredTokens(ctx)
+		if err != nil {
+			log.Printf("ERROR: failed to cleanup expired tokens: %v", err)
+		} else if rows > 0 {
+			log.Printf("Cleaned up %d expired blacklist entries", rows)
+		}
+		cancel()
+	}
 }

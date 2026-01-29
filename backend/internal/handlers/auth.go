@@ -1,19 +1,28 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/gpd/my-notes/internal/services"
 )
 
+// BlacklistAdder adds tokens to the blacklist
+type BlacklistAdder interface {
+	AddToken(ctx context.Context, tokenID, userID, sessionID string, expiresAt time.Time, reason string) error
+}
+
 // AuthHandler handles authentication-related HTTP requests
 type AuthHandler struct {
 	tokenService *auth.TokenService
 	userService  services.UserServiceInterface
+	blacklist    BlacklistAdder // optional blacklist adder
 }
 
 // NewAuthHandler creates a new AuthHandler instance
@@ -25,6 +34,11 @@ func NewAuthHandler(
 		tokenService: tokenService,
 		userService:  userService,
 	}
+}
+
+// SetBlacklist sets the blacklist adder
+func (h *AuthHandler) SetBlacklist(blacklist BlacklistAdder) {
+	h.blacklist = blacklist
 }
 
 // RefreshToken handles POST /api/v1/auth/refresh
@@ -42,7 +56,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate refresh token
-	claims, err := h.tokenService.ValidateRefreshToken(req.RefreshToken)
+	claims, err := h.tokenService.ValidateRefreshToken(r.Context(), req.RefreshToken)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Invalid refresh token")
 		return
@@ -79,12 +93,23 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// In a real implementation, you would invalidate the refresh token
-	// For now, we'll just return success
-	// TODO: Implement token blacklist or invalidation
+	// Get claims from context (set by auth middleware)
+	claims, ok := r.Context().Value("claims").(*auth.Claims)
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized, "Invalid token claims")
+		return
+	}
 
-	// Log the logout event (user is available for logging/auditing)
-	_ = user // Suppress unused variable warning until we implement proper logging
+	// Add the current token to the blacklist
+	if h.blacklist != nil {
+		expiresAt := claims.ExpiresAt.Time
+		err := h.blacklist.AddToken(r.Context(), claims.ID, user.ID.String(), claims.SessionID, expiresAt, "logout")
+		if err != nil {
+			// Log error but don't fail - user is still logged out from client perspective
+			// The token will expire naturally
+			log.Printf("WARNING: failed to blacklist token during logout: %v", err)
+		}
+	}
 
 	respondWithJSON(w, http.StatusOK, map[string]string{
 		"message": "Successfully logged out",
@@ -93,6 +118,9 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 // ValidateToken handles GET /api/v1/auth/validate
 func (h *AuthHandler) ValidateToken(w http.ResponseWriter, r *http.Request) {
+	// This endpoint is protected by auth middleware, so if we reach here,
+	// the token is valid. Just return the user info and claims.
+
 	// Get user from context (set by auth middleware)
 	user, ok := r.Context().Value("user").(*models.User)
 	if !ok {

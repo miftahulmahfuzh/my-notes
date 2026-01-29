@@ -46,7 +46,7 @@ func (m *AuthMiddleware) Auth(next http.Handler) http.Handler {
 		tokenString := tokenParts[1]
 
 		// Validate token
-		claims, err := m.tokenService.ValidateToken(tokenString)
+		claims, err := m.tokenService.ValidateToken(r.Context(), tokenString)
 		if err != nil {
 			respondWithError(w, http.StatusUnauthorized, "Invalid token")
 			return
@@ -107,7 +107,7 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 		tokenString := tokenParts[1]
 
 		// Validate token
-		claims, err := m.tokenService.ValidateToken(tokenString)
+		claims, err := m.tokenService.ValidateToken(r.Context(), tokenString)
 		if err != nil {
 			// Invalid token, continue without authentication
 			next.ServeHTTP(w, r)

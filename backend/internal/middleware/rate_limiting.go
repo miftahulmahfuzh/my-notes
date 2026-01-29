@@ -168,7 +168,7 @@ func (rlm *RateLimitingMiddleware) getUserIDFromRequest(r *http.Request) string 
 	if authHeader != "" {
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
-			claims, err := rlm.tokenService.ValidateToken(tokenParts[1])
+			claims, err := rlm.tokenService.ValidateToken(r.Context(), tokenParts[1])
 			if err == nil {
 				return claims.UserID
 			}

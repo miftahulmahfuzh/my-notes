@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -27,6 +28,11 @@ type TokenPair struct {
 	ExpiresIn    int    `json:"expires_in"`
 }
 
+// BlacklistChecker checks if a token has been revoked
+type BlacklistChecker interface {
+	IsTokenBlacklisted(ctx context.Context, tokenID string) (bool, error)
+}
+
 // TokenService handles JWT token generation, validation, and refresh
 type TokenService struct {
 	secretKey     []byte
@@ -34,6 +40,7 @@ type TokenService struct {
 	refreshExpiry time.Duration
 	issuer        string
 	audience      string
+	blacklist     BlacklistChecker // optional blacklist checker
 }
 
 // NewTokenService creates a new TokenService instance
@@ -45,6 +52,11 @@ func NewTokenService(secretKey string, accessExpiry, refreshExpiry time.Duration
 		issuer:        issuer,
 		audience:      audience,
 	}
+}
+
+// SetBlacklist sets the blacklist checker
+func (s *TokenService) SetBlacklist(blacklist BlacklistChecker) {
+	s.blacklist = blacklist
 }
 
 // GenerateTokenPair generates a new access token and refresh token pair
@@ -165,7 +177,7 @@ func (s *TokenService) GenerateTokenPairWithSession(user *models.User, sessionID
 }
 
 // ValidateToken validates a JWT token and returns the claims
-func (s *TokenService) ValidateToken(tokenString string) (*Claims, error) {
+func (s *TokenService) ValidateToken(ctx context.Context, tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -191,12 +203,19 @@ func (s *TokenService) ValidateToken(tokenString string) (*Claims, error) {
 		return nil, fmt.Errorf("invalid token audience")
 	}
 
+	// Check if token is blacklisted
+	if s.blacklist != nil {
+		if blacklisted, err := s.blacklist.IsTokenBlacklisted(ctx, claims.ID); err == nil && blacklisted {
+			return nil, fmt.Errorf("token has been revoked")
+		}
+	}
+
 	return claims, nil
 }
 
 // ValidateRefreshToken specifically validates a refresh token
-func (s *TokenService) ValidateRefreshToken(tokenString string) (*Claims, error) {
-	claims, err := s.ValidateToken(tokenString)
+func (s *TokenService) ValidateRefreshToken(ctx context.Context, tokenString string) (*Claims, error) {
+	claims, err := s.ValidateToken(ctx, tokenString)
 	if err != nil {
 		return nil, fmt.Errorf("invalid refresh token: %w", err)
 	}

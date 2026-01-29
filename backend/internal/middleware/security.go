@@ -277,7 +277,7 @@ func (sm *SecurityMiddleware) EnhancedAuth(next http.Handler) http.Handler {
 		tokenString := tokenParts[1]
 
 		// Validate token
-		claims, err := sm.tokenService.ValidateToken(tokenString)
+		claims, err := sm.tokenService.ValidateToken(r.Context(), tokenString)
 		if err != nil {
 			// Check if this is a test environment and a mock token
 			if sm.securityConfig != nil && (tokenString == "valid-mock-token" || tokenString == "mock-access-token") {
