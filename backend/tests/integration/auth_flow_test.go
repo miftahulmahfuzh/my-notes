@@ -36,7 +36,21 @@ func (suite *AuthFlowTestSuite) SetupSuite() {
 		suite.T().Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
-	// Load test configuration
+	// Load configuration to get database settings
+	cfg, err := config.LoadConfig("")
+	require.NoError(suite.T(), err, "Failed to load config")
+
+	// Create test database
+	db, err := database.CreateTestDatabase(cfg.Database)
+	require.NoError(suite.T(), err, "Failed to create test database")
+	suite.db = db
+
+	// Run migrations
+	migrator := database.NewMigrator(db, "../../migrations")
+	err = migrator.Up()
+	require.NoError(suite.T(), err, "Failed to run migrations")
+
+	// Create test configuration
 	testConfig := &config.Config{
 		App: config.AppConfig{
 			Environment: "test",
@@ -50,30 +64,13 @@ func (suite *AuthFlowTestSuite) SetupSuite() {
 			WriteTimeout: 30,
 			IdleTimeout:  60,
 		},
-		Database: config.DatabaseConfig{
-			Host:     "localhost",
-			Port:     5432,
-			Name:     "my_notes_test",
-			User:     "test_user",
-			Password: "test_password",
-			SSLMode:  "disable",
-		},
+		Database: cfg.Database,
 		Auth: config.AuthConfig{
 			JWTSecret:     "test-secret-key-for-testing",
 			TokenExpiry:   1,   // 1 hour for testing
 			RefreshExpiry: 24,  // 1 day for testing
 		},
 	}
-
-	// Initialize test database
-	db, err := database.NewConnection(testConfig.Database)
-	require.NoError(suite.T(), err, "Failed to connect to test database")
-	suite.db = db
-
-	// Run test migrations
-	migrator := database.NewMigrator(db, "../../migrations")
-	err = migrator.Up()
-	require.NoError(suite.T(), err, "Failed to run test migrations")
 
 	// Initialize handlers
 	handlers := handlers.NewHandlers()
@@ -86,7 +83,7 @@ func (suite *AuthFlowTestSuite) SetupSuite() {
 // TearDownSuite runs once after all tests
 func (suite *AuthFlowTestSuite) TearDownSuite() {
 	if suite.db != nil {
-		suite.db.Close()
+		database.DropTestDatabase(suite.db)
 	}
 }
 
