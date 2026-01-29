@@ -13,7 +13,7 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import NoteEditor from '../../src/components/NoteEditor';
@@ -347,12 +347,14 @@ describe('NoteEditor Component', () => {
       const contentTextarea = screen.getByPlaceholderText('Start typing your note...') as HTMLTextAreaElement;
 
       // Directly set value and dispatch event to avoid character-by-character typing
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value'
-      )?.set;
-      nativeInputValueSetter?.call(contentTextarea, 'First line of content\nSecond line');
-      contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      await act(async () => {
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          'value'
+        )?.set;
+        nativeInputValueSetter?.call(contentTextarea, 'First line of content\nSecond line');
+        contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      });
 
       const titleInput = screen.getByPlaceholderText('Note title (optional)');
       await waitFor(() => {
@@ -373,12 +375,14 @@ describe('NoteEditor Component', () => {
       const contentTextarea = screen.getByPlaceholderText('Start typing your note...') as HTMLTextAreaElement;
 
       // Directly set value and dispatch event
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value'
-      )?.set;
-      nativeInputValueSetter?.call(contentTextarea, longLine);
-      contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      await act(async () => {
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          'value'
+        )?.set;
+        nativeInputValueSetter?.call(contentTextarea, longLine);
+        contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      });
 
       const titleInput = screen.getByPlaceholderText('Note title (optional)');
       await waitFor(() => {
@@ -484,8 +488,10 @@ describe('NoteEditor Component', () => {
       const longContent = 'a'.repeat(10001);
 
       // Simulate typing a long string by using change event
-      contentTextarea.value = longContent.substring(0, 10000);
-      contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      await act(async () => {
+        contentTextarea.value = longContent.substring(0, 10000);
+        contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      });
 
       // Content should be truncated to 10000 characters
       expect(contentTextarea).toHaveValue('a'.repeat(10000));
@@ -524,12 +530,14 @@ describe('NoteEditor Component', () => {
       const contentTextarea = screen.getByPlaceholderText('Start typing your note...') as HTMLTextAreaElement;
 
       // Directly set value to whitespace only
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value'
-      )?.set;
-      nativeInputValueSetter?.call(contentTextarea, '   \n  \t  ');
-      contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      await act(async () => {
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          'value'
+        )?.set;
+        nativeInputValueSetter?.call(contentTextarea, '   \n  \t  ');
+        contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      });
 
       const saveButton = screen.getByRole('button', { name: 'Save' });
 
@@ -606,12 +614,14 @@ describe('NoteEditor Component', () => {
       const contentTextarea = screen.getByPlaceholderText('Start typing your note...') as HTMLTextAreaElement;
 
       // Directly set value
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value'
-      )?.set;
-      nativeInputValueSetter?.call(contentTextarea, 'Test content');
-      contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      await act(async () => {
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          'value'
+        )?.set;
+        nativeInputValueSetter?.call(contentTextarea, 'Test content');
+        contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      });
 
       // Wait for auto-title to be set
       await waitFor(() => {
@@ -649,21 +659,25 @@ describe('NoteEditor Component', () => {
       const contentTextarea = screen.getByPlaceholderText('Start typing your note...') as HTMLTextAreaElement;
 
       // Directly set value
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value'
-      )?.set;
-      nativeInputValueSetter?.call(contentTextarea, 'Test content');
-      contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      await act(async () => {
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          'value'
+        )?.set;
+        nativeInputValueSetter?.call(contentTextarea, 'Test content');
+        contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      });
 
       // Simulate Cmd+S (Meta key)
-      const saveEvent = new KeyboardEvent('keydown', {
-        key: 's',
-        metaKey: true,
-        ctrlKey: false,
-        bubbles: true,
+      await act(async () => {
+        const saveEvent = new KeyboardEvent('keydown', {
+          key: 's',
+          metaKey: true,
+          ctrlKey: false,
+          bubbles: true,
+        });
+        contentTextarea.dispatchEvent(saveEvent);
       });
-      contentTextarea.dispatchEvent(saveEvent);
 
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
@@ -791,20 +805,24 @@ describe('NoteEditor Component', () => {
       const contentTextarea = screen.getByPlaceholderText('Start typing your note...') as HTMLTextAreaElement;
 
       // Set title
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype,
-        'value'
-      )?.set;
-      nativeInputValueSetter?.call(titleInput, 'Test Title');
-      titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+      await act(async () => {
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLInputElement.prototype,
+          'value'
+        )?.set;
+        nativeInputValueSetter?.call(titleInput, 'Test Title');
+        titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+      });
 
       // Set content
-      const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value'
-      )?.set;
-      nativeTextAreaValueSetter?.call(contentTextarea, 'Test content');
-      contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      await act(async () => {
+        const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          'value'
+        )?.set;
+        nativeTextAreaValueSetter?.call(contentTextarea, 'Test content');
+        contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      });
 
       const saveButton = screen.getByRole('button', { name: 'Save' });
       await user.click(saveButton);
@@ -829,12 +847,14 @@ describe('NoteEditor Component', () => {
       const contentTextarea = screen.getByPlaceholderText('Start typing your note...') as HTMLTextAreaElement;
 
       // Directly set value
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value'
-      )?.set;
-      nativeInputValueSetter?.call(contentTextarea, 'Test content');
-      contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      await act(async () => {
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLTextAreaElement.prototype,
+          'value'
+        )?.set;
+        nativeInputValueSetter?.call(contentTextarea, 'Test content');
+        contentTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      });
 
       // Wait for auto-title generation
       await waitFor(() => {
