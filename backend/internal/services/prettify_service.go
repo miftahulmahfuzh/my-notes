@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -47,21 +48,29 @@ type prettifyLLMResponse struct {
 
 // PrettifyNote prettifies a note using LLM
 func (s *PrettifyService) PrettifyNote(ctx context.Context, userID, noteID string) (*models.PrettifyNoteResponse, error) {
+	startTime := time.Now()
+	log.Printf("[PrettifyService] Starting PrettifyNote for note: %s, user: %s", noteID, userID)
+
 	// 1. Get the note
 	note, err := s.noteService.GetNoteByID(userID, noteID)
 	if err != nil {
+		log.Printf("[PrettifyService] ERROR: Failed to get note: %v", err)
 		return nil, fmt.Errorf("failed to get note: %w", err)
 	}
+	log.Printf("[PrettifyService] Retrieved note: title='%v', content_length=%d", note.Title, len(note.Content))
 
 	// 2. Validate minimum word count (excluding hashtags)
 	contentWithoutTags := s.removeHashtags(note.Content)
 	wordCount := s.countWords(contentWithoutTags)
+	log.Printf("[PrettifyService] Word count (excluding hashtags): %d", wordCount)
 	if wordCount < 5 {
+		log.Printf("[PrettifyService] ERROR: Note too short (%d words, minimum 5)", wordCount)
 		return nil, fmt.Errorf("note content too short (minimum 5 words excluding hashtags, got %d)", wordCount)
 	}
 
 	// 3. Check if already prettified and not manually edited
 	if note.AIImproved && note.PrettifiedAt != nil {
+		log.Printf("[PrettifyService] Note already prettified at %v, allowing re-prettification", note.PrettifiedAt)
 		// Check if the content has changed since prettification
 		// For now, we'll allow re-prettification but the UI should handle the restriction
 	}
@@ -70,18 +79,30 @@ func (s *PrettifyService) PrettifyNote(ctx context.Context, userID, noteID strin
 	tagList, err := s.tagService.GetAllTags(userID, 100, 0)
 	if err != nil {
 		// Log but don't fail - tag context is optional
-		fmt.Printf("Warning: failed to get user tags: %v\n", err)
+		log.Printf("[PrettifyService] WARNING: Failed to get user tags: %v", err)
 		tagList = &models.TagList{Tags: []models.TagResponse{}}
 	}
+	log.Printf("[PrettifyService] User has %d existing tags for context", len(tagList.Tags))
 
 	// 5. Build the LLM prompt with user tags
 	prompt := s.buildPrettifyPrompt(note, tagList.Tags)
+	log.Printf("[PrettifyService] Built LLM prompt (length: %d chars)", len(prompt))
 
 	// 6. Call LLM
+	log.Printf("[PrettifyService] Calling LLM...")
+	llmStart := time.Now()
 	response, err := s.llm.GenerateFromSinglePrompt(ctx, prompt)
+	llmDuration := time.Since(llmStart)
+	log.Printf("[PrettifyService] LLM call duration: %v", llmDuration)
+
 	if err != nil {
+		log.Printf("[PrettifyService] ERROR: LLM prettification failed")
+		log.Printf("[PrettifyService]   Error: %v", err)
+		log.Printf("[PrettifyService]   Error type: %T", err)
+		log.Printf("[PrettifyService]   Context error: %v", ctx.Err())
 		return nil, fmt.Errorf("LLM prettification failed: %w", err)
 	}
+	log.Printf("[PrettifyService] LLM call successful, response length: %d chars", len(response))
 
 	// 7. Parse LLM response
 	var llmResult prettifyLLMResponse
@@ -141,7 +162,7 @@ func (s *PrettifyService) PrettifyNote(ctx context.Context, userID, noteID strin
 	// 11. Update tags with suggested ones
 	if err := s.tagService.UpdateTagsForNote(noteID, allTags); err != nil {
 		// Log error but don't fail - the note content is already updated
-		fmt.Printf("Warning: failed to update tags: %v\n", err)
+		log.Printf("[PrettifyService] WARNING: Failed to update tags: %v", err)
 	}
 
 	// 12. Set prettification flags on the returned note
@@ -151,6 +172,12 @@ func (s *PrettifyService) PrettifyNote(ctx context.Context, userID, noteID strin
 	// 13. Build response
 	noteResponse := updatedNote.ToResponse()
 	noteResponse.Tags = allTags
+
+	totalDuration := time.Since(startTime)
+	log.Printf("[PrettifyService] SUCCESS: PrettifyNote completed in %v", totalDuration)
+	log.Printf("[PrettifyService]   Changes made: %v", llmResult.ChangesMade)
+	log.Printf("[PrettifyService]   Suggested tags: %v", llmResult.SuggestedTags)
+	log.Printf("[PrettifyService]   Final tags: %v", allTags)
 
 	return &models.PrettifyNoteResponse{
 		NoteResponse:  noteResponse,
@@ -232,7 +259,7 @@ Response format (JSON):
 
 // parseLLMResponse extracts and parses JSON from LLM response
 func (s *PrettifyService) parseLLMResponse(response string, result *prettifyLLMResponse) error {
-	// Extract JSON from response (LLM may add extra text)
+	// Extract JSON from response (LLM may add extra text or markdown code blocks)
 	jsonStart := strings.Index(response, "{")
 	jsonEnd := strings.LastIndex(response, "}")
 	if jsonStart == -1 || jsonEnd == -1 {
@@ -240,7 +267,59 @@ func (s *PrettifyService) parseLLMResponse(response string, result *prettifyLLMR
 	}
 	jsonStr := response[jsonStart : jsonEnd+1]
 
-	return json.Unmarshal([]byte(jsonStr), result)
+	// First, unmarshal into a generic map to handle prettified_content being either string or object
+	var rawResponse map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &rawResponse); err != nil {
+		return fmt.Errorf("failed to unmarshal LLM response: %w", err)
+	}
+
+	// Extract fields with type handling
+	if v, ok := rawResponse["detected_language"].(string); ok {
+		result.DetectedLanguage = v
+	}
+	if v, ok := rawResponse["prettified_title"].(string); ok {
+		result.PrettifiedTitle = v
+	}
+
+	// Handle prettified_content - convert object to JSON string if needed
+	if v, ok := rawResponse["prettified_content"]; ok {
+		switch val := v.(type) {
+		case string:
+			result.PrettifiedContent = val
+		case map[string]interface{}, []interface{}:
+			// It's an object or array, convert back to JSON string
+			jsonBytes, err := json.Marshal(val)
+			if err != nil {
+				return fmt.Errorf("failed to convert prettified_content object to string: %w", err)
+			}
+			result.PrettifiedContent = string(jsonBytes)
+		default:
+			// Try to convert to string
+			result.PrettifiedContent = fmt.Sprintf("%v", val)
+		}
+	}
+
+	// Handle suggested_tags array
+	if v, ok := rawResponse["suggested_tags"].([]interface{}); ok {
+		result.SuggestedTags = make([]string, len(v))
+		for i, tag := range v {
+			if tagStr, ok := tag.(string); ok {
+				result.SuggestedTags[i] = tagStr
+			}
+		}
+	}
+
+	// Handle changes_made array
+	if v, ok := rawResponse["changes_made"].([]interface{}); ok {
+		result.ChangesMade = make([]string, len(v))
+		for i, change := range v {
+			if changeStr, ok := change.(string); ok {
+				result.ChangesMade[i] = changeStr
+			}
+		}
+	}
+
+	return nil
 }
 
 // removeHashtags removes hashtags from content

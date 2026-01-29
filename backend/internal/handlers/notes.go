@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -642,7 +643,9 @@ func (h *NotesHandler) getConflictStatus(note models.Note, conflicts []models.No
 
 // PrettifyNote handles POST /api/notes/{id}/prettify
 func (h *NotesHandler) PrettifyNote(w http.ResponseWriter, r *http.Request) {
-	log.Printf("[PrettifyNote] Starting prettify request")
+	startTime := time.Now()
+	log.Printf("[PrettifyNote] ========================================")
+	log.Printf("[PrettifyNote] Starting prettify request at %v", startTime.Format(time.RFC3339))
 
 	// Get user from context (set by auth middleware)
 	user, ok := r.Context().Value("user").(*models.User)
@@ -651,7 +654,7 @@ func (h *NotesHandler) PrettifyNote(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
-	log.Printf("[PrettifyNote] User authenticated: %s", user.Email)
+	log.Printf("[PrettifyNote] User authenticated: %s (ID: %s)", user.Email, user.ID)
 
 	// Get note ID from URL
 	vars := mux.Vars(r)
@@ -674,9 +677,32 @@ func (h *NotesHandler) PrettifyNote(w http.ResponseWriter, r *http.Request) {
 	// Prettify the note
 	ctx := r.Context()
 	log.Printf("[PrettifyNote] Calling prettify service...")
+	deadline, ok := ctx.Deadline()
+	if ok {
+		log.Printf("[PrettifyNote] Request context deadline: %v", deadline.Format(time.RFC3339))
+		timeUntilDeadline := time.Until(deadline)
+		log.Printf("[PrettifyNote] Time until deadline: %v", timeUntilDeadline)
+	} else {
+		log.Printf("[PrettifyNote] Request context has no deadline")
+	}
+	serviceStart := time.Now()
+
 	result, err := h.prettifyService.PrettifyNote(ctx, user.ID.String(), noteID)
+
+	serviceDuration := time.Since(serviceStart)
+	totalDuration := time.Since(startTime)
+
 	if err != nil {
-		log.Printf("[PrettifyNote] ERROR: Prettify failed: %v", err)
+		log.Printf("[PrettifyNote] ========================================")
+		log.Printf("[PrettifyNote] ERROR: Prettify failed")
+		log.Printf("[PrettifyNote]   Total duration: %v", totalDuration)
+		log.Printf("[PrettifyNote]   Service call duration: %v", serviceDuration)
+		log.Printf("[PrettifyNote]   Error type: %T", err)
+		log.Printf("[PrettifyNote]   Error message: %v", err)
+		log.Printf("[PrettifyNote]   Context error: %v", ctx.Err())
+		log.Printf("[PrettifyNote]   Context deadline exceeded: %v", ctx.Err() == context.DeadlineExceeded)
+		log.Printf("[PrettifyNote] ========================================")
+
 		if strings.Contains(err.Error(), "too short") {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 		} else {
@@ -685,6 +711,12 @@ func (h *NotesHandler) PrettifyNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("[PrettifyNote] SUCCESS: Note prettified, changes: %v", result.ChangesMade)
+	log.Printf("[PrettifyNote] ========================================")
+	log.Printf("[PrettifyNote] SUCCESS: Note prettified")
+	log.Printf("[PrettifyNote]   Total duration: %v", totalDuration)
+	log.Printf("[PrettifyNote]   Service call duration: %v", serviceDuration)
+	log.Printf("[PrettifyNote]   Changes made: %v", result.ChangesMade)
+	log.Printf("[PrettifyNote]   Suggested tags: %v", result.SuggestedTags)
+	log.Printf("[PrettifyNote] ========================================")
 	respondWithJSON(w, http.StatusOK, result)
 }

@@ -305,11 +305,77 @@ class ApiService {
   /**
    * Prettify a note using AI
    * POST /api/v1/notes/{id}/prettify
+   * Note: This uses a longer timeout (60s) since LLM calls can take 10-30s
    */
   async prettifyNote(id: string): Promise<ApiResponse<PrettifyResponse>> {
-    return this.makeRequest<PrettifyResponse>(`/api/v1/notes/${id}/prettify`, {
-      method: 'POST',
-    });
+    const url = `${this.baseUrl}/api/v1/notes/${id}/prettify`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds for LLM
+
+    try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add auth header dynamically
+      const { authService } = await import('./auth');
+      const authHeader = await authService.getAuthHeader();
+      Object.assign(headers, authHeader);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      // Handle empty responses
+      let data: any;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      if (!response.ok) {
+        const errorMessage = typeof data.error === 'object'
+          ? (data.error?.message || data.error?.code || data.error?.details || 'Unknown error')
+          : data.error || data.message || `HTTP ${response.status}: ${response.statusText}`;
+
+        return {
+          success: false,
+          error: errorMessage,
+          message: typeof data.message === 'string' ? data.message : 'Request failed'
+        };
+      }
+
+      let responseData = data as PrettifyResponse;
+
+      // If the data has the backend's APIResponse structure, extract the inner data
+      if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+        responseData = (data as any).data;
+      }
+
+      return {
+        success: true,
+        data: responseData,
+        message: (data as any)?.message || 'Success'
+      };
+
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new Error('Request timeout - LLM prettification took too long');
+        }
+        throw error;
+      }
+
+      throw new Error('Unknown error occurred');
+    }
   }
 
   /**
