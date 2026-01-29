@@ -440,7 +440,7 @@ describe('ApiService', () => {
       await testService.getNotes({ limit: 10, offset: 5 });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes?limit=10&offset=5&order_by=created_at&order_dir=desc',
+        'http://localhost:8080/api/v1/notes?limit=10&offset=5&order_by=updated_at&order_dir=desc',
         expect.any(Object)
       );
     });
@@ -475,7 +475,7 @@ describe('ApiService', () => {
       await testService.getNotes();
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes?limit=20&offset=0&order_by=created_at&order_dir=desc',
+        'http://localhost:8080/api/v1/notes?limit=20&offset=0&order_by=updated_at&order_dir=desc',
         expect.any(Object)
       );
     });
