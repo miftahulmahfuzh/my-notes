@@ -40,6 +40,8 @@ jobs:
       working-directory: ./extension
       run: npm ci
 
-    - name: Run single frontend test
+    - name: Run frontend tests
       working-directory: ./extension
-      run: npx jest src/components/__tests__/iconRendering.test.tsx
+      run: |
+        npx jest src/components/__tests__/iconRendering.test.tsx
+        npx jest tests/components/LoginForm.test.tsx
