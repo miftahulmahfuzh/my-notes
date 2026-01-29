@@ -46,3 +46,4 @@ jobs:
         npx jest src/components/__tests__/iconRendering.test.tsx
         npx jest tests/components/LoginForm.test.tsx
         npx jest tests/components/NoteEditor.test.tsx
+        npx jest tests/utils/config.test.ts
