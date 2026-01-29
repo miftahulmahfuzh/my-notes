@@ -33,7 +33,6 @@ module.exports = {
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/dist/',
-    '<rootDir>/tests/components/MarkdownPreview.test.tsx', // Skipped due to ESM issues with react-markdown dependencies
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
