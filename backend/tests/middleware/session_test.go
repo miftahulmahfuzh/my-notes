@@ -3,13 +3,12 @@ package middleware
 import (
 	"database/sql"
 	"fmt"
-	"os"
-	"strconv"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gpd/my-notes/internal/config"
+	"github.com/gpd/my-notes/internal/database"
 	"github.com/gpd/my-notes/internal/middleware"
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/gpd/my-notes/internal/services"
@@ -36,16 +35,21 @@ func (suite *SessionMiddlewareTestSuite) SetupSuite() {
 		suite.T().Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
-	// Connect to test database
-	db, err := sql.Open("postgres", getTestDatabaseDSN())
-	require.NoError(suite.T(), err, "Failed to connect to test database")
+	// Load configuration
+	cfg, err := config.LoadConfig("")
+	require.NoError(suite.T(), err, "Failed to load config")
 
-	// Test the connection
-	err = db.Ping()
-	require.NoError(suite.T(), err, "Failed to ping test database")
-
+	// Create test database
+	db, err := database.CreateTestDatabase(cfg.Database)
+	require.NoError(suite.T(), err, "Failed to create test database")
 	suite.db = db
-	suite.userService = services.NewUserService(db)
+
+	// Run migrations
+	migrator := database.NewMigrator(db, "../../migrations")
+	err = migrator.Up()
+	require.NoError(suite.T(), err, "Failed to run migrations")
+
+	suite.userService = services.NewUserService(suite.db)
 	suite.testUserID = "3631d096-4834-4a5f-a173-ae871efb408e"
 	suite.cleanupSessions = make([]string, 0)
 
@@ -85,12 +89,7 @@ func (suite *SessionMiddlewareTestSuite) TearDownTest() {
 // TearDownSuite runs once after all tests
 func (suite *SessionMiddlewareTestSuite) TearDownSuite() {
 	if suite.db != nil {
-		// Clean up test user
-		_, err := suite.db.Exec("DELETE FROM users WHERE id = $1", suite.testUserID)
-		if err != nil {
-			suite.T().Logf("Warning: Failed to cleanup test user: %v", err)
-		}
-		suite.db.Close()
+		database.DropTestDatabase(suite.db)
 	}
 }
 
@@ -242,49 +241,6 @@ func (suite *SessionMiddlewareTestSuite) TestSessionInvalidation() {
 	assert.False(suite.T(), foundActive, "Session should be inactive after invalidation")
 }
 
-// getTestDatabaseDSN returns the test database connection string
-func getTestDatabaseDSN() string {
-	// Load configuration to ensure .env file is loaded
-	cfg, err := config.LoadConfig("")
-	if err != nil {
-		// Fall back to environment variables if config loading fails
-		host := getEnv("TEST_DB_HOST", getEnv("DB_HOST", "localhost"))
-		port := getEnvInt("TEST_DB_PORT", getEnvInt("DB_PORT", 5432))
-		user := getEnv("TEST_DB_USER", getEnv("DB_USER", "postgres"))
-		password := getEnv("TEST_DB_PASSWORD", getEnv("DB_PASSWORD", "postgres123"))
-		dbname := getEnv("TEST_DB_NAME", getEnv("DB_NAME", "notes_test"))
-		return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-			host, port, user, password, dbname)
-	}
-
-	// Use TEST_DB_* variables if available, otherwise fall back to DB_* variables
-	host := getEnv("TEST_DB_HOST", cfg.Database.Host)
-	port := getEnvInt("TEST_DB_PORT", cfg.Database.Port)
-	user := getEnv("TEST_DB_USER", cfg.Database.User)
-	password := getEnv("TEST_DB_PASSWORD", cfg.Database.Password)
-	dbname := getEnv("TEST_DB_NAME", cfg.Database.Name)
-
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-}
-
-// Helper functions for environment variables (local copies since tests package functions are not exported)
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
-}
-
 // Helper methods
 
 // createTestSession creates a test session for the test user
@@ -401,13 +357,19 @@ func TestSessionStatusCheck(t *testing.T) {
 		t.Skip("PostgreSQL tests are disabled. Set USE_POSTGRE_DURING_TEST=true to enable.")
 	}
 
-	db, err := sql.Open("postgres", getTestDatabaseDSN())
-	require.NoError(t, err, "Failed to connect to database")
-	defer db.Close()
+	// Load configuration
+	cfg, err := config.LoadConfig("")
+	require.NoError(t, err, "Failed to load config")
 
-	// Test the connection
-	err = db.Ping()
-	require.NoError(t, err, "Failed to ping database")
+	// Create test database
+	db, err := database.CreateTestDatabase(cfg.Database)
+	require.NoError(t, err, "Failed to create test database")
+	defer database.DropTestDatabase(db)
+
+	// Run migrations
+	migrator := database.NewMigrator(db, "../../migrations")
+	err = migrator.Up()
+	require.NoError(t, err, "Failed to run migrations")
 
 	testUserID := "3631d096-4834-4a5f-a173-ae871efb408e"
 	sessions, err := getActiveSessions(db, testUserID)
