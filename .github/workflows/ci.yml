@@ -53,3 +53,4 @@ jobs:
         npx jest tests/api.test.ts
         npx jest tests/popup/PopupApp.test.tsx
         npx jest tests/background/index.test.ts
+        npx jest tests/components/NoteView.test.tsx
