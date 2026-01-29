@@ -118,6 +118,9 @@ run_test_suite "JWT Tests" "./tests/auth/jwt_test.go" "skip"
 # JWT Validation Tests
 run_test_suite "JWT Validation Tests" "./tests/auth/jwt_validation_test.go ./tests/auth/jwt_test.go" "skip"
 
+# Token Blacklist Tests (handles token revocation for logout)
+run_test_suite "Token Blacklist Tests" "./tests/token_blacklist_test.go ./tests/setup_test.go ./tests/tests.go" ""
+
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Middleware Tests${NC}"
 echo -e "${BLUE}========================================${NC}"
@@ -136,6 +139,9 @@ echo ""
 
 # Auth Flow Integration Tests
 run_test_suite "Auth Flow Integration Tests" "./tests/integration/auth_flow_test.go" ""
+
+# Logout Integration Tests (handles token blacklist on logout)
+run_test_suite "Logout Integration Tests" "./tests/integration/logout_test.go" ""
 
 # Security Integration Tests
 run_test_suite "Security Integration Tests" "./tests/integration/security_test.go ./tests/integration/auth_flow_test.go" ""
