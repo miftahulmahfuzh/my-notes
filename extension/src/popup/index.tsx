@@ -759,13 +759,19 @@ const PopupApp: React.FC = () => {
           currentNote: response.data || null,
           editingNote: null,
           showNoteEditor: false,
-          showNoteDetail: true,
           isLoading: false,
           error: null
         }));
 
         // Refresh the notes list to show updated data
         await loadNotes();
+
+        // Set detail view state after loadNotes to preserve it
+        setState(prev => ({
+          ...prev,
+          showNoteDetail: true,
+          showNotesList: false
+        }));
       } else {
         // Handle API error
         const errorMessage = response.error || 'Failed to update note';
@@ -1361,6 +1367,7 @@ const PopupApp: React.FC = () => {
             <hr className="help-separator" />
             <p className="text-sm"><strong>Note Detail Shortcuts</strong></p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Copy content</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>E</strong> Edit note</p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>P</strong> Prettify note</p>
             <p className="text-sm"><strong>Prettify:</strong> LLM-powered note improvements</p>
             <p className="text-sm">Click tag to filter notes</p>

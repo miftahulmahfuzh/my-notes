@@ -50,7 +50,7 @@ const NoteView: React.FC<NoteViewProps> = ({
   const wordCount = getWordCountExcludingTags(note.content);
   const hasEnoughContent = wordCount >= 5;
 
-  // Set up keyboard shortcut for copy (Ctrl+C / Cmd+C) and prettify (Ctrl+P)
+  // Set up keyboard shortcut for copy (Ctrl+C / Cmd+C), prettify (Ctrl+P), and edit (Ctrl+E)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check for Ctrl+C or Cmd+C
@@ -65,13 +65,18 @@ const NoteView: React.FC<NoteViewProps> = ({
           handlePrettify();
         }
       }
+      // Check for Ctrl+E or Cmd+E for edit
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        onEdit();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [note, canPrettify, hasEnoughContent, isPrettifying]);
+  }, [note, canPrettify, hasEnoughContent, isPrettifying, onEdit]);
 
   const handlePrettify = async () => {
     if (!canPrettify || !hasEnoughContent || isPrettifying) {
