@@ -123,28 +123,30 @@ const PopupApp: React.FC = () => {
   const navigatedToListRef = useRef(false);
 
   // Focus search input when navigating to notes list via keyboard shortcuts
+  // We watch for isLoading to go from true to false (after loadNotes completes)
   useEffect(() => {
-    // Only attempt focus if we just navigated to notes list
-    if (!navigatedToListRef.current || !state.showNotesList) {
+    console.log('[Focus Effect] Triggered. navigatedToListRef.current:', navigatedToListRef.current, 'showNotesList:', state.showNotesList, 'isLoading:', state.isLoading);
+
+    // Only attempt focus if we just navigated to notes list AND loading is complete
+    if (!navigatedToListRef.current || !state.showNotesList || state.isLoading) {
+      console.log('[Focus Effect] Early return - conditions not met');
       return;
     }
 
+    console.log('[Focus Effect] Proceeding with focus attempt');
     // Reset the navigation flag
     navigatedToListRef.current = false;
 
-    // Focus the search input - retry until it's available (after render)
-    const focusSearchInput = () => {
+    // Use a small delay to ensure React has committed the DOM after the last render
+    setTimeout(() => {
       if (searchInputRef.current) {
         searchInputRef.current.focus();
+        console.log('[Focus Success] Search input focused!');
       } else {
-        // Input not ready yet, try again after render
-        setTimeout(focusSearchInput, 10);
+        console.error('[Focus Failed] searchInputRef.current is null');
       }
-    };
-
-    // Trigger focus attempt
-    focusSearchInput();
-  }, [state.showNotesList]);
+    }, 50);
+  }, [state.isLoading, state.showNotesList]);
 
   // Load notes when navigating to notes list from a different page
   useEffect(() => {
@@ -949,6 +951,7 @@ const PopupApp: React.FC = () => {
 
       // Set flag to trigger focus after navigation
       navigatedToListRef.current = true;
+      console.log('[NavigateToSearch] Set navigatedToListRef.current = true');
 
       // Otherwise, navigate to notes list and preserve history
       const newHistoryEntry: HistoryState = {
