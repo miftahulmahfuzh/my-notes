@@ -5,12 +5,23 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gpd/my-notes/internal/auth"
 	"github.com/gpd/my-notes/internal/models"
 	"github.com/gpd/my-notes/internal/services"
 )
+
+// tokenCacheEntry holds cached token validation result
+type tokenCacheEntry struct {
+	userInfo  *auth.GoogleUserInfo
+	expiresAt time.Time
+}
+
+// Global in-memory cache for Chrome token validation
+// Key: token string, Value: *tokenCacheEntry
+var tokenCache sync.Map
 
 // ChromeAuthRequest represents the request from Chrome extension
 type ChromeAuthRequest struct {
@@ -103,8 +114,23 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 	}
 }
 
+// Cache duration for token validation (50 minutes, less than Google's 1-hour token lifetime)
+const tokenCacheDuration = 50 * time.Minute
+
 // validateChromeToken validates Chrome Identity token with Google
 func (h *ChromeAuthHandler) validateChromeToken(token string) (*auth.GoogleUserInfo, error) {
+	// Check cache first
+	if cached, ok := tokenCache.Load(token); ok {
+		entry := cached.(*tokenCacheEntry)
+		if time.Now().Before(entry.expiresAt) {
+			// Cache hit - return cached user info
+			return entry.userInfo, nil
+		}
+		// Cache expired - remove it
+		tokenCache.Delete(token)
+	}
+
+	// Cache miss - validate with Google
 	// For Chrome extensions, we need to validate the token with Google's tokeninfo endpoint
 	// This is a simpler validation that doesn't require PKCE
 
@@ -182,6 +208,12 @@ func (h *ChromeAuthHandler) validateChromeToken(token string) (*auth.GoogleUserI
 	if googleUserInfo.Email == "" {
 		return nil, fmt.Errorf("invalid Google user info: email is required")
 	}
+
+	// Store in cache for future requests
+	tokenCache.Store(token, &tokenCacheEntry{
+		userInfo:  googleUserInfo,
+		expiresAt: time.Now().Add(tokenCacheDuration),
+	})
 
 	return googleUserInfo, nil
 }
