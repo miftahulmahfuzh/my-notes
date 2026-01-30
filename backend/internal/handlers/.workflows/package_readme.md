@@ -1,6 +1,7 @@
 # Package: handlers
 
 **Location**: `backend/internal/handlers`
+
 **Last Updated**: 2025-01-30
 
 ## Overview
