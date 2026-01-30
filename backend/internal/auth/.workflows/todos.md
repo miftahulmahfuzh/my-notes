@@ -4,18 +4,18 @@
 
 **Package Code**: AU
 
-**Last Updated**: 2026-01-30 10:15:00
+**Last Updated**: 2026-01-30 10:40:00
 
-**Total Active Tasks**: 2
+**Total Active Tasks**: 0
 
 ## Quick Stats
 - P0 Critical: 0
 - P1 High: 0
-- P2 Medium: 2
+- P2 Medium: 0
 - P3 Low: 0
 - P4 Backlog: 0
 - Blocked: 0
-- Completed: 5
+- Completed: 7
 
 ---
 
@@ -28,21 +28,7 @@
 *No high priority tasks*
 
 ### [P2] Medium
-- [ ] **P2-AU-A002** Refactor duplicate code in GenerateTokenPair and GenerateTokenPairWithSession
-  - **Difficulty**: NORMAL
-  - **Context**: Two functions share ~85% identical logic (~50 lines of duplicate token generation code). Extract to private `generateTokenPair(user, sessionID)` helper function.
-  - **Identified**: 2026-01-29
-  - **Related**: analysis_report.md - Refactoring Opportunities
-  - **Location**: jwt.go:51-107, jwt.go:110-165
-  - **Status**: active
-
-- [ ] **P2-AU-A003** Add package-level constant for "Bearer" token type
-  - **Difficulty**: EASY
-  - **Context**: `TokenType: "Bearer"` is hardcoded in two places (jwt.go:104, jwt.go:162). Extract to `const TokenTypeBearer = "Bearer"`.
-  - **Identified**: 2026-01-29
-  - **Related**: analysis_report.md - Hardcoded String Literal
-  - **Location**: jwt.go:104, jwt.go:162
-  - **Status**: active
+*No medium priority tasks*
 
 ### [P3] Low
 *No low priority tasks*
@@ -57,6 +43,35 @@
 
 ## Completed Tasks
 
+### Recently Completed
+- [x] **P2-AU-A003** Add package-level constant for "Bearer" token type
+  - **Status**: WONTFIX
+  - **Closed**: 2026-01-30 10:40:00
+  - **Reason**: Low-value refactoring - "Bearer" is defined by RFC 6750 and will never change
+  - **Analysis**:
+    - "Bearer" is a protocol constant fixed by OAuth 2.0 / RFC 6750 standard
+    - Only used in 2 places in the codebase
+    - Typos would be caught immediately by client testing
+    - Benefits of constant extraction are minimal for immutable standards
+  - **When Constants ARE Worth It**:
+    - ✓ App-specific strings (issuer, audience)
+    - ✓ Magic numbers (timeouts, limits)
+    - ✓ Error messages used in 10+ places
+    - ✓ Strings with unclear meaning
+  - **When Constants Are NOT Worth It**:
+    - ✗ Protocol standards (HTTP methods, OAuth schemes)
+    - ✗ One-time use strings
+    - ✗ Values that can't change
+
+- [x] **P2-AU-A002** Refactor duplicate code in GenerateTokenPair and GenerateTokenPairWithSession
+  - **Completed**: 2026-01-30 10:35:00
+  - **Method**: Extracted ~85% duplicate code (~50 lines) from GenerateTokenPair and GenerateTokenPairWithSession into private `generateTokenPair(user, sessionID)` helper function. Both public functions now delegate to the helper, eliminating code duplication while maintaining the same API surface.
+  - **Files Modified**:
+    - `backend/internal/auth/jwt.go` - added private generateTokenPair method (lines 63-118), simplified GenerateTokenPair (lines 121-122) and GenerateTokenPairWithSession (lines 125-126)
+  - **Impact**: Removed ~50 lines of duplicate code, reduced maintenance burden, improved code organization
+  - **Tests**: All passing (verified 2026-01-30)
+
+### This Week
 - [x] **P1-AU-A001** Add server-side refresh token tracking with token type enforcement
   - **Status**: WONTFIX
   - **Closed**: 2026-01-30 10:15:00
