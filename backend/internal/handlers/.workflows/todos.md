@@ -1,9 +1,12 @@
 # Todos: handlers
 
 **Package Path**: `backend/internal/handlers`
+
 **Package Code**: HD
+
 **Last Updated**: 2026-01-30 10:49:40
-**Total Active Tasks**: 11
+
+**Total Active Tasks**: 10
 
 ## Quick Stats
 - P0 Critical: 1
@@ -12,19 +15,13 @@
 - P3 Low: 3
 - P4 Backlog: 0
 - Blocked: 0
-- Completed: 6
+- Completed: 7
 
 ---
 
 ## Active Tasks
 
 ### [P0] Critical
-- [ ] **P0-HD-A000** Add timeout to HTTP client in validateChromeToken
-  - **Difficulty**: EASY
-  - **Context**: HTTP client without timeout could hang if Google tokeninfo is slow (chrome_auth.go:148). This is a production risk as slow external calls can block all auth requests.
-  - **Identified**: 2026-01-30 (analysis_report.md)
-  - **Status**: active
-  - **Related**: See "Concurrency Risks" section in analysis_report.md:209-212
 
 ### [P1] High
 - [ ] **P1-HD-A001** Extract duplicate token generation logic in ExchangeChromeToken
@@ -118,6 +115,13 @@
 ---
 
 ## Completed Tasks
+
+### Recently Completed
+- [x] **P0-HD-A000** Add timeout to HTTP client in validateChromeToken
+  - **Completed**: 2026-01-30 (during execution)
+  - **Method**: Added 10-second timeout to HTTP client
+  - **Files Modified**: chrome_auth.go:148-151
+  - **Impact**: HTTP client now has 10-second timeout, preventing indefinite hangs if Google tokeninfo endpoint is slow
 
 - [x] **P1-HD-A006** Implement GET /api/v1/tags endpoint for autocomplete
   - **Completed**: 2026-01-28 12:15:00
