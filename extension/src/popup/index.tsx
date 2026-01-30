@@ -119,22 +119,23 @@ const PopupApp: React.FC = () => {
 
   // Ref for search input (used by Ctrl+F to focus)
   const searchInputRef = useRef<HTMLInputElement>(null);
-  // Track when we need to focus search input (after navigation)
-  const pendingSearchFocusRef = useRef(false);
+  // Track when we navigated to notes list (for focusing search input)
+  const navigatedToListRef = useRef(false);
 
   // Focus search input when navigating to notes list via keyboard shortcuts
   useEffect(() => {
-    // Only attempt focus if we're on the notes list
-    if (!state.showNotesList) {
-      pendingSearchFocusRef.current = false;
+    // Only attempt focus if we just navigated to notes list
+    if (!navigatedToListRef.current || !state.showNotesList) {
       return;
     }
 
-    // Focus the search input
+    // Reset the navigation flag
+    navigatedToListRef.current = false;
+
+    // Focus the search input - retry until it's available (after render)
     const focusSearchInput = () => {
       if (searchInputRef.current) {
         searchInputRef.current.focus();
-        pendingSearchFocusRef.current = false;
       } else {
         // Input not ready yet, try again after render
         setTimeout(focusSearchInput, 10);
@@ -143,7 +144,7 @@ const PopupApp: React.FC = () => {
 
     // Trigger focus attempt
     focusSearchInput();
-  }, [state.showNotesList, state.semanticSearchEnabled]);
+  }, [state.showNotesList]);
 
   // Load notes when navigating to notes list from a different page
   useEffect(() => {
@@ -946,6 +947,9 @@ const PopupApp: React.FC = () => {
         };
       }
 
+      // Set flag to trigger focus after navigation
+      navigatedToListRef.current = true;
+
       // Otherwise, navigate to notes list and preserve history
       const newHistoryEntry: HistoryState = {
         view: prev.showNoteEditor ? 'noteEditor' :
@@ -1010,14 +1014,28 @@ const PopupApp: React.FC = () => {
       // Ctrl+Shift+F: Navigate to list and enable semantic search (works globally)
       if (e.shiftKey && e.key === 'F') {
         e.preventDefault();
-        handleNavigateToSearch('semantic');
+        if (state.showNotesList) {
+          // Already on list - update mode and focus directly
+          setState(prev => ({ ...prev, semanticSearchEnabled: true }));
+          // Use setTimeout to focus after React commits the state update
+          setTimeout(() => searchInputRef.current?.focus(), 0);
+        } else {
+          handleNavigateToSearch('semantic');
+        }
         return;
       }
 
       // Ctrl+F: Navigate to list and enable keyword search (works globally)
       if (e.key === 'f') {
         e.preventDefault();
-        handleNavigateToSearch('keyword');
+        if (state.showNotesList) {
+          // Already on list - update mode and focus directly
+          setState(prev => ({ ...prev, semanticSearchEnabled: false }));
+          // Use setTimeout to focus after React commits the state update
+          setTimeout(() => searchInputRef.current?.focus(), 0);
+        } else {
+          handleNavigateToSearch('keyword');
+        }
         return;
       }
 
