@@ -4,18 +4,18 @@
 
 **Package Code**: HD
 
-**Last Updated**: 2026-01-30 10:49:40
+**Last Updated**: 2026-01-30 11:15:00
 
-**Total Active Tasks**: 10
+**Total Active Tasks**: 9
 
 ## Quick Stats
 - P0 Critical: 1
-- P1 High: 3
+- P1 High: 2
 - P2 Medium: 4
 - P3 Low: 3
 - P4 Backlog: 0
 - Blocked: 0
-- Completed: 7
+- Completed: 8
 
 ---
 
@@ -24,14 +24,6 @@
 ### [P0] Critical
 
 ### [P1] High
-- [ ] **P1-HD-A001** Extract duplicate token generation logic in ExchangeChromeToken
-  - **Difficulty**: NORMAL
-  - **Context**: Lines 82-96 and 115-127 contain nearly identical token generation and response building code. 84-line function has complexity of 6.
-  - **Identified**: 2026-01-30 (analysis_report.md)
-  - **Status**: active
-  - **Related**: See "Refactoring Opportunities" section in analysis_report.md:17-21
-  - **Location**: chrome_auth.go:82-96, 115-127
-
 - [ ] **P1-HD-A002** Add caching mechanism for validateChromeToken
   - **Difficulty**: NORMAL
   - **Context**: Makes HTTP request to Google tokeninfo endpoint on every auth. No caching - consider short-lived token cache to reduce external API calls.
@@ -117,6 +109,12 @@
 ## Completed Tasks
 
 ### Recently Completed
+- [x] **P1-HD-A001** Extract duplicate token generation logic in ExchangeChromeToken
+  - **Completed**: 2026-01-30 11:15:00
+  - **Method**: Extracted duplicate token generation and response building code into sendAuthResponse helper method
+  - **Files Modified**: chrome_auth.go (lines 81-84, 100-103, added sendAuthResponse method at line 200)
+  - **Impact**: Reduced ExchangeChromeToken from 84 lines to ~56 lines, eliminated duplicate code blocks for existing and new session token generation
+
 - [x] **P0-HD-A000** Add timeout to HTTP client in validateChromeToken
   - **Completed**: 2026-01-30 (during execution)
   - **Method**: Added 10-second timeout to HTTP client

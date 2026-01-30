@@ -78,25 +78,10 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 		for _, existingSession := range existingSessions {
 			if existingSession.UserAgent == "Chrome-Extension" && existingSession.IsActive {
 				// Reuse existing Chrome extension session
-				sessionID := existingSession.ID
-
-				// Generate JWT tokens with the existing session ID
-				tokenPair, err := h.tokenService.GenerateTokenPairWithSession(user, sessionID)
-				if err != nil {
+				if err := h.sendAuthResponse(w, user, existingSession.ID); err != nil {
 					respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to generate tokens: %v", err))
 					return
 				}
-
-				response := ChromeAuthResponse{
-					User:         user.ToResponse(),
-					AccessToken:  tokenPair.AccessToken,
-					RefreshToken: tokenPair.RefreshToken,
-					TokenType:    tokenPair.TokenType,
-					ExpiresIn:    tokenPair.ExpiresIn,
-					SessionID:    sessionID,
-				}
-
-				respondWithJSON(w, http.StatusOK, response)
 				return
 			}
 		}
@@ -112,23 +97,10 @@ func (h *ChromeAuthHandler) ExchangeChromeToken(w http.ResponseWriter, r *http.R
 		sessionID = session.ID
 	}
 
-	// Generate JWT tokens with the actual session ID
-	tokenPair, err := h.tokenService.GenerateTokenPairWithSession(user, sessionID)
-	if err != nil {
+	if err := h.sendAuthResponse(w, user, sessionID); err != nil {
 		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to generate tokens: %v", err))
 		return
 	}
-
-	response := ChromeAuthResponse{
-		User:         user.ToResponse(),
-		AccessToken:  tokenPair.AccessToken,
-		RefreshToken: tokenPair.RefreshToken,
-		TokenType:    tokenPair.TokenType,
-		ExpiresIn:    tokenPair.ExpiresIn,
-		SessionID:    sessionID,
-	}
-
-	respondWithJSON(w, http.StatusOK, response)
 }
 
 // validateChromeToken validates Chrome Identity token with Google
@@ -223,4 +195,25 @@ func (h *ChromeAuthHandler) getOrCreateUser(googleUserInfo *auth.GoogleUserInfo)
 	}
 
 	return user, nil
+}
+
+// sendAuthResponse generates tokens and sends auth response for Chrome extension
+func (h *ChromeAuthHandler) sendAuthResponse(w http.ResponseWriter, user *models.User, sessionID string) error {
+	// Generate JWT tokens with the session ID
+	tokenPair, err := h.tokenService.GenerateTokenPairWithSession(user, sessionID)
+	if err != nil {
+		return fmt.Errorf("failed to generate tokens: %w", err)
+	}
+
+	response := ChromeAuthResponse{
+		User:         user.ToResponse(),
+		AccessToken:  tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
+		TokenType:    tokenPair.TokenType,
+		ExpiresIn:    tokenPair.ExpiresIn,
+		SessionID:    sessionID,
+	}
+
+	respondWithJSON(w, http.StatusOK, response)
+	return nil
 }
