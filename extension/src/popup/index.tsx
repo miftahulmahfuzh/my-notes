@@ -1410,15 +1410,15 @@ const PopupApp: React.FC = () => {
           <div className="content-section content-section--help">
             <p className="text-sm"><strong>Global Shortcuts</strong></p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>N</strong> New note</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>F</strong> Keyword search <span className="text-xs text-muted">(works everywhere)</span></p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>Shift</strong> + <strong>F</strong> Semantic search <span className="text-xs text-muted">(works everywhere)</span></p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>H</strong> Help</p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>B</strong> Back</p>
             <hr className="help-separator" />
-            <p className="text-sm"><strong>List/Search Shortcuts</strong></p>
-            <p className="text-sm"><strong>Ctrl</strong> + <strong>F</strong> Keyword search</p>
-            <p className="text-sm"><strong>Keyword:</strong> Text matching in titles/content</p>
-            <p className="text-sm"><strong>Ctrl</strong> + <strong>Shift</strong> + <strong>F</strong> Semantic search</p>
-            <p className="text-sm"><strong>Semantic:</strong> LLM-powered understanding (brain on)</p>
-            <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Clear search</p>
+            <p className="text-sm"><strong>Search Modes</strong></p>
+            <p className="text-sm"><strong>Ctrl+F:</strong> Keyword search (text matching in titles/content)</p>
+            <p className="text-sm"><strong>Ctrl+Shift+F:</strong> Semantic search (LLM-powered understanding)</p>
+            <p className="text-sm"><strong>Ctrl</strong> + <strong>C</strong> Clear search <span className="text-xs text-muted">(list page only)</span></p>
             <hr className="help-separator" />
             <p className="text-sm"><strong>Note Editing Shortcuts</strong></p>
             <p className="text-sm"><strong>Ctrl</strong> + <strong>Z</strong> Undo changes</p>
