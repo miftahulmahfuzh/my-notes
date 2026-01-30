@@ -895,6 +895,50 @@ const PopupApp: React.FC = () => {
     }));
   };
 
+  /**
+   * Navigate to notes list and enable search mode (keyword or semantic)
+   * This is called by Ctrl+F and Ctrl+Shift+F global shortcuts
+   * @param mode - 'keyword' for Ctrl+F, 'semantic' for Ctrl+Shift+F
+   */
+  const handleNavigateToSearch = (mode: 'keyword' | 'semantic'): void => {
+    console.log('handleNavigateToSearch called with mode:', mode);
+
+    setState(prev => {
+      // If already on notes list, just update search mode
+      if (prev.showNotesList) {
+        return {
+          ...prev,
+          semanticSearchEnabled: mode === 'semantic'
+        };
+      }
+
+      // Otherwise, navigate to notes list and preserve history
+      const newHistoryEntry: HistoryState = {
+        view: prev.showNoteEditor ? 'noteEditor' :
+               prev.showNoteDetail ? 'noteDetail' :
+               prev.showHelpView ? 'help' : 'welcome',
+        searchQuery: prev.searchQuery,  // Preserve search query
+        noteId: prev.currentNote?.id,
+        timestamp: Date.now(),
+        // Preserve form state when navigating from editor
+        newNoteTitle: prev.newNoteTitle,
+        newNoteContent: prev.newNoteContent,
+        editingNote: prev.editingNote
+      };
+
+      return {
+        ...prev,
+        navigationHistory: [...prev.navigationHistory, newHistoryEntry],
+        showNotesList: true,
+        showNoteDetail: false,
+        showNoteEditor: false,
+        showHelpView: false,
+        showCreateForm: false,
+        semanticSearchEnabled: mode === 'semantic'
+      };
+    });
+  };
+
   // Keyboard shortcut: Ctrl+C to clear search query
   useEffect(() => {
     if (!state.showNotesList) return;
