@@ -119,13 +119,31 @@ const PopupApp: React.FC = () => {
 
   // Ref for search input (used by Ctrl+F to focus)
   const searchInputRef = useRef<HTMLInputElement>(null);
+  // Track when we need to focus search input (after navigation)
+  const pendingSearchFocusRef = useRef(false);
 
   // Focus search input when navigating to notes list via keyboard shortcuts
   useEffect(() => {
-    if (state.showNotesList && searchInputRef.current) {
-      searchInputRef.current.focus();
+    // Only attempt focus if we're on the notes list
+    if (!state.showNotesList) {
+      pendingSearchFocusRef.current = false;
+      return;
     }
-  }, [state.showNotesList]);
+
+    // Focus the search input
+    const focusSearchInput = () => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+        pendingSearchFocusRef.current = false;
+      } else {
+        // Input not ready yet, try again after render
+        setTimeout(focusSearchInput, 10);
+      }
+    };
+
+    // Trigger focus attempt
+    focusSearchInput();
+  }, [state.showNotesList, state.semanticSearchEnabled]);
 
   // Load notes when navigating to notes list from a different page
   useEffect(() => {
