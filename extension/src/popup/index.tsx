@@ -120,6 +120,13 @@ const PopupApp: React.FC = () => {
   // Ref for search input (used by Ctrl+F to focus)
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Focus search input when navigating to notes list via keyboard shortcuts
+  useEffect(() => {
+    if (state.showNotesList && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [state.showNotesList]);
+
   // Initialize auth on component mount
   useEffect(() => {
     const initializeApp = async () => {
