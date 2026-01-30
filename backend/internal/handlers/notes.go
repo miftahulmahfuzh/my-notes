@@ -369,6 +369,96 @@ func (h *NotesHandler) GetNotesByTag(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, noteList)
 }
 
+// syncParams holds parsed and validated sync request parameters
+type syncParams struct {
+	Limit          int
+	Offset         int
+	Timestamp      time.Time
+	SyncToken      string
+	IncludeDeleted bool
+}
+
+// parseSyncParams extracts and validates sync query parameters from the request
+func parseSyncParams(r *http.Request) (*syncParams, error) {
+	// Parse limit parameter
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 || limit > 1000 {
+		limit = 1000 // Higher limit for sync operations
+	}
+
+	// Parse offset parameter
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	if offset < 0 {
+		offset = 0
+	}
+
+	// Parse timestamp parameter
+	timestampParam := r.URL.Query().Get("since")
+	var timestamp time.Time
+	var err error
+
+	if timestampParam != "" {
+		timestamp, err = time.Parse(time.RFC3339, timestampParam)
+		if err != nil {
+			return nil, fmt.Errorf("invalid timestamp format. Use RFC3339 format")
+		}
+	} else {
+		// If no timestamp provided, use a default lookback period (24 hours)
+		timestamp = time.Now().Add(-24 * time.Hour)
+	}
+
+	// Parse sync token and include deleted flag
+	syncToken := r.URL.Query().Get("sync_token")
+	includeDeleted := r.URL.Query().Get("include_deleted") == "true"
+
+	return &syncParams{
+		Limit:          limit,
+		Offset:         offset,
+		Timestamp:      timestamp,
+		SyncToken:      syncToken,
+		IncludeDeleted: includeDeleted,
+	}, nil
+}
+
+// enrichNotesWithSyncMetadata converts notes to NoteResponse objects with tags and sync metadata
+func (h *NotesHandler) enrichNotesWithSyncMetadata(notes []models.Note, conflicts []models.NoteConflict) []models.NoteResponse {
+	var noteResponses []models.NoteResponse
+	for _, note := range notes {
+		tags := note.ExtractHashtags()
+		noteResponse := note.ToResponse()
+		noteResponse.Tags = tags
+		noteResponse.SyncMetadata = map[string]interface{}{
+			"sync_version":   note.Version,
+			"conflict_status": h.getConflictStatus(note, conflicts),
+			"last_synced":     time.Now().Format(time.RFC3339),
+		}
+		noteResponses = append(noteResponses, noteResponse)
+	}
+	return noteResponses
+}
+
+// buildSyncResponse constructs a comprehensive sync response with metadata
+func (h *NotesHandler) buildSyncResponse(noteResponses []models.NoteResponse, total int, params *syncParams, conflicts []models.NoteConflict, syncToken string) models.SyncResponse {
+	now := time.Now().Format(time.RFC3339)
+	return models.SyncResponse{
+		Notes:      noteResponses,
+		Total:      total,
+		Limit:      params.Limit,
+		Offset:     params.Offset,
+		HasMore:    params.Offset+params.Limit < total,
+		SyncToken:  syncToken,
+		ServerTime: now,
+		Conflicts:  conflicts,
+		Metadata: models.SyncMetadata{
+			LastSyncAt:    now,
+			ServerTime:    now,
+			TotalNotes:    total,
+			UpdatedNotes:  len(noteResponses),
+			HasConflicts:  len(conflicts) > 0,
+		},
+	}
+}
+
 // SyncNotes handles GET /api/notes/sync
 func (h *NotesHandler) SyncNotes(w http.ResponseWriter, r *http.Request) {
 	// Get user from context (set by auth middleware)
@@ -379,41 +469,21 @@ func (h *NotesHandler) SyncNotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse sync parameters
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	timestampParam := r.URL.Query().Get("since")
-	syncToken := r.URL.Query().Get("sync_token")
-	includeDeleted := r.URL.Query().Get("include_deleted") == "true"
-
-	// TODO: Implement proper sync token validation and refresh logic
-	// For now, we just acknowledge the received sync token
-	_ = syncToken // Prevent unused variable error
-
-	// Set defaults
-	if limit <= 0 || limit > 1000 {
-		limit = 1000 // Higher limit for sync operations
-	}
-	if offset < 0 {
-		offset = 0
+	params, err := parseSyncParams(r)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	// Parse timestamp (assuming RFC3339 format)
-	var timestamp time.Time
-	var err error
-
-	if timestampParam != "" {
-		timestamp, err = time.Parse(time.RFC3339, timestampParam)
-		if err != nil {
-			respondWithError(w, http.StatusBadRequest, "Invalid timestamp format. Use RFC3339 format.")
-			return
+	// Validate sync token if provided (lenient validation - don't fail sync)
+	if params.SyncToken != "" {
+		if valid := h.validateSyncToken(params.SyncToken); !valid {
+			log.Printf("SyncNotes: Invalid or expired sync token provided, will generate new token")
 		}
-	} else {
-		// If no timestamp provided, use a default lookback period (24 hours)
-		timestamp = time.Now().Add(-24 * time.Hour)
 	}
 
 	// Get notes since timestamp with sync support
-	notes, total, err := h.noteService.GetNotesForSync(user.ID.String(), limit, offset, &timestamp, includeDeleted)
+	notes, total, err := h.noteService.GetNotesForSync(user.ID.String(), params.Limit, params.Offset, &params.Timestamp, params.IncludeDeleted)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -429,39 +499,11 @@ func (h *NotesHandler) SyncNotes(w http.ResponseWriter, r *http.Request) {
 	// Generate new sync token
 	newSyncToken := h.generateSyncToken(user.ID.String(), time.Now())
 
-	// Convert to response format with tags and sync metadata
-	var noteResponses []models.NoteResponse
-	for _, note := range notes {
-		tags := note.ExtractHashtags()
-		noteResponse := note.ToResponse()
-		noteResponse.Tags = tags
-		noteResponse.SyncMetadata = map[string]interface{}{
-			"sync_version": note.Version,
-			"conflict_status": h.getConflictStatus(note, conflicts),
-			"last_synced": time.Now().Format(time.RFC3339),
-		}
-		noteResponses = append(noteResponses, noteResponse)
-	}
+	// Enrich notes with sync metadata
+	noteResponses := h.enrichNotesWithSyncMetadata(notes, conflicts)
 
-	// Prepare comprehensive sync response
-	response := models.SyncResponse{
-		Notes:      noteResponses,
-		Total:      total,
-		Limit:      limit,
-		Offset:     offset,
-		HasMore:    offset+limit < total,
-		SyncToken:  newSyncToken,
-		ServerTime: time.Now().Format(time.RFC3339),
-		Conflicts:  conflicts,
-		Metadata: models.SyncMetadata{
-			LastSyncAt:    time.Now().Format(time.RFC3339),
-			ServerTime:    time.Now().Format(time.RFC3339),
-			TotalNotes:    total,
-			UpdatedNotes:  len(notes),
-			HasConflicts:  len(conflicts) > 0,
-		},
-	}
-
+	// Build and send sync response
+	response := h.buildSyncResponse(noteResponses, total, params, conflicts, newSyncToken)
 	respondWithJSON(w, http.StatusOK, response)
 }
 
@@ -616,6 +658,39 @@ func (h *NotesHandler) GetNoteStats(w http.ResponseWriter, r *http.Request) {
 }
 
 // Helper methods for sync functionality
+
+// validateSyncToken validates a sync token format and expiration.
+// Returns true if valid, false otherwise. Logs warnings for invalid tokens.
+// Lenient validation: sync is allowed to proceed even with invalid tokens.
+func (h *NotesHandler) validateSyncToken(token string) bool {
+	if token == "" {
+		return false
+	}
+
+	// Check token format: sync_YYYYMMDD_XXXXXXXX
+	// Expected format: sync_date_8char_hash
+	parts := strings.Split(token, "_")
+	if len(parts) != 3 || parts[0] != "sync" {
+		log.Printf("Warning: Invalid sync token format: %s", token)
+		return false
+	}
+
+	// Parse date from token (format: YYYYMMDD)
+	tokenDate, err := time.Parse("20060102", parts[1])
+	if err != nil {
+		log.Printf("Warning: Invalid sync token date: %s", parts[1])
+		return false
+	}
+
+	// Check if token is too old (more than 24 hours)
+	tokenAge := time.Since(tokenDate)
+	if tokenAge > 24*time.Hour {
+		log.Printf("Warning: Sync token is too old: %s (age: %v)", token, tokenAge)
+		return false
+	}
+
+	return true
+}
 
 // generateSyncToken generates a unique sync token for tracking sync sessions
 func (h *NotesHandler) generateSyncToken(userID string, timestamp time.Time) string {

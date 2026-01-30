@@ -240,6 +240,47 @@ func (h *NotesHandler) handleSemanticSearch(w http.ResponseWriter, r *http.Reque
 
 Purpose: Internal handler for semantic search requests. Delegates to SemanticSearchService and formats response with duration metadata.
 
+#### parseSyncParams
+```go
+func parseSyncParams(r *http.Request) (*syncParams, error)
+```
+
+Purpose: Extracts and validates sync query parameters (limit, offset, timestamp, sync_token, include_deleted). Returns structured syncParams or validation error. Sets default values for missing parameters.
+
+#### syncParams
+```go
+type syncParams struct {
+    Limit          int
+    Offset         int
+    Timestamp      time.Time
+    SyncToken      string
+    IncludeDeleted bool
+}
+```
+
+Purpose: Holds parsed and validated sync request parameters.
+
+#### (*NotesHandler) validateSyncToken
+```go
+func (h *NotesHandler) validateSyncToken(token string) bool
+```
+
+Purpose: Validates sync token format and expiration. Checks token format (sync_YYYYMMDD_XXXXXXXX) and ensures token is not older than 24 hours. Returns true if valid, false otherwise. Lenient validation - logs warnings but doesn't fail sync.
+
+#### (*NotesHandler) enrichNotesWithSyncMetadata
+```go
+func (h *NotesHandler) enrichNotesWithSyncMetadata(notes []models.Note, conflicts []models.NoteConflict) []models.NoteResponse
+```
+
+Purpose: Converts notes to NoteResponse objects with tags and sync metadata (version, conflict status, last synced timestamp).
+
+#### (*NotesHandler) buildSyncResponse
+```go
+func (h *NotesHandler) buildSyncResponse(noteResponses []models.NoteResponse, total int, params *syncParams, conflicts []models.NoteConflict, syncToken string) models.SyncResponse
+```
+
+Purpose: Constructs comprehensive sync response with metadata including pagination info, server time, and conflict status.
+
 #### (*NotesHandler) generateSyncToken
 ```go
 func (h *NotesHandler) generateSyncToken(userID string, timestamp time.Time) string
