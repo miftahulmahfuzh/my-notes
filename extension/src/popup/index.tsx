@@ -127,6 +127,15 @@ const PopupApp: React.FC = () => {
     }
   }, [state.showNotesList]);
 
+  // Load notes when navigating to notes list from a different page
+  useEffect(() => {
+    // Only load if we just navigated to notes list (from a different view)
+    const hasOtherView = state.showNoteDetail || state.showNoteEditor || state.showHelpView || state.showCreateForm;
+    if (state.showNotesList && !hasOtherView && state.authState.isAuthenticated) {
+      loadNotes();
+    }
+  }, [state.showNotesList, state.showNoteDetail, state.showNoteEditor, state.showHelpView, state.showCreateForm, state.authState.isAuthenticated]);
+
   // Initialize auth on component mount
   useEffect(() => {
     const initializeApp = async () => {
