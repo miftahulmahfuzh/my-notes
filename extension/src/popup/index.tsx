@@ -973,19 +973,17 @@ const PopupApp: React.FC = () => {
         return;
       }
 
-      // Ctrl+Shift+F: Enable semantic search, focus input (only when notes list is visible)
-      if (e.shiftKey && e.key === 'F' && state.showNotesList) {
+      // Ctrl+Shift+F: Navigate to list and enable semantic search (works globally)
+      if (e.shiftKey && e.key === 'F') {
         e.preventDefault();
-        enableSemanticSearch();
-        searchInputRef.current?.focus();
+        handleNavigateToSearch('semantic');
         return;
       }
 
-      // Ctrl+F: Enable keyword search, focus input (only when notes list is visible)
-      if (e.key === 'f' && state.showNotesList) {
+      // Ctrl+F: Navigate to list and enable keyword search (works globally)
+      if (e.key === 'f') {
         e.preventDefault();
-        enableKeywordSearch();
-        searchInputRef.current?.focus();
+        handleNavigateToSearch('keyword');
         return;
       }
 
