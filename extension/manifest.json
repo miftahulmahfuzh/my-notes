@@ -6,13 +6,9 @@
   "permissions": [
     "storage",
     "identity",
-    "activeTab",
-    "background",
-    "alarms",
-    "notifications"
+    "background"
   ],
   "host_permissions": [
-    "http://localhost:8080/*",
     "https://accounts.google.com/*",
     "https://www.googleapis.com/*",
     "https://oauth2.googleapis.com/*",
