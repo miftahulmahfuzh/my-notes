@@ -260,7 +260,7 @@ export class AuthService {
    * Exchange Google OAuth token for backend auth tokens
    */
   private async exchangeTokenForAuth(googleToken: string): Promise<AuthResponse | null> {
-    const authUrl = `${CONFIG.API_BASE_URL}/api/v1/auth/chrome`;
+    const authUrl = `${CONFIG.API_BASE_URL}/auth/chrome`;
     console.log('[Auth] === Starting token exchange ===');
     console.log('[Auth] CONFIG.API_BASE_URL:', CONFIG.API_BASE_URL);
     console.log('[Auth] Full URL:', authUrl);
@@ -371,7 +371,7 @@ export class AuthService {
           return false;
         }
 
-        const response = await fetch(`${CONFIG.API_BASE_URL}/api/v1/auth/refresh`, {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/auth/refresh`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -428,7 +428,7 @@ export class AuthService {
       // NOTE: Directly access stored token to avoid circular dependency with isAuthenticated()
       // which checks isRefreshing flag during token refresh failures
       if (token) {
-        await fetch(`${CONFIG.API_BASE_URL}/api/v1/auth/logout`, {
+        await fetch(`${CONFIG.API_BASE_URL}/auth/logout`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`

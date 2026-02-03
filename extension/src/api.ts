@@ -244,7 +244,7 @@ class ApiService {
    * POST /api/v1/notes
    */
   async createNote(request: CreateNoteRequest): Promise<ApiResponse<NoteResponse>> {
-    return this.makeRequest<NoteResponse>('/api/v1/notes', {
+    return this.makeRequest<NoteResponse>('/notes', {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -274,7 +274,7 @@ class ApiService {
     searchParams.append('order_dir', orderDir);
 
     const query = searchParams.toString();
-    const endpoint = `/api/v1/notes${query ? `?${query}` : ''}`;
+    const endpoint = `/notes${query ? `?${query}` : ''}`;
 
     return this.makeRequest<NoteListResponse>(endpoint, {
       method: 'GET',
@@ -286,7 +286,7 @@ class ApiService {
    * GET /api/v1/notes/{id}
    */
   async getNote(id: string): Promise<ApiResponse<NoteResponse>> {
-    return this.makeRequest<NoteResponse>(`/api/v1/notes/${id}`, {
+    return this.makeRequest<NoteResponse>(`/notes/${id}`, {
       method: 'GET',
     });
   }
@@ -296,7 +296,7 @@ class ApiService {
    * PUT /api/v1/notes/{id}
    */
   async updateNote(id: string, request: UpdateNoteRequest): Promise<ApiResponse<NoteResponse>> {
-    return this.makeRequest<NoteResponse>(`/api/v1/notes/${id}`, {
+    return this.makeRequest<NoteResponse>(`/notes/${id}`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });
@@ -308,7 +308,7 @@ class ApiService {
    * Note: This uses a longer timeout (60s) since LLM calls can take 10-30s
    */
   async prettifyNote(id: string): Promise<ApiResponse<PrettifyResponse>> {
-    const url = `${this.baseUrl}/api/v1/notes/${id}/prettify`;
+    const url = `${this.baseUrl}/notes/${id}/prettify`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds for LLM
 
@@ -383,7 +383,7 @@ class ApiService {
    * DELETE /api/v1/notes/{id}
    */
   async deleteNote(id: string): Promise<ApiResponse<{ message: string }>> {
-    return this.makeRequest<{ message: string }>(`/api/v1/notes/${id}`, {
+    return this.makeRequest<{ message: string }>(`/notes/${id}`, {
       method: 'DELETE',
     });
   }
@@ -405,7 +405,7 @@ class ApiService {
     if (params.order_dir) searchParams.append('order_dir', params.order_dir);
 
     const query = searchParams.toString();
-    const endpoint = `/api/v1/search/notes${query ? `?${query}` : ''}`;
+    const endpoint = `/search/notes${query ? `?${query}` : ''}`;
 
     return this.makeRequest<SearchResult>(endpoint, {
       method: 'GET',
@@ -422,7 +422,7 @@ class ApiService {
     if (query) searchParams.append('query', query);
     searchParams.append('semantic', 'true');
 
-    const endpoint = `/api/v1/search/notes?${searchParams.toString()}`;
+    const endpoint = `/search/notes?${searchParams.toString()}`;
 
     return this.makeRequest<SearchResult & { duration: number }>(endpoint, {
       method: 'GET',
@@ -446,7 +446,7 @@ class ApiService {
     searchParams.append('offset', offset.toString());
 
     const query = searchParams.toString();
-    const endpoint = `/api/v1/notes/tags/${encodeURIComponent(tag)}${query ? `?${query}` : ''}`;
+    const endpoint = `/notes/tags/${encodeURIComponent(tag)}${query ? `?${query}` : ''}`;
 
     return this.makeRequest<SearchResult>(endpoint, {
       method: 'GET',
@@ -462,7 +462,7 @@ class ApiService {
     last_sync: string;
     [key: string]: any;
   }>> {
-    return this.makeRequest<any>('/api/v1/notes/stats', {
+    return this.makeRequest<any>('/notes/stats', {
       method: 'GET',
     });
   }
@@ -497,7 +497,7 @@ class ApiService {
     if (params.sync_token) searchParams.append('sync_token', params.sync_token);
 
     const query = searchParams.toString();
-    const endpoint = `/api/v1/notes/sync${query ? `?${query}` : ''}`;
+    const endpoint = `/notes/sync${query ? `?${query}` : ''}`;
 
     return this.makeRequest<any>(endpoint, {
       method: 'GET',
@@ -512,7 +512,7 @@ class ApiService {
     notes: NoteResponse[];
     count: number;
   }>> {
-    return this.makeRequest<any>('/api/v1/notes/batch', {
+    return this.makeRequest<any>('/notes/batch', {
       method: 'POST',
       body: JSON.stringify(requests),
     });
@@ -529,7 +529,7 @@ class ApiService {
     notes: NoteResponse[];
     count: number;
   }>> {
-    return this.makeRequest<any>('/api/v1/notes/batch', {
+    return this.makeRequest<any>('/notes/batch', {
       method: 'PUT',
       body: JSON.stringify({ updates }),
     });
@@ -540,7 +540,7 @@ class ApiService {
    * GET /api/v1/health
    */
   async healthCheck(): Promise<ApiResponse<{ status: string }>> {
-    return this.makeRequest<{ status: string }>('/api/v1/health', {
+    return this.makeRequest<{ status: string }>('/health', {
       method: 'GET',
     });
   }
@@ -563,7 +563,7 @@ class ApiService {
     searchParams.append('offset', offset.toString());
 
     const query = searchParams.toString();
-    const endpoint = `/api/v1/tags${query ? `?${query}` : ''}`;
+    const endpoint = `/tags${query ? `?${query}` : ''}`;
 
     return this.makeRequest<TagsListResponse>(endpoint, {
       method: 'GET',
