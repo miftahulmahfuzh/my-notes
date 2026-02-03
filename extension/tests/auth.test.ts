@@ -236,7 +236,7 @@ describe('AuthService', () => {
 
       // Should attempt refresh
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/auth/refresh',
+        'http://localhost:8080/auth/refresh',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -302,7 +302,7 @@ describe('AuthService', () => {
         expect.any(Function)
       );
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/auth/chrome',
+        'http://localhost:8080/auth/chrome',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -553,7 +553,7 @@ describe('AuthService', () => {
       const result = await authService.isAuthenticated();
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/auth/refresh',
+        'http://localhost:8080/auth/refresh',
         expect.any(Object)
       );
     });
@@ -656,7 +656,7 @@ describe('AuthService', () => {
 
       expect(result).toBe(true);
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/auth/refresh',
+        'http://localhost:8080/auth/refresh',
         expect.objectContaining({
           method: 'POST',
           body: expect.stringContaining('valid-refresh-token')
@@ -1117,7 +1117,7 @@ describe('AuthService', () => {
       await authService.getAuthHeader();
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/auth/refresh',
+        'http://localhost:8080/auth/refresh',
         expect.any(Object)
       );
     });
@@ -1161,7 +1161,7 @@ describe('AuthService', () => {
       await authService.logout();
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/auth/logout',
+        'http://localhost:8080/auth/logout',
         expect.objectContaining({
           method: 'DELETE'
         })
