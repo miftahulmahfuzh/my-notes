@@ -9,6 +9,7 @@
     "background"
   ],
   "host_permissions": [
+    "https://my-notes-api-7bnrhx3mka-uc.a.run.app/*",
     "https://accounts.google.com/*",
     "https://www.googleapis.com/*",
     "https://oauth2.googleapis.com/*",
