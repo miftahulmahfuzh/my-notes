@@ -383,7 +383,7 @@ describe('ApiService', () => {
       await testService.createNote(createRequest);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes',
+        'http://localhost:8080/notes',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(createRequest),
@@ -440,7 +440,7 @@ describe('ApiService', () => {
       await testService.getNotes({ limit: 10, offset: 5 });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes?limit=10&offset=5&order_by=updated_at&order_dir=desc',
+        'http://localhost:8080/notes?limit=10&offset=5&order_by=updated_at&order_dir=desc',
         expect.any(Object)
       );
     });
@@ -460,7 +460,7 @@ describe('ApiService', () => {
       });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes?limit=20&offset=40&order_by=updated_at&order_dir=asc',
+        'http://localhost:8080/notes?limit=20&offset=40&order_by=updated_at&order_dir=asc',
         expect.any(Object)
       );
     });
@@ -475,7 +475,7 @@ describe('ApiService', () => {
       await testService.getNotes();
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes?limit=20&offset=0&order_by=updated_at&order_dir=desc',
+        'http://localhost:8080/notes?limit=20&offset=0&order_by=updated_at&order_dir=desc',
         expect.any(Object)
       );
     });
@@ -502,7 +502,7 @@ describe('ApiService', () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockNote);
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes/note-123',
+        'http://localhost:8080/notes/note-123',
         expect.objectContaining({ method: 'GET' })
       );
     });
@@ -535,7 +535,7 @@ describe('ApiService', () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockNote);
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes/note-123',
+        'http://localhost:8080/notes/note-123',
         expect.objectContaining({
           method: 'PUT',
           body: JSON.stringify(updateRequest),
@@ -554,7 +554,7 @@ describe('ApiService', () => {
 
       expect(result.success).toBe(true);
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes/note-123',
+        'http://localhost:8080/notes/note-123',
         expect.objectContaining({ method: 'DELETE' })
       );
     });
@@ -575,7 +575,7 @@ describe('ApiService', () => {
       await testService.searchNotes({ query: 'test search' });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/search/notes?query=test+search',
+        'http://localhost:8080/search/notes?query=test+search',
         expect.any(Object)
       );
     });
@@ -590,7 +590,7 @@ describe('ApiService', () => {
       await testService.searchNotes({ tags: ['tag1', 'tag2', 'tag3'] });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/search/notes?tags=tag1%2Ctag2%2Ctag3',
+        'http://localhost:8080/search/notes?tags=tag1%2Ctag2%2Ctag3',
         expect.any(Object)
       );
     });
@@ -645,7 +645,7 @@ describe('ApiService', () => {
       await testService.getNotesByTag('C# Programming');
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes/tags/C%23%20Programming?limit=20&offset=0',
+        'http://localhost:8080/notes/tags/C%23%20Programming?limit=20&offset=0',
         expect.any(Object)
       );
     });
@@ -660,7 +660,7 @@ describe('ApiService', () => {
       await testService.getNotesByTag('test', { limit: 50, offset: 100 });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes/tags/test?limit=50&offset=100',
+        'http://localhost:8080/notes/tags/test?limit=50&offset=100',
         expect.any(Object)
       );
     });
@@ -688,7 +688,7 @@ describe('ApiService', () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockStats);
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes/stats',
+        'http://localhost:8080/notes/stats',
         expect.objectContaining({ method: 'GET' })
       );
     });
@@ -752,7 +752,7 @@ describe('ApiService', () => {
       await testService.syncNotes({});
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes/sync',
+        'http://localhost:8080/notes/sync',
         expect.any(Object)
       );
     });
@@ -775,7 +775,7 @@ describe('ApiService', () => {
       await testService.batchCreateNotes(requests);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes/batch',
+        'http://localhost:8080/notes/batch',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(requests),
@@ -801,7 +801,7 @@ describe('ApiService', () => {
       await testService.batchUpdateNotes(updates);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/notes/batch',
+        'http://localhost:8080/notes/batch',
         expect.objectContaining({
           method: 'PUT',
           body: JSON.stringify({ updates }),
@@ -823,7 +823,7 @@ describe('ApiService', () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockHealth);
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/health',
+        'http://localhost:8080/health',
         expect.objectContaining({ method: 'GET' })
       );
     });
@@ -974,7 +974,7 @@ describe('ApiService', () => {
       await customService.healthCheck();
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.example.com/api/v1/health',
+        'https://api.example.com/health',
         expect.any(Object)
       );
     });
