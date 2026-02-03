@@ -73,6 +73,7 @@ tmp/
 /backend/server
 *code_analyzer.md
 consolidate_auth.md
+*silence-notes.zip
 
 # Workflows plans
 .workflows/plan/

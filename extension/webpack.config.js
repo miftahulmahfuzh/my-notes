@@ -3,34 +3,33 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const dotenv = require('dotenv');
-const dotenvExpand = require('dotenv-expand');
 
 // Provide process polyfill
 const { ProvidePlugin } = webpack;
 
 // Load environment variables from .env files
-// Priority: .env.{mode}.local > .env.{mode} > .env.local > .env
+// Priority: .env (defaults) < .env.local < .env.{mode} < .env.{mode}.local
 const loadEnv = (mode) => {
-  const envFiles = [
-    `.env.${mode}.local`,
-    `.env.${mode}`,
-    '.env.local',
-    '.env'
-  ];
-
   const envVars = {};
-  envFiles.forEach(file => {
+
+  // Helper to load a single env file
+  const loadFile = (file) => {
     try {
       const filePath = path.resolve(__dirname, file);
       const result = dotenv.config({ path: filePath });
       if (result.parsed) {
-        dotenvExpand({ parsed: result.parsed });
         Object.assign(envVars, result.parsed);
       }
     } catch (e) {
       // File doesn't exist, skip
     }
-  });
+  };
+
+  // Load in order: defaults first, then overrides
+  loadFile('.env');                    // Default values
+  loadFile('.env.local');              // Local overrides
+  loadFile(`.env.${mode}`);            // Environment-specific
+  loadFile(`.env.${mode}.local`);      // Local + environment-specific
 
   return envVars;
 };

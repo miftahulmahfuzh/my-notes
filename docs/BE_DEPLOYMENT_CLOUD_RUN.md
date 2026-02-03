@@ -439,67 +439,54 @@ gcloud logging read "resource.type=cloud_run_revision AND resource.labels.servic
 
 Now that your backend is deployed, update your Chrome extension to use it.
 
-### Files to Update
+### Update the Production Environment File
 
-You need to update **2 files** in your extension:
+The extension uses environment files to configure the API URL for different environments.
 
-#### File 1: `extension/src/utils/config.ts`
+#### Edit `extension/.env.production`
 
 **Find this line:**
-```typescript
-API_BASE_URL: 'http://localhost:8080',
+```bash
+VITE_API_BASE_URL=http://localhost:8080/api/v1
 ```
 
-**Replace with your deployed URL:**
-```typescript
-API_BASE_URL: 'https://my-notes-api-xxxxx-xx.a.run.app',
+**Replace with your deployed Cloud Run URL:**
+```bash
+VITE_API_BASE_URL=https://my-notes-api-xxxxx-xx.a.run.app/api/v1
 ```
 
-**Full context:**
-```typescript
-export const CONFIG = {
-  // API Configuration - Production URL on Cloud Run
-  API_BASE_URL: 'https://my-notes-api-xxxxx-xx.a.run.app',
+**Full example:**
+```bash
+# Production Environment Configuration
+# Used when running: npm run build
 
-  // Google OAuth Configuration
-  GOOGLE_OAUTH: {
-    // ... rest of config
-  }
-};
+NODE_ENV=production
+VITE_API_BASE_URL=https://my-notes-api-7bnrhx3mka-uc.a.run.app/api/v1
 ```
 
-#### File 2: `extension/src/api.ts`
+**Important:** Use the `/api/v1` suffix to match the backend API routes.
 
-**Find this section:**
-```typescript
-const defaultConfig: ApiConfig = {
-  baseUrl: 'http://localhost:8080',
-  timeout: 10000,
-  retryAttempts: 3,
-  retryDelay: 1000
-};
-```
+### Build the Extension for Production
 
-**Replace with:**
-```typescript
-const defaultConfig: ApiConfig = {
-  baseUrl: 'https://my-notes-api-xxxxx-xx.a.run.app',
-  timeout: 10000,
-  retryAttempts: 3,
-  retryDelay: 1000
-};
-```
+**Option 1: Build with the production script (Recommended)**
 
-### Rebuild the Extension
-
-After updating the files:
+This builds for production and creates a ZIP ready for Chrome Web Store:
 
 ```bash
 # From the project root
-./frontend_build.sh
+./frontend_build_prod.sh
+```
+
+**Option 2: Build manually**
+
+```bash
+cd extension
+npm run build
 ```
 
 ### Load the Updated Extension
+
+#### For Local Testing
 
 1. Open Chrome and go to `chrome://extensions/`
 2. Find "Silence Notes" in the list
@@ -508,6 +495,29 @@ After updating the files:
 **OR** if loading for the first time:
 1. Click **"Load unpacked"**
 2. Select the `extension/dist` folder
+
+#### For Chrome Web Store Submission
+
+The production build script creates a ZIP file at:
+```
+extension/silence-notes.zip
+```
+
+Upload this file to the Chrome Web Store Developer Dashboard.
+
+### Build Script Reference
+
+| Script | Purpose | Environment | Output |
+|--------|---------|-------------|--------|
+| `frontend_build_dev.sh` | Local development | Uses `http://localhost:8080/api/v1` | `extension/dist/` |
+| `frontend_build_prod.sh` | Production deployment | Uses GCP URL from `.env.production` | `extension/dist/` + ZIP |
+
+### Environment File Reference
+
+| File | Environment | Used By |
+|------|-------------|---------|
+| `.env` | Development | `npm run build:dev` |
+| `.env.production` | Production | `npm run build` |
 
 ---
 
@@ -928,8 +938,10 @@ gcloud run services update my-notes-api --min-instances=0 --max-instances=10
 |------|---------|
 | `deploy_gcp.sh.template` | Deployment script template |
 | `backend/.env.production.template` | Environment variables template |
-| `extension/src/utils/config.ts` | Extension API config |
-| `extension/src/api.ts` | Extension API service |
+| `extension/.env.production` | Extension production API URL |
+| `extension/.env` | Extension development API URL |
+| `frontend_build_prod.sh` | Production build script (creates ZIP) |
+| `frontend_build_dev.sh` | Development build script |
 | `backend/Dockerfile` | Backend container definition |
 
 ---
