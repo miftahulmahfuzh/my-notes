@@ -2,6 +2,9 @@
 import { Note } from '../src/types';
 import '@testing-library/jest-dom';
 
+// Mock webpack-injected __DEBUG__ constant (disable logs in tests)
+(global as any).__DEBUG__ = false;
+
 type MockedFn = ReturnType<typeof jest.fn> & {
   mockResolvedValue: (value: any) => any;
   mockRejectedValue: (value: any) => any;

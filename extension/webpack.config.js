@@ -77,6 +77,7 @@ module.exports = (env, argv) => {
       new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify(mode),
         'process.browser': JSON.stringify(true),
+        __DEBUG__: !isProduction,
         __CONFIG__: JSON.stringify({
           NODE_ENV: mode,
           API_BASE_URL: envVars.VITE_API_BASE_URL || 'http://localhost:8080',

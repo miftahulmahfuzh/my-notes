@@ -1154,7 +1154,9 @@ describe('PopupApp Component', () => {
       // @ts-ignore
       apiService.getNotes.mockImplementation(() => {
         callCount++;
-        if (callCount === 1) {
+        // Return notes for first two calls (initial mount + View All Notes click)
+        // Return empty array after delete (third call)
+        if (callCount <= 2) {
           return Promise.resolve({
             success: true,
             data: {
@@ -1923,13 +1925,13 @@ describe('PopupApp Component', () => {
         // Global shortcuts
         expect(screen.getByText(/Global Shortcuts/i)).toBeInTheDocument();
         expect(screen.getByText(/New note/)).toBeInTheDocument();
-        expect(screen.getByText(/Help/)).toBeInTheDocument();
-        expect(screen.getByText(/Back/)).toBeInTheDocument();
+        expect(screen.getAllByText(/Help/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/Back/).length).toBeGreaterThan(0);
 
-        // List/Search shortcuts
-        expect(screen.getByText(/List\/Search Shortcuts/i)).toBeInTheDocument();
-        expect(screen.getByText(/Keyword search/)).toBeInTheDocument();
-        expect(screen.getByText(/Semantic search/)).toBeInTheDocument();
+        // Search Modes
+        expect(screen.getByText(/Search Modes/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/Keyword search/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/Semantic search/).length).toBeGreaterThan(0);
         expect(screen.getByText(/Clear search/)).toBeInTheDocument();
 
         // Note Editing shortcuts
@@ -1940,13 +1942,13 @@ describe('PopupApp Component', () => {
         // Tags Suggestion shortcuts
         expect(screen.getByText(/Tags Suggestion Shortcuts/i)).toBeInTheDocument();
         expect(screen.getByText(/Show tags suggestion/)).toBeInTheDocument();
-        expect(screen.getByText(/Move down/)).toBeInTheDocument();
-        expect(screen.getByText(/Move up/)).toBeInTheDocument();
+        expect(screen.getAllByText(/Move down/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/Move up/).length).toBeGreaterThan(0);
         expect(screen.getByText(/Select tag/)).toBeInTheDocument();
 
         // Note Detail shortcuts
         expect(screen.getByText(/Note Detail Shortcuts/i)).toBeInTheDocument();
-        expect(screen.getByText(/Copy content/)).toBeInTheDocument();
+        expect(screen.getAllByText(/Copy content/).length).toBeGreaterThan(0);
         expect(screen.getByText(/Prettify note/)).toBeInTheDocument();
         expect(screen.getByText(/Click tag to filter notes/)).toBeInTheDocument();
       });

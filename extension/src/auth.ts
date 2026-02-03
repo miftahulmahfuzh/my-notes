@@ -4,6 +4,10 @@
  */
 
 import { CONFIG } from './utils/config';
+import { Logger } from './utils/logger';
+
+// Create auth-specific logger
+const logger = new Logger('Auth');
 
 // Authentication Types
 export interface User {
@@ -121,35 +125,35 @@ export class AuthService {
   async isAuthenticated(): Promise<boolean> {
     // If a refresh is already in progress, wait for it
     if (this.isRefreshing && this.refreshPromise) {
-      console.log('[Auth] isAuthenticated: refresh already in progress, waiting');
+      logger.log('isAuthenticated: refresh already in progress, waiting');
       return this.refreshPromise;
     }
 
     const token = await this.getStoredToken(STORAGE_KEYS.ACCESS_TOKEN);
     const expiry = await this.getStoredToken(STORAGE_KEYS.TOKEN_EXPIRY);
 
-    console.log('[Auth] isAuthenticated - token exists:', !!token);
-    console.log('[Auth] isAuthenticated - expiry exists:', !!expiry);
+    logger.log('isAuthenticated - token exists:', !!token);
+    logger.log('isAuthenticated - expiry exists:', !!expiry);
 
     if (!token || !expiry) {
-      console.log('[Auth] isAuthenticated: false - missing token or expiry');
+      logger.log('isAuthenticated: false - missing token or expiry');
       return false;
     }
 
     // Check if token is expired
     const now = Date.now();
     const expiryTime = parseInt(expiry);
-    console.log('[Auth] isAuthenticated - now:', now);
-    console.log('[Auth] isAuthenticated - expiry:', expiryTime);
-    console.log('[Auth] isAuthenticated - expired:', now >= expiryTime);
+    logger.log('isAuthenticated - now:', now);
+    logger.log('isAuthenticated - expiry:', expiryTime);
+    logger.log('isAuthenticated - expired:', now >= expiryTime);
 
     if (now >= expiryTime) {
-      console.log('[Auth] isAuthenticated: token expired, attempting refresh');
+      logger.log('isAuthenticated: token expired, attempting refresh');
       // Try to refresh token (this will cache the promise)
       return this.refreshToken();
     }
 
-    console.log('[Auth] isAuthenticated: true - token valid');
+    logger.log('isAuthenticated: true - token valid');
     return true;
   }
 
@@ -261,16 +265,16 @@ export class AuthService {
    */
   private async exchangeTokenForAuth(googleToken: string): Promise<AuthResponse | null> {
     const authUrl = `${CONFIG.API_BASE_URL}/auth/chrome`;
-    console.log('[Auth] === Starting token exchange ===');
-    console.log('[Auth] CONFIG.API_BASE_URL:', CONFIG.API_BASE_URL);
-    console.log('[Auth] Full URL:', authUrl);
-    console.log('[Auth] Has google token:', !!googleToken);
+    logger.log('=== Starting token exchange ===');
+    logger.log('CONFIG.API_BASE_URL:', CONFIG.API_BASE_URL);
+    logger.log('Full URL:', authUrl);
+    logger.log('Has google token:', !!googleToken);
 
     try {
       const requestBody = {
         token: googleToken
       };
-      console.log('[Auth] Request body keys:', Object.keys(requestBody));
+      logger.log('Request body keys:', Object.keys(requestBody));
 
       const response = await fetch(authUrl, {
         method: 'POST',
@@ -280,24 +284,24 @@ export class AuthService {
         body: JSON.stringify(requestBody)
       });
 
-      console.log('[Auth] Response status:', response.status);
-      console.log('[Auth] Response ok:', response.ok);
-      console.log('[Auth] Response statusText:', response.statusText);
+      logger.log('Response status:', response.status);
+      logger.log('Response ok:', response.ok);
+      logger.log('Response statusText:', response.statusText);
 
       if (!response.ok) {
         let errorText = '';
         let errorJson = null;
         try {
           errorText = await response.text();
-          console.log('[Auth] Error response body (raw):', errorText);
+          logger.log('Error response body (raw):', errorText);
           try {
             errorJson = JSON.parse(errorText);
-            console.log('[Auth] Error response (parsed):', JSON.stringify(errorJson, null, 2));
+            logger.log('Error response (parsed):', JSON.stringify(errorJson, null, 2));
           } catch {
             // Not JSON, use raw text
           }
         } catch (e) {
-          console.log('[Auth] Could not read error response body');
+          logger.log('Could not read error response body');
         }
 
         const errorMessage = errorJson?.error?.message || errorJson?.error || errorText || `HTTP ${response.status}`;
@@ -305,15 +309,15 @@ export class AuthService {
       }
 
       const responseText = await response.text();
-      console.log('[Auth] Success response body (raw):', responseText);
+      logger.log('Success response body (raw):', responseText);
 
       const data = JSON.parse(responseText);
-      console.log('[Auth] Parsed response keys:', Object.keys(data));
+      logger.log('Parsed response keys:', Object.keys(data));
 
       // The backend wraps responses in APIResponse format: { success: true, data: {...} }
       const responseData = data.success ? data.data : data;
 
-      console.log('[Auth] Response data keys:', Object.keys(responseData));
+      logger.log('Response data keys:', Object.keys(responseData));
 
       // Validate required fields exist in response
       if (!responseData.user || !responseData.access_token || !responseData.refresh_token) {
@@ -334,18 +338,18 @@ export class AuthService {
         sessionId: responseData.session_id
       };
 
-      console.log('[Auth] === Token exchange successful ===');
-      console.log('[Auth] User email:', authResponse.user?.email);
-      console.log('[Auth] Session ID:', authResponse.sessionId);
+      logger.log('=== Token exchange successful ===');
+      logger.log('User email:', authResponse.user?.email);
+      logger.log('Session ID:', authResponse.sessionId);
 
       return authResponse;
     } catch (error) {
-      console.log('[Auth] === Token exchange FAILED ===');
-      console.log('[Auth] Error type:', error?.constructor?.name || typeof error);
-      console.log('[Auth] Error name:', (error as Error)?.name);
-      console.log('[Auth] Error message:', (error as Error)?.message);
-      console.log('[Auth] Error toString():', String(error));
-      console.log('[Auth] Error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+      logger.log('=== Token exchange FAILED ===');
+      logger.log('Error type:', error?.constructor?.name || typeof error);
+      logger.log('Error name:', (error as Error)?.name);
+      logger.log('Error message:', (error as Error)?.message);
+      logger.log('Error toString():', String(error));
+      logger.log('Error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
 
       return null;
     }
@@ -357,7 +361,7 @@ export class AuthService {
   async refreshToken(): Promise<boolean> {
     // If a refresh is already in progress, return the existing promise
     if (this.isRefreshing && this.refreshPromise) {
-      console.log('[Auth] refreshToken: already refreshing, returning existing promise');
+      logger.log('refreshToken: already refreshing, returning existing promise');
       return this.refreshPromise;
     }
 
@@ -457,11 +461,11 @@ export class AuthService {
    */
   async getAuthHeader(): Promise<Record<string, string>> {
     const isAuth = await this.isAuthenticated();
-    console.log('[Auth] isAuthenticated:', isAuth);
+    logger.log('isAuthenticated:', isAuth);
 
     if (isAuth) {
       const token = await this.getStoredToken(STORAGE_KEYS.ACCESS_TOKEN);
-      console.log('[Auth] Retrieved token (first 10 chars):', token ? token.substring(0, 10) + '...' : 'null');
+      logger.log('Retrieved token (first 10 chars):', token ? token.substring(0, 10) + '...' : 'null');
 
       if (token) {
         return {
@@ -471,7 +475,7 @@ export class AuthService {
         console.error('[Auth] isAuthenticated returned true but no token found');
       }
     } else {
-      console.log('[Auth] User not authenticated, no auth header');
+      logger.log('User not authenticated, no auth header');
     }
 
     return {};
@@ -481,11 +485,11 @@ export class AuthService {
    * Storage helper methods
    */
   private async storeTokens(authResponse: AuthResponse): Promise<void> {
-    console.log('[Auth] Storing tokens...');
-    console.log('[Auth] Access token (first 10 chars):', authResponse.accessToken ? authResponse.accessToken.substring(0, 10) + '...' : 'null');
-    console.log('[Auth] Refresh token (first 10 chars):', authResponse.refreshToken ? authResponse.refreshToken.substring(0, 10) + '...' : 'null');
-    console.log('[Auth] Session ID:', authResponse.sessionId);
-    console.log('[Auth] Expires in:', authResponse.expiresIn, 'seconds');
+    logger.log('Storing tokens...');
+    logger.log('Access token (first 10 chars):', authResponse.accessToken ? authResponse.accessToken.substring(0, 10) + '...' : 'null');
+    logger.log('Refresh token (first 10 chars):', authResponse.refreshToken ? authResponse.refreshToken.substring(0, 10) + '...' : 'null');
+    logger.log('Session ID:', authResponse.sessionId);
+    logger.log('Expires in:', authResponse.expiresIn, 'seconds');
 
     await this.storeToken(STORAGE_KEYS.ACCESS_TOKEN, authResponse.accessToken);
     await this.storeToken(STORAGE_KEYS.REFRESH_TOKEN, authResponse.refreshToken);
@@ -494,7 +498,7 @@ export class AuthService {
     const expiryTime = Date.now() + (authResponse.expiresIn * 1000);
     await this.storeToken(STORAGE_KEYS.TOKEN_EXPIRY, expiryTime.toString());
 
-    console.log('[Auth] Tokens and session stored successfully');
+    logger.log('Tokens and session stored successfully');
   }
 
   private async storeToken(key: string, value: string): Promise<void> {
