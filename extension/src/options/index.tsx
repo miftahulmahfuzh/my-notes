@@ -12,10 +12,6 @@ const OptionsApp: React.FC = () => {
             <h2 className="text-xl font-semibold mb-3">General Settings</h2>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label>Enable notifications</label>
-                <input type="checkbox" defaultChecked />
-              </div>
-              <div className="flex items-center justify-between">
                 <label>Auto-sync notes</label>
                 <input type="checkbox" defaultChecked />
               </div>

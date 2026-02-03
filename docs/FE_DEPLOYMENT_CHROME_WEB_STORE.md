@@ -350,12 +350,21 @@ Edit `extension/manifest.json`:
 "permissions": [
   "storage",
   "identity",
-  "activeTab",
-  "background",
-  "alarms",
-  "notifications"
+  "background"
 ]
 ```
+
+> **IMPORTANT**: Only request permissions that are actively used in your code. Chrome Web Store will reject submissions with unused permissions. The current implementation only uses:
+> - `storage` - For storing auth tokens and user data
+> - `identity` - For Google OAuth authentication
+> - `background` - For the service worker
+
+**Removed permissions (previously caused rejection):**
+> - `activeTab` - NOT used (no chrome.tabs or activeTab API calls)
+> - `alarms` - NOT used (no chrome.alarms API calls)
+> - `notifications` - NOT used (no chrome.notifications API calls)
+> - `scripting` - NOT used (no chrome.scripting API calls)
+> - `webNavigation` - NOT used (no chrome.webNavigation API calls)
 
 **Complete fixed manifest:**
 
@@ -368,10 +377,7 @@ Edit `extension/manifest.json`:
   "permissions": [
     "storage",
     "identity",
-    "activeTab",
-    "background",
-    "alarms",
-    "notifications"
+    "background"
   ],
   "host_permissions": [
     "https://my-notes-api-7bnrhx3mka-uc.a.run.app/*",
@@ -393,7 +399,8 @@ Edit `extension/manifest.json`:
     "default_title": "Silence Notes"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
@@ -670,23 +677,7 @@ Silence Notes is a note-taking Chrome extension that allows users to create, edi
 
 Chrome Web Store requires justification for each permission. **Copy and paste these:**
 
----
-
-#### **activeTab**
-
-**Justification:**
-```
-Used to optionally access the current tab's content for the future feature of creating notes from selected text on web pages. The extension can only access the active tab when the user explicitly clicks the extension icon.
-```
-
----
-
-#### **alarms**
-
-**Justification:**
-```
-Used for scheduled background tasks such as automatic token refresh and periodic data synchronization with the backend API to ensure notes stay current.
-```
+> **CRITICAL**: Only justify permissions that are ACTUALLY used in your code. Chrome Web Store reviewers verify this by examining your extension's source code. Requesting permissions without using them will result in rejection.
 
 ---
 
@@ -718,15 +709,6 @@ No data is sent to any third-party services other than the user's own Google acc
 **Justification:**
 ```
 Uses Chrome Identity API (chrome.identity.getAuthToken) for Google OAuth 2.0 authentication. This allows users to sign in with their Google account securely. Only the user's email, name, and profile picture are requested for account creation. No other user data is accessed.
-```
-
----
-
-#### **notifications**
-
-**Justification:**
-```
-Used to display non-intrusive browser notifications for important events such as successful note synchronization, authentication status changes, and error messages when the extension encounters connectivity issues. Users can disable notifications in the options page.
 ```
 
 ---
@@ -914,6 +896,64 @@ The manifest defines an invalid url: http://localhost:*/*
 2. Find `host_permissions` section
 3. Remove all `localhost` entries
 4. Rebuild and repackage
+
+---
+
+### Problem: Rejected - Unused Permissions
+
+**Error:**
+```
+Violation: Requesting but not using the following permission(s):
+activeTab, alarms, notifications
+```
+
+**Solution:**
+This is the most common Chrome Web Store rejection. Reviewers verify that each permission you request is ACTUALLY used in your code.
+
+1. **Search your codebase** for each permission:
+   ```bash
+   # Check if chrome.alarms is used
+   grep -r "chrome\.alarms" extension/src/
+
+   # Check if chrome.notifications is used
+   grep -r "chrome\.notifications" extension/src/
+
+   # Check if chrome.tabs.query or activeTab is used
+   grep -r "chrome\.tabs\|activeTab" extension/src/
+   ```
+
+2. **Remove unused permissions** from `extension/src/manifest.json`:
+   ```json
+   "permissions": [
+     "storage",      // Used in auth.ts for storing tokens
+     "identity",     // Used in auth.ts for Google OAuth
+     "background"    // Used for service worker
+   ]
+   ```
+
+3. **Do NOT add** permissions for "future features" - this will cause rejection
+
+4. **Current implementation permissions:**
+   - ✅ `storage` - Used in `auth.ts` (chrome.storage.local.get/set)
+   - ✅ `identity` - Used in `auth.ts` (chrome.identity.getAuthToken)
+   - ✅ `background` - Used for service worker
+
+5. **Removed permissions (caused rejection):**
+   - ❌ `activeTab` - NOT used (no chrome.tabs or activeTab API calls)
+   - ❌ `alarms` - NOT used (no chrome.alarms API calls)
+   - ❌ `notifications` - NOT used (no chrome.notifications API calls)
+   - ❌ `scripting` - NOT used (no chrome.scripting API calls)
+   - ❌ `webNavigation` - NOT used (no chrome.webNavigation API calls)
+
+6. **Rebuild and repackage**:
+   ```bash
+   cd extension
+   npm run build
+   cd dist
+   zip -r silence-notes.zip *.js *.json *.html *.css *.png
+   ```
+
+7. **Resubmit** to Chrome Web Store
 
 ---
 
