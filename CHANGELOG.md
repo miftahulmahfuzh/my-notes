@@ -5,6 +5,100 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-03
+
+### Added
+- **Semantic search** with AI-powered content analysis using embeddings
+- **Ctrl+Shift+F** global shortcut for semantic search
+- **Brain icon toggle** for switching between keyword and semantic search
+- **AI prettify feature** for automatic note content improvement and formatting
+- **Tag autocomplete** feature in note editor with Ctrl+N shortcut support
+- **GET /api/v1/tags endpoint** for tag autocomplete suggestions
+- **Token blacklist** for JWT revocation on logout
+- **Ctrl+E shortcut** to edit notes from detail view
+- **Ctrl+C shortcut** to copy note content (without hashtags) in detail view
+- **Auto-show detail view** after creating a new note
+- **Navigation history state preservation** for form data
+- **Comprehensive frontend CI/CD** with GitHub Actions
+- **LLM configuration support** with OpenRouter integration
+- **ResilientLLM wrapper** with circuit breaker pattern
+- **Token counter** for LLM usage tracking
+- **Clustering logic** for parallel LLM request processing
+- **Extension icons** (16px, 48px, 128px) for Chrome Web Store
+- **User tags support** in prettify feature
+- **Frontend build scripts** split into dev and prod workflows
+- **Comprehensive backend and frontend test suites**
+
+### Changed
+- **Removed /api/v1 prefix** from all endpoint paths for cleaner URLs
+- **Note list default sorting** changed from created_at to updated_at
+- **Help page** condensed with Ctrl+H global shortcut
+- **Chrome Web Store deployment guide** simplified to reference format
+- **Environment variable loading** standardized across backend
+- **Build scripts** split into dev and prod workflows
+- **Popup layout** improved with reduced bottom margin spacing
+- **Note header layout** compacted with icon-only actions
+- **Statistics removed** from note detail view
+
+### Fixed
+- **Search input focus** after navigation using keyboard shortcuts
+- **Tag autocomplete positioning** with scroll offset correction
+- **Logout 401 error** resolution
+- **Duplicate token refresh requests** prevention
+- **Test reliability** with proper database setup
+- **API test expectations** updated for updated_at ordering
+- **Test warnings** by wrapping dispatchEvent calls in act()
+- **Missing @babel/preset-typescript dependency** in CI
+- **DB_PASSWORD** added to TestConfigLoadsFromBackendDotEnv test
+- **Chrome extension permissions** removed unused ones for Chrome Web Store compliance
+
+### Refactor
+- **Extracted duplicate token generation logic** from auth handlers
+- **Improved content type detection** in prettify service
+- **Sync complexity extracted** from SyncNotes component
+- **Token generation logic** centralized
+- **Handlers package** comprehensive documentation and analysis
+- **Auth package** comprehensive documentation and analysis
+- **Chrome token validation** caching mechanism added
+- **HTTP client timeout** added to validateChromeToken
+
+### Security
+- **Token blacklist implementation** for JWT revocation
+- **Chrome extension permissions** cleaned up for Chrome Web Store compliance
+- **Token refresh deduplication** to prevent race conditions
+
+### Testing
+- **Added frontend test job** to GitHub Actions workflow
+- **Added tests for**: PopupApp, api, auth, config, contentUtils, LoginForm, NoteEditor, NoteView, Options, Settings, SimpleUserProfile, background
+- **Added comprehensive LLM testing** with streaming support
+- **Added semantic search** end-to-end testing
+- **Added prettify service tests** with URL, JSON, and Go struct handling
+- **Added token blacklist** and logout tests
+- **Improved database setup** for integration tests
+- **Removed MarkdownPreview test** due to ESM issues
+
+### Documentation
+- **Added frontend CI/CD guide** (FE_GITHUB_CI_GUIDE.md)
+- **Added semantic search design** document
+- **Added prettify fixes and user tags** design document
+- **Added token blacklist design** document for P1-AU-A000
+- **Added comprehensive package documentation** for handlers and auth
+- **Updated shortcuts documentation** for global search
+- **Simplified Chrome Web Store deployment guide**
+
+### Deployment
+- **Switched from Docker to local PostgreSQL** for backend deployment
+- **Added LLM configuration support** for deployment
+- **Improved deployment experience** with better configuration
+
+### Build
+- **Split frontend build scripts** into dev and prod workflows
+- **Removed production API URL fallback** from webpack config
+
+### Dependencies
+- **Updated Go dependencies** for LLM integration
+- **Added frontend testing dependencies**
+
 ## [1.0.0] - 2026-01-28
 
 ### Added
