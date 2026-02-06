@@ -31,7 +31,7 @@ echo ""
 
 # Run production build
 echo -e "${YELLOW}Building extension (PRODUCTION mode)...${NC}"
-echo -e "${YELLOW}API: https://my-notes-api-7bnrhx3mka-uc.a.run.app/api/v1${NC}"
+echo -e "${YELLOW}API: https://my-notes-api-1019738114244.us-central1.run.app/api/v1${NC}"
 if npm run --prefix extension build; then
     echo ""
     echo -e "${GREEN}========================================${NC}"

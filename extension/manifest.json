@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Silence Notes",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A brutalist note-taking Chrome extension with hashtag filtering",
   "permissions": [
     "storage",
@@ -9,7 +9,7 @@
     "background"
   ],
   "host_permissions": [
-    "https://my-notes-api-7bnrhx3mka-uc.a.run.app/*",
+    "https://my-notes-api-1019738114244.us-central1.run.app/*",
     "https://accounts.google.com/*",
     "https://www.googleapis.com/*",
     "https://oauth2.googleapis.com/*",
