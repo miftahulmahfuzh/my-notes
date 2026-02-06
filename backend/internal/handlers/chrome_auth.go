@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -134,15 +135,14 @@ func (h *ChromeAuthHandler) validateChromeToken(token string) (*auth.GoogleUserI
 	// For Chrome extensions, we need to validate the token with Google's tokeninfo endpoint
 	// This is a simpler validation that doesn't require PKCE
 
-	// Google tokeninfo endpoint
-	tokenInfoURL := "https://www.googleapis.com/oauth2/v2/tokeninfo"
+	// Google tokeninfo endpoint - use oauth2.googleapis.com (current)
+	// Note: The tokeninfo endpoint expects access_token as query parameter, not Authorization header
+	tokenInfoURL := fmt.Sprintf("https://oauth2.googleapis.com/tokeninfo?access_token=%s", url.QueryEscape(token))
 
 	req, err := http.NewRequest("GET", tokenInfoURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tokeninfo request: %w", err)
 	}
-
-	req.Header.Set("Authorization", "Bearer "+token)
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,

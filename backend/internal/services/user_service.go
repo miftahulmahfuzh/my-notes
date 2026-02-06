@@ -42,12 +42,12 @@ func NewUserService(db *sql.DB) *UserService {
 func (s *UserService) CreateOrUpdateFromGoogle(userInfo *auth.GoogleUserInfo) (*models.User, error) {
 	ctx := context.Background()
 
-	// Check if user exists
+	// Check if user exists by email first (email has unique constraint)
 	var user models.User
 	err := s.db.QueryRowContext(ctx,
 		`SELECT id, google_id, email, avatar_url, created_at, updated_at
-		 FROM users WHERE google_id = $1`,
-		userInfo.ID).Scan(
+		 FROM users WHERE email = $1`,
+		userInfo.Email).Scan(
 		&user.ID, &user.GoogleID, &user.Email, &user.AvatarURL,
 		&user.CreatedAt, &user.UpdatedAt)
 
@@ -69,7 +69,8 @@ func (s *UserService) CreateOrUpdateFromGoogle(userInfo *auth.GoogleUserInfo) (*
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to query user: %w", err)
 	} else {
-		// Update existing user
+		// Update existing user (google_id may change, e.g., fallback ID in Chrome auth)
+		user.GoogleID = userInfo.ID
 		user.AvatarURL = &userInfo.Picture
 		user.UpdatedAt = time.Now()
 
@@ -411,12 +412,12 @@ func (s *UserService) createUser(ctx context.Context, user *models.User) error {
 func (s *UserService) updateUser(ctx context.Context, user *models.User) error {
 	query := `
 		UPDATE users
-		SET avatar_url = $1, updated_at = $2
-		WHERE id = $3
+		SET google_id = $1, avatar_url = $2, updated_at = $3
+		WHERE id = $4
 	`
 
 	_, err := s.db.ExecContext(ctx, query,
-		user.AvatarURL, user.UpdatedAt, user.ID)
+		user.GoogleID, user.AvatarURL, user.UpdatedAt, user.ID)
 
 	return err
 }
